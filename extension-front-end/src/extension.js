@@ -41,7 +41,7 @@ export async function getOptions() {
 export async function getSavedTweets() {
   await API.storage.local.get("tweets")
     .then(() => { 
-      console.log('Tweet URLs received.') 
+      console.log('Tweets received.') 
     });
 }
 

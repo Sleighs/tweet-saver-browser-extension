@@ -36,6 +36,10 @@ let defaultSettings = {
 // Get initial page URL
 let url = window.location.href;
 
+// browser.storage variables
+let urlsFromStorage = 'tweetUrls';
+let tweetsFromStorage = 'tweets';
+
 // Arrays to hold URLs and tweets
 let recentUrls = [];
 // let savedUrls = JSON.parse(localStorage.getItem('tweet-saver--urls')) || [];
@@ -93,16 +97,23 @@ console.log('Tweet Saver is running');
 
 const getSavedData = async () => {
   // Directly get data from local storage
-  chrome.storage.local.get(['tweetUrls', 'tweets'], (result) => {
-    if (chrome.runtime.lastError) {
-      console.error('Error:', chrome.runtime.lastError);
-    } else {
-      console.log('getSavedData - Storage data:', result);
-      const { tweetUrls, tweets } = result;
-      savedTweets = [...tweets];
-      savedUrls = [...tweetUrls];
-    }
-  });
+  try {
+    chrome.storage.local.get([
+      'tweetUrls', 
+      'tweets'
+    ], (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error:', chrome.runtime.lastError);
+      } else {
+        console.log('getSavedData - Storage data:', result);
+        const { tweetUrls, tweets } = result;
+        savedTweets = [...tweets];
+        savedUrls = [...tweetUrls];
+      }
+    });
+  } catch (error) {
+    console.error('getSavedData - Error getting saved data:', error);
+  }
 };
 
 function saveDataToStorage(tweetUrls, tweets) {
