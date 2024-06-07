@@ -28,6 +28,8 @@ Features for Tweet Saver
 
 const browser = chrome || browser;
 
+let debugMode = true;
+
 // Default settings
 let defaultSettings = {
   saveLastTweet: true,
@@ -67,7 +69,7 @@ class Tweet {
     this.loggedInAccount = loggedInAccount;
   }
 
-  saveTweet() {
+  async saveTweet() {
     // Check if the tweet is already saved
     if (savedTweets?.some(savedTweet => savedTweet.url === this.url)) {
       console.log('Tweet already saved');
@@ -81,7 +83,7 @@ class Tweet {
       //localStorage.setItem('tweet-saver--tweets', JSON.stringify(savedTweets));
       
       // Save to browser storage
-      saveDataToStorage(savedUrls, savedTweets);
+      await saveDataToStorage(savedUrls, savedTweets);
       
       console.log('Tweet saved:', this);
     }
@@ -98,51 +100,58 @@ console.log('Tweet Saver is running');
 const getSavedData = async () => {
   // Directly get data from local storage
   try {
-    chrome.storage.local.get([
+    await chrome.storage.local.get([
       'tweetUrls', 
       'tweets'
     ], (result) => {
-      if (chrome.runtime.lastError) {
-        console.error('Error:', chrome.runtime.lastError);
-      } else {
-        console.log('getSavedData - Storage data:', result);
+      // if (chrome.runtime.lastError) {
+      //   console.error('Error:', chrome.runtime.lastError);
+      // } else {
+        if (debugMode) console.log('getSavedData - Storage data:', result);
         const { tweetUrls, tweets } = result;
         savedTweets = [...tweets];
         savedUrls = [...tweetUrls];
-      }
+      // }
     });
   } catch (error) {
-    console.error('getSavedData - Error getting saved data:', error);
+    if (debugMode) console.error('getSavedData - Error getting saved data:', error);
   }
 };
 
-function saveDataToStorage(tweetUrls, tweets) {
-  chrome.storage.local.set({ tweetUrls, tweets }, function() {
-    if (chrome.runtime.lastError) {
-      console.error('Error saving data:', chrome.runtime.lastError);
-    } else {
-      console.log('Data saved successfully:', { tweetUrls, tweets });
-    }
-  });
+const saveDataToStorage = async (tweetUrls, tweets) => {
+  try {
+    await chrome.storage.local.set({ tweetUrls, tweets }, function() {
+      // if (chrome.runtime.lastError) {
+      //   console.error('Error saving data:', chrome.runtime.lastError);
+      // } else {
+        if (debugMode) console.log('Data saved successfully:', { tweetUrls, tweets });
+      // }
+    });
+  } catch (error) {
+    if (debugMode) console.error('saveDataToStorage - Error saving data:', error);
+  }
 }
 
-const saveUrl = (currentUrl) => {
-  if (!isUrlSaved(currentUrl) && isTweetUrl(currentUrl)) {
-    // Save the URL
-    savedUrls.push(currentUrl);
+const saveUrl = async (currentUrl) => {
+  try {
+    if (!isUrlSaved(currentUrl) && isTweetUrl(currentUrl)) {
+      // Save the URL
+      savedUrls.push(currentUrl);
 
-    // Save to local storage
-    //localStorage.setItem('tweet-saver--urls', JSON.stringify(savedUrls));
+      // Save to local storage
+      //localStorage.setItem('tweet-saver--urls', JSON.stringify(savedUrls));
 
-    // Save to browser storage
-    saveDataToStorage(savedUrls, savedTweets);
+      // Save to browser storage
+      await saveDataToStorage(savedUrls, savedTweets);
 
-    console.log('URL saved', savedUrls);
-  } else {
-    console.log('URL already saved');
+      console.log('URL saved', savedUrls);
+    } else {
+      console.log('URL already saved');
+    }
+  } catch (error) {
+    if (debugMode) console.error('saveUrl - Error saving URL:', error);
   }
 };
-
 
 
 const saveNewTweet = (tweetElement, currentUrl) => {
@@ -248,7 +257,7 @@ const isUrlSaved = (urlToCheck) => {
 };
 
 const isTweetUrl = (urlToCheck) => {
-  if (urlToCheck.includes('status') && !urlToCheck.includes('quote') && !urlToCheck.includes('retweet') && !urlToCheck.includes('like')) {
+  if (urlToCheck.includes('status') && !urlToCheck.includes('photo') && !urlToCheck.includes('quote') && !urlToCheck.includes('retweet') && !urlToCheck.includes('like')) {
     return true;
   }
   return false;
