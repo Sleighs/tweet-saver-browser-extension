@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Tweet Saver",
+  "version": "0.1",
+  "description": "Additional features for X/Twitter",
+  "action": {
+    "default_icon": {
+      "16": "favicon/favicon-16x16.png",
+      "32": "favicon/favicon-32x32.png"
+    },
+    "default_title": "Tweet Extension",
+    "default_popup": "build/index.html"
+  },
+  "icons": {
+    "16": "favicon/favicon-16x16.png", 
+    "32": "favicon/favicon-32x32.png"
+  },
+  "background": {
+    "service_worker": "scripts/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "scripts/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "storage", "activeTab", "scripting"
+  ],
+  "options_page": "build/index.html"
+}
