@@ -69,8 +69,11 @@ class Tweet {
       console.log('Tweet already saved');
     } else {
       savedTweets.push(this);
-      savedUrls.push(this.url);
 
+      if (isTweetUrl(this.url) && !isUrlSaved(this.url)){
+        savedUrls.push(this.url);
+      }
+      
       //localStorage.setItem('tweet-saver--tweets', JSON.stringify(savedTweets));
       
       // Save to browser storage
@@ -113,7 +116,7 @@ function saveDataToStorage(tweetUrls, tweets) {
 }
 
 const saveUrl = (currentUrl) => {
-  if (!isUrlSaved(currentUrl) && currentUrl.includes('status')) {
+  if (!isUrlSaved(currentUrl) && isTweetUrl(currentUrl)) {
     // Save the URL
     savedUrls.push(currentUrl);
 
@@ -133,14 +136,14 @@ const saveUrl = (currentUrl) => {
 
 const saveNewTweet = (tweetElement, currentUrl) => {
   if (tweetElement) {
-    let tweetUsername = tweetElement.querySelector('[data-testid="User-Name"]').innerText.split('\n');
+    let tweetUsername = tweetElement.querySelector('[data-testid="User-Name"]')?.innerText.split('\n');
     let tweetText = tweetElement.querySelector('[data-testid="tweetText"]')?.innerText;
-    let tweetTime = tweetElement.querySelector('time').innerText;
+    let tweetTime = tweetElement.querySelector('time')?.innerText;
     let tweetInfo = tweetElement.querySelectorAll('[data-testid="app-text-transition-container"]');
-    let tweetReplies = tweetElement.querySelector('[data-testid="reply"]').innerText;
-    let tweetRetweets = tweetElement.querySelector('[data-testid="retweet"]').innerText;
+    let tweetReplies = tweetElement.querySelector('[data-testid="reply"]')?.innerText;
+    let tweetRetweets = tweetElement.querySelector('[data-testid="retweet"]')?.innerText;
     let tweetLikes = tweetElement.querySelector('[data-testid="like"]')?.innerText;
-    let tweetBookmarkCount = tweetElement.querySelector('[data-testid="bookmark"]').innerText;
+    let tweetBookmarkCount = tweetElement.querySelector('[data-testid="bookmark"]')?.innerText;
     let username = tweetElement.querySelector('[data-testid="AppTabBar_Profile_Link"]')?.innerText || '';
 
     // check data-testid's that contain UserAvatar-Container-
@@ -185,31 +188,36 @@ const deleteAllSavedData = () => {
   localStorage.removeItem('tweet-saver--tweets');
 }
 
-// Function to handle the logic when the URL changes
-function handleUrlChange() {
+// Logic for handling URL changes
+const handleUrlChange = () => {
   const currentUrl = location.href;
 
   if (currentUrl !== url) {
     url = currentUrl;
 
-    if (url.includes('status')) {
+    //if (url.includes('status')) {
       // If url does not include quotes, reposts, or likes
-      if (!url.includes('quote') && !url.includes('retweet') && !url.includes('like')) {
+      if (isTweetUrl(currentUrl)) {
         let tweet = document.querySelector('article[role="article"]');
+        let tweetElement  = tweet?.querySelector('[data-testid="tweet"]');
+
+        // console.log('tweet', tweet);
+        // console.log('tweetElement', tweetElement);
+
         if (tweet) {
           // Extract tweet data and save tweet
-          saveNewTweet(tweet, currentUrl);
+          saveNewTweet(tweetElement, currentUrl);
         }
+
         // Save the URL
-        saveUrl(currentUrl);
-    }
+        saveUrl(currentUrl);   
       }
-      
+    //}
   }
 }
 
-// Function to detect URL changes
-function detectUrlChange() {
+// Observer to detect URL changes
+const detectUrlChange = () => {
   const observer = new MutationObserver(() => {
     handleUrlChange();
   });
@@ -224,8 +232,15 @@ function detectUrlChange() {
 
 /////// Helper functions ///////
 
-const isUrlSaved = (url) => {
-  return savedUrls.includes(url);
+const isUrlSaved = (urlToCheck) => {
+  return savedUrls.includes(urlToCheck);
+};
+
+const isTweetUrl = (urlToCheck) => {
+  if (urlToCheck.includes('status') && !urlToCheck.includes('quote') && !urlToCheck.includes('retweet') && !urlToCheck.includes('like')) {
+    return true;
+  }
+  return false;
 };
 
 
@@ -251,6 +266,7 @@ try {
 // Add click event listener for saving tweets
 document.addEventListener('click', function(event) {
   let tweet = event.target.closest('article');
+  //let tweetElement  = tweet?.querySelector('[data-testid="tweet"]');
 
   if (tweet) {
     saveNewTweet(tweet, location.href);

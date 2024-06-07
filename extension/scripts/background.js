@@ -14,38 +14,39 @@ let tweetUrls = [];
 let tweets = [];
 
 // Initial setup
-// browser.runtime.onInstalled.addListener(() => {
-//   browser.storage.sync.get("options").then((result) => {
-//     let optionsList = [
-//       "enableExtension",
-//       "saveLastTweetEnabled",
-//     ];
+browser.runtime.onInstalled.addListener(() => {
+  browser.storage.sync.get("options").then((result) => {
+    let optionsList = [
+      "enableExtension",
+      "saveLastTweetEnabled",
+    ];
 
-//     function extractProperties(names, obj) {
-//       let extracted = {};
-//       names.forEach(name => {
-//         extracted[name] = obj[name] ?? defaultOptions[name];
-//       });
-//       return extracted;
-//     }
+    function extractProperties(names, obj) {
+      let extracted = {};
+      names.forEach(name => {
+        extracted[name] = obj[name] ?? defaultOptions[name];
+      });
+      return extracted;
+    }
 
-//     if (result && result.options) {
-//       let newOptionObj = extractProperties(optionsList, result.options);
+    if (result && result.options) {
+      let newOptionObj = extractProperties(optionsList, result.options);
 
-//       browser.storage.local.set({ options: newOptionObj })
-//         .then(() => {
-//           console.log("Installed - set options", newOptionObj);
-//         });
-//     } else {
-//       browser.storage.local.set({ options: defaultOptions })
-//         .then(() => {
-//           console.log("Installed - default options", defaultOptions);
-//         });
-//     }
-//   });
+      browser.storage.sync.set({ options: newOptionObj })
+        .then(() => {
+          console.log("Installed - set options", newOptionObj);
+        });
+    } else {
+      browser.storage.sync.set({ options: defaultOptions })
+        .then(() => {
+          console.log("Installed - default options", defaultOptions);
+        });
+    }
+  });
 
-//   getTweetsFromStorage();
-// });
+  updateIcon();
+  getTweetsFromStorage();
+});
 
 // browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 //   if (message.method === 'enableExtension') {  
@@ -79,25 +80,25 @@ let tweets = [];
 //   return true;
 // });
 
-// async function updateIcon() {
-//   try {
-//     const data = await browser.storage.sync.get('options');
-//     const iconPath = data.options.enableExtension
-//       ? {
-//           "16": "../images/icon-16.png",
-//           "32": "../images/icon-32.png",
-//           "128": "../images/icon-128.png"
-//         }
-//       : {
-//           "16": "../images/icon-gray-32.png",
-//           "32": "../images/icon-gray-32.png",
-//           "128": "../images/icon-gray-128.png"
-//         };
-//     await browser.action.setIcon({ path: iconPath });
-//   } catch (err) {
-//     console.log('Error updating Icon', err);
-//   }
-// }
+async function updateIcon() {
+  try {
+    const data = await browser.storage.sync.get('options');
+    const iconPath = data.options.enableExtension
+      ? {
+          "16": "../images/icon-16.png",
+          "32": "../images/icon-32.png",
+          "128": "../images/icon-128.png"
+        }
+      : {
+          "16": "../images/icon-gray-32.png",
+          "32": "../images/icon-gray-32.png",
+          "128": "../images/icon-gray-128.png"
+        };
+    await browser.action.setIcon({ path: iconPath });
+  } catch (err) {
+    console.log('Error updating Icon', err);
+  }
+}
 
 // async function getTweetsFromStorage() {
 //   try {
@@ -134,22 +135,22 @@ let tweets = [];
 
 
 // On extension installation or update
-browser.runtime.onInstalled.addListener(() => {
-  // Get options from storage
-  browser.storage.sync.get("options").then((result) => {
-    if (result && result.options) {
-      options = { ...defaultOptions, ...result.options };
-    } else {
-      options = defaultOptions;
-      browser.storage.sync.set({ options: defaultOptions });
-    }
-    console.log("Options initialized:", options);
-  }).catch(error => console.error('Error initializing options:', error));
+// browser.runtime.onInstalled.addListener(() => {
+//   // Get options from storage
+//   browser.storage.sync.get("options").then((result) => {
+//     if (result && result.options) {
+//       options = { ...defaultOptions, ...result.options };
+//     } else {
+//       options = defaultOptions;
+//       browser.storage.sync.set({ options: defaultOptions });
+//     }
+//     console.log("Options initialized:", options);
+//   }).catch(error => console.error('Error initializing options:', error));
 
-  // Get saved URLs and tweets from storage
-  getTweetsFromStorage();
-  updateIcon();
-});
+//   // Get saved URLs and tweets from storage
+//   getTweetsFromStorage();
+//   updateIcon();
+// });
 
 // Handle messages from the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -195,26 +196,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-// Update the browser action icon based on options
-async function updateIcon() {
-  try {
-    const { options } = await browser.storage.sync.get('options');
-    const iconPath = options.enableExtension
-      ? {
-          "16": "../images/icon-16.png",
-          "32": "../images/icon-32.png",
-          "128": "../images/icon-128.png"
-        }
-      : {
-          "16": "../images/icon-gray-32.png",
-          "32": "../images/icon-gray-32.png",
-          "128": "../images/icon-gray-128.png"
-        };
-    await browser.action.setIcon({ path: iconPath });
-  } catch (err) {
-    console.error('Error updating icon:', err);
-  }
-}
+
 
 // Fetch tweets and URLs from local storage
 async function getTweetsFromStorage() {
