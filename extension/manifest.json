@@ -9,7 +9,7 @@
       "32": "favicon/favicon-32x32.png"
     },
     "default_title": "Tweet Extension",
-    "default_popup": "build/index.html"
+    "default_popup": "dist/index.html"
   },
   "icons": {
     "16": "favicon/favicon-16x16.png", 
@@ -33,5 +33,5 @@
   "permissions": [
     "storage", "activeTab", "scripting"
   ],
-  "options_page": "build/index.html"
+  "options_page": "dist/index.html"
 }

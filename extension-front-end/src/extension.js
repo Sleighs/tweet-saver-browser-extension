@@ -2,7 +2,7 @@
 /* global browser */
 
 
-const API = browser || chrome;
+const API = chrome || browser;
 
 // Opens options page
 export async function openOptions() {
@@ -39,17 +39,35 @@ export async function getOptions() {
 }
 
 export async function getSavedTweets() {
-  await API.storage.local.get("tweets")
-    .then(() => { 
-      console.log('Tweets received.') 
-    });
+  let tweetData = null;
+
+  try {
+    await API.storage.local.get("tweets")
+      .then((result) => { 
+        console.log('Tweets received.', result) 
+        tweetData = result;
+      });
+  } catch (error) {
+    console.log('getSavedTweets - Error retrieving tweets.', error);
+  }
+
+  return tweetData;
 }
 
 export async function getTweetUrls() {
-  await API.storage.local.get("tweetUrls")
-    .then(() => { 
-      console.log('Tweet URLs received.') 
-    });
+  try {
+    let urlData = null;
+    
+    await API.storage.local.get("tweetUrls")
+      .then((result) => { 
+        console.log('Tweet URLs received.', result) 
+        urlData = result;
+      });
+    
+    return urlData;
+  } catch (error) {
+    console.log('getTweetUrls - Error retrieving tweet URLs.', error);
+  }  
 }
 
 export async function updateIcon() {

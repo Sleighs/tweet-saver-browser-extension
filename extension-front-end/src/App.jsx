@@ -7,33 +7,34 @@ function App() {
   const [savedUrls, setSavedUrls] = useState(null);
   const [savedTweets, setSavedTweets] = useState(null);
 
+  const getData = async () => {
+    const tweetData = await getSavedTweets();
+    const urlData = await getTweetUrls();
+
+    if (tweetData) {
+      console.log('Tweet data:', tweetData);
+      setSavedTweets(tweetData.tweets);
+    }
+    if (urlData) {
+      console.log('URL data:', urlData);
+      setSavedUrls(urlData.tweetUrls);
+    }
+  }
+
   useEffect(() => {
-    getSavedTweets().then((data) => {
-      console.log('getSavedTweets data', data);
-    });
-
-    getTweetUrls().then((data) => {
-      console.log('getTweetUrls data', data);
-    });
-
+    getData();
   }, []);
 
-  // useEffect(() => {
-  //   let urlsFromLocalStorage = JSON.parse(localStorage.getItem('tweet-saver--urls')) || null;
-  //   let tweetsFromLocalStorage = JSON.parse(localStorage.getItem('tweet-saver--tweets')) || null;
-
-  //   console.log('urlsFromLocalStorage', urlsFromLocalStorage);
-  //   console.log('tweetsFromLocalStorage', tweetsFromLocalStorage);
-
-  //   setSavedUrls(urlsFromLocalStorage);
-  //   setSavedTweets(tweetsFromLocalStorage);
-  // }, []);
-
+  useEffect(() => {
+    console.log('Saved URLs from App.jsx:', savedUrls);
+  }, [savedUrls]);
 
   return (
     <div>
       <div>
         <h2>Saved URLs</h2>
+        {savedUrls === null && <p>No saved URLs</p>}
+        <p>{savedUrls && String(savedUrls[0])}</p>
         <ul>
           {savedUrls && (savedUrls.map((url, index) => (
             <li key={index}>
@@ -43,16 +44,17 @@ function App() {
         </ul>
       </div>
       
-        <div>
-          <h2>Saved Tweets</h2>
-          <ul>
-            {savedTweets && (savedTweets.map((tweet, index) => (
-              <li key={index}>
-                {String(tweet)}
-              </li>)
-            ))}
-          </ul>
-        </div>
+      <div>
+        <h2>Saved Tweets</h2>
+        {savedTweets === null && <p>No saved tweets</p>}
+        <ul>
+          {savedTweets && (savedTweets.map((tweet, index) => (
+            <li key={index}>
+              {`${tweet?.handle}${tweet?.username ? '/' + tweet.username : ''} - ${tweet?.text}`}
+            </li>)
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }
