@@ -13,7 +13,9 @@ function App() {
 
     if (tweetData) {
       console.log('Tweet data:', tweetData);
-      setSavedTweets(tweetData.tweets);
+      // reverse the order of the tweets
+
+      setSavedTweets(tweetData.tweets.reverse());
     }
     if (urlData) {
       console.log('URL data:', urlData);
