@@ -78,22 +78,27 @@ class Tweet {
 
   async saveTweet() {
     // Check if the tweet is already saved
-    if (savedTweets?.some(savedTweet => savedTweet.url === this.url)) {
-      console.log('Tweet already saved');
-    } else {
-      savedTweets.push(this);
+    try {
+       if (savedTweets?.some(savedTweet => savedTweet?.url === this.url)) {
+        console.log('Tweet already saved');
+      } else {
+        savedTweets.push(this);
+              
+        // Save to browser storage
+        await saveDataToStorage(savedUrls, savedTweets);
+        
+        // Save to local storage
+        //localStorage.setItem('tweet-saver--tweets', JSON.stringify(savedTweets));
 
-      if (!isUrlSaved(this.url)){
-        savedUrls.push(this.url);
+        console.log('Tweet saved:', this);
       }
-            
-      // Save to browser storage
-      await saveDataToStorage(savedUrls, savedTweets);
-      
-      // Save to local storage
-      //localStorage.setItem('tweet-saver--tweets', JSON.stringify(savedTweets));
+    } catch (error) {
+      if (debugMode) console.error('Tweet.saveTweet - Error saving Tweet:', error);
+    }
+   
 
-      console.log('Tweet saved:', this);
+    if (!isUrlSaved(this.url)){
+      savedUrls.push(this.url);
     }
   }
 }
@@ -253,7 +258,7 @@ const deleteAllSavedData = async () => {
 }
 
 // Logic for handling URL changes
-const handleUrlChange = async (ele) => {
+const handleUrlChange = async (node) => {
   const currentUrl = location.href;
 
   // console.log('handleUrlChange', currentUrl);
@@ -262,14 +267,10 @@ const handleUrlChange = async (ele) => {
   if (currentUrl !== url) {
     url = currentUrl;
 
-    //if (url.includes('status')) {
       // If url does not include quotes, reposts, or likes
-      if (isTweetUrl(currentUrl)) {
+      //if (isTweetUrl(currentUrl)) {
         let tweet = document.querySelector('article');
         let tweetElement  = tweet?.querySelector('[data-testid="tweet"]');
-        //console.log(ele)
-        // console.log('tweet', tweet);
-        // console.log('tweetElement', tweetElement);
 
         if (tweet) { 
           // Extract tweet data and save tweet
@@ -278,7 +279,7 @@ const handleUrlChange = async (ele) => {
 
         // Save the URL
         await saveUrl(currentUrl);   
-      }
+
     //}
   }
 }
@@ -316,9 +317,16 @@ const isUrlSaved = (urlToCheck) => {
 };
 
 const isTweetUrl = (urlToCheck) => {
-  if (urlToCheck.includes('status') && !urlToCheck.includes('photo') && !urlToCheck.includes('quote') && !urlToCheck.includes('retweet') && !urlToCheck.includes('like')) {
+  const homepageUrl = "https://x.com/home";
+
+  if (urlToCheck.includes('status') 
+    && !urlToCheck.includes('photo') 
+    && !urlToCheck.includes('quote') 
+    && !urlToCheck.includes('retweet') 
+    && !urlToCheck.includes('like')
+  ) {
     return true;
-  }
+  } 
   return false;
 };
 
@@ -331,16 +339,26 @@ const isTweetUrl = (urlToCheck) => {
 // Add click event listener for saving tweets
 document.addEventListener('click', async function(event) {
   let tweet = event.target.closest('article');
+  let tweetEle = event.target.closest('article[data-testid="tweet"]');
+  let tweetEle2 = tweetEle?.querySelector('[data-testid="tweetLink"]');
+
+
   // get element type of target
+  const homepageUrl = "https://x.com/home";
 
 
-  if (
-    event.target.getAttribute('data-testid') === 'tweet'
-    || 
-    event.target === document.querySelector('article')
-  ){
-    console.log('tweet clicked data-testid');
-    await saveNewTweet(event.target, location.href);
+  // if (
+  //   event.target.getAttribute('data-testid') === 'tweet'
+  //   || 
+  //   event.target === document.querySelector('article')
+  // ){
+  //   console.log('tweet clicked data-testid');
+  //   await saveNewTweet(event.target, location.href);
+  // }
+
+  if (url === homepageUrl) {
+    console.log('homepage clicked', tweet, tweetEle, tweetEle2);
+    // await saveNewTweet(tweet, url);
   }
 
   if (tweet) {
