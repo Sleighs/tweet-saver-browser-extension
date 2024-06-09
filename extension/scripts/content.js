@@ -178,7 +178,7 @@ const saveDataToStorage = async (tweetUrls, tweets) => {
 
 const saveUrl = async (currentUrl) => {
   try {
-    if (!isUrlSaved(currentUrl) && isTweetUrl(currentUrl)) {
+    if (!isUrlSaved(currentUrl)) {
       // Save the URL
       savedUrls.push(currentUrl);
 
@@ -334,19 +334,19 @@ document.addEventListener('click', async function(event) {
   // get element type of target
 
 
+  if (
+    event.target.getAttribute('data-testid') === 'tweet'
+    || 
+    event.target === document.querySelector('article')
+  ){
+    console.log('tweet clicked data-testid');
+    await saveNewTweet(event.target, location.href);
+  }
+
   if (tweet) {
     console.log('tweet clicked');
     await saveNewTweet(tweet, location.href);
   }
-
-  // if (
-  //   event.target.getAttribute('data-testid') === 'tweet'
-  //   || 
-  //   event.target === document.querySelector('article')
-  // ){
-  //   console.log('tweet clicked data-testid');
-  //   await saveNewTweet(event.target, location.href);
-  // }
 });
 
 // browser.runtime.onMessage.addListener((message, sender, sendResponse) => { });
