@@ -15,7 +15,8 @@ Features for Tweet Saver
 
 - Make a place to save quick drafts
 
-- look up extention 
+- make api 
+
 */
 
 
@@ -29,12 +30,18 @@ Features for Tweet Saver
 
 const browser = chrome || browser;
 
-let debugMode = true;
-
-// Default settings
-let defaultSettings = {
-  saveLastTweet: true,
+// Options
+let optionsState = {
+  enableExtension: true,
+  saveLastTweetEnabled: true,
+  browserStorageType: 'local', // local or sync
+  debugMode: true,
 };
+
+let enableExtension = true;
+let saveLastTweetEnabled = true;
+let browserStorageType = 'local';
+let debugMode = true;
 
 // Get initial page URL
 let url = window.location.href;
@@ -80,12 +87,13 @@ class Tweet {
       if (isTweetUrl(this.url) && !isUrlSaved(this.url)){
         savedUrls.push(this.url);
       }
-      
-      //localStorage.setItem('tweet-saver--tweets', JSON.stringify(savedTweets));
-      
+            
       // Save to browser storage
       await saveDataToStorage(savedUrls, savedTweets);
       
+      // Save to local storage
+      //localStorage.setItem('tweet-saver--tweets', JSON.stringify(savedTweets));
+
       console.log('Tweet saved:', this);
     }
   }
@@ -95,25 +103,90 @@ console.log('Tweet Saver is running');
 
 
 
+const initializeOptions = async () => {
+  // Retrieve and set options
+  await chrome.storage.sync.get("options")
+    .then(function (result) {
+
+      const defaultOptions = {
+        enableExtension: true,
+        saveLastTweetEnabled: true,
+        browserStorageType: 'local',
+        debugMode: true,
+      };
+
+      const optionsList = [
+        "enableExtension",
+        "saveLastTweetEnabled",
+        "browserStorageType",
+        "debugMode",
+      ];
+
+      if (result && result.options){
+        let newOptionObj = extractProperties(optionsList, result.options);
+
+        enableExtension = newOptionObj.enableExtension;
+        saveLastTweetEnabled = newOptionObj.saveLastTweetEnabled;
+        browserStorageType = newOptionObj.browserStorageType;
+        debugMode = newOptionObj.debugMode;
+        
+        Object.assign(optionsState, newOptionObj);
+      } else {
+        enableExtension = defaultOptions.enableExtension;
+        saveLastTweetEnabled = defaultOptions.saveLastTweetEnabled;
+        browserStorageType = defaultOptions.browserStorageType;
+        debugMode = defaultOptions.debugMode;
+
+        Object.assign(optionsState, defaultOptions);
+      }
+
+    })
+    .catch(function (error) {
+      if (debugMode) console.error('initializeOptions - Error retrieving options:', error, optionsState);
+    });
+}
+
+
+
+
 
 //////// Main functions ///////
-
 const getSavedData = async () => {
   // Directly get data from local storage
   try {
-    await chrome.storage.local.get([
-      'tweetUrls', 
-      'tweets'
-    ], (result) => {
-      // if (chrome.runtime.lastError) {
-      //   console.error('Error:', chrome.runtime.lastError);
-      // } else {
-        if (debugMode) console.log('getSavedData - Storage data:', result);
-        const { tweetUrls, tweets } = result;
-        savedTweets = [...tweets];
-        savedUrls = [...tweetUrls];
-      // }
-    });
+    if (browserStorageType === 'sync') {
+      await chrome.storage.sync.get([
+        'tweetUrls', 
+        'tweets'
+      ], (result) => {
+        // if (chrome.runtime.lastError) {
+        //   console.error('Error:', chrome.runtime.lastError);
+        // } else {
+          if (debugMode) console.log('getSavedData - Storage data:', result);
+          const { tweetUrls, tweets } = result;
+          let tweetUrlData = JSON.parse(tweetUrls);
+          let tweetData = JSON.parse(tweets);
+          savedTweets = [...tweetData];
+          savedUrls = [...tweetUrlData];
+        // }
+      });
+    } else if (browserStorageType === 'local') {
+      await chrome.storage.local.get([
+        'tweetUrls', 
+        'tweets'
+      ], (result) => {
+        // if (chrome.runtime.lastError) {
+        //   console.error('Error:', chrome.runtime.lastError);
+        // } else {
+          if (debugMode) console.log('getSavedData - Storage data:', result);
+          const { tweetUrls, tweets } = result;
+          let tweetUrlData = JSON.parse(tweetUrls);
+          let tweetData = JSON.parse(tweets);
+          savedTweets = [...tweetData];
+          savedUrls = [...tweetUrlData];
+        // }
+      });
+    }
   } catch (error) {
     if (debugMode) console.error('getSavedData - Error getting saved data:', error);
   }
@@ -121,15 +194,27 @@ const getSavedData = async () => {
 
 const saveDataToStorage = async (tweetUrls, tweets) => {
   try {
-    await chrome.storage.local.set({ tweetUrls, tweets }, function() {
-      // if (chrome.runtime.lastError) {
-      //   console.error('Error saving data:', chrome.runtime.lastError);
-      // } else {
+    if (browserStorageType === 'sync') {
+      await chrome.storage.sync.set({
+        tweetUrls: JSON.stringify(tweetUrls),
+        tweets: JSON.stringify(tweets),
+      }, function() {
         if (debugMode) console.log('Data saved successfully:', { tweetUrls, tweets });
-      // }
-    });
+      });
+    } else if (browserStorageType === 'local') {
+      await chrome.storage.local.set({ 
+        tweetUrls: JSON.stringify(tweetUrls),
+        tweets: JSON.stringify(tweets),
+      }, function() {
+        // if (chrome.runtime.lastError) {
+        //   console.error('Error saving data:', chrome.runtime.lastError);
+        // } else {
+          if (debugMode) console.log('Data saved successfully:', { tweetUrls, tweets });
+        // }
+      });
+    }
   } catch (error) {
-    if (debugMode) console.error('saveDataToStorage - Error saving data:', error);
+    if (debugMode) console.error('saveDataToStorage - Error saving data:', error, { tweetUrls, tweets });
   }
 }
 
@@ -155,7 +240,7 @@ const saveUrl = async (currentUrl) => {
 };
 
 
-const saveNewTweet = (tweetElement, currentUrl) => {
+const saveNewTweet = async (tweetElement, currentUrl) => {
   if (tweetElement) {
     let tweetUsername = tweetElement.querySelector('[data-testid="User-Name"]')?.innerText.split('\n');
     let tweetText = tweetElement.querySelector('[data-testid="tweetText"]')?.innerText;
@@ -187,11 +272,17 @@ const saveNewTweet = (tweetElement, currentUrl) => {
       loggedInAccount: username,
     });
 
-    tweetObj.saveTweet();
+    await tweetObj.saveTweet();
   }
 };
 
-const deleteAllSavedData = () => {
+const deleteAllSavedData = async () => {
+  await browser.storage.local.clear();
+
+  // Clear local storage
+  localStorage.removeItem('tweet-saver--urls');
+  localStorage.removeItem('tweet-saver--tweets');
+
   // browser.runtime.sendMessage({ method: 'deleteAllTweets' }, (response) => {
   //   if (browser.runtime.lastError) {
   //     console.error('Error:', browser.runtime.lastError);
@@ -201,17 +292,14 @@ const deleteAllSavedData = () => {
   //     // Use tweetUrls and tweets as needed
   //   }
   // });
-
-  browser.storage.local.clear();
-
-  // Clear local storage
-  localStorage.removeItem('tweet-saver--urls');
-  localStorage.removeItem('tweet-saver--tweets');
 }
 
 // Logic for handling URL changes
-const handleUrlChange = () => {
+const handleUrlChange = async (ele) => {
   const currentUrl = location.href;
+
+  // console.log('handleUrlChange', currentUrl);
+  // console.dir(ele)
 
   if (currentUrl !== url) {
     url = currentUrl;
@@ -219,34 +307,46 @@ const handleUrlChange = () => {
     //if (url.includes('status')) {
       // If url does not include quotes, reposts, or likes
       if (isTweetUrl(currentUrl)) {
-        let tweet = document.querySelector('article[role="article"]');
+        let tweet = document.querySelector('article');
         let tweetElement  = tweet?.querySelector('[data-testid="tweet"]');
-
+        //console.log(ele)
         // console.log('tweet', tweet);
         // console.log('tweetElement', tweetElement);
 
-        if (tweet) {
+        if (tweet) { 
           // Extract tweet data and save tweet
-          saveNewTweet(tweetElement, currentUrl);
+          await saveNewTweet(tweetElement, currentUrl);
         }
 
         // Save the URL
-        saveUrl(currentUrl);   
+        await saveUrl(currentUrl);   
       }
     //}
   }
 }
 
 // Observer to detect URL changes
-const detectUrlChange = () => {
-  const observer = new MutationObserver(() => {
-    handleUrlChange();
+const detectUrlChange = async () => {
+  const observer = new MutationObserver((node) => {
+    handleUrlChange(node);
   });
 
   observer.observe(document, { subtree: true, childList: true });
 
   window.addEventListener('popstate', handleUrlChange);
 }
+
+function extractProperties(names, obj) {
+  let extracted = {};
+  names.forEach(name => {
+    if (name in obj) {
+      extracted[name] = obj[name];
+    } else {
+      extracted[name] = defaultOptions[name];
+    }
+  });
+  return extracted;
+};
 
 
 
@@ -269,29 +369,65 @@ const isTweetUrl = (urlToCheck) => {
 
 
 /////// Initialization ///////
-
 try {
   // Initialize URL change detection
-  detectUrlChange();
+   detectUrlChange();
 
   // Check initial URL
-  handleUrlChange();
+   handleUrlChange();
 
   // Get the saved tweets from browser storage
-  getSavedData();
+   getSavedData();
+
 } catch (error) {
   console.error('Error in Tweet Saver', error);
 }
 
+(async () => {
+  try {
+
+    await initializeOptions();
+
+    // await detectUrlChange();
+
+    // // Check initial URL
+    // await handleUrlChange();
+  
+    // // Get the saved tweets from browser storage
+    // await getSavedData();
+  } catch (error) {
+    console.error('Error in Tweet Saver', error);
+  }
+})();
+
+
+
+
+
+
+/////// Event listeners ///////
 
 // Add click event listener for saving tweets
-document.addEventListener('click', function(event) {
+document.addEventListener('click', async function(event) {
   let tweet = event.target.closest('article');
-  //let tweetElement  = tweet?.querySelector('[data-testid="tweet"]');
+  // get element type of target
+
 
   if (tweet) {
-    saveNewTweet(tweet, location.href);
+    console.log('tweet clicked');
+    await saveNewTweet(tweet, location.href);
   }
+
+  if (
+    event.target.getAttribute('data-testid') === 'tweet'
+    || 
+    event.target === document.querySelector('article')
+  ){
+    console.log('tweet clicked data-testid');
+    await saveNewTweet(event.target, location.href);
+  }
+
+  // if (event.target.getAttribute('data-testid') === 'tweet') {
 
   // if (event.target.getAttribute('data-testid') === 'caret') {
   //   console.log('caret clicked');
@@ -307,7 +443,6 @@ document.addEventListener('click', function(event) {
 //     console.log('tweetUrls', message.urls);
 //   }
 // });
-
 
 // // Send a message to the background script to get data from storage
 // chrome.runtime.sendMessage({ method: 'getStorageData' }, (response) => {

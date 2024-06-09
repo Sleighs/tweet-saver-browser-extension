@@ -4,6 +4,8 @@ const browser = chrome || browser;
 const defaultOptions = {
   enableExtension: true,
   saveLastTweetEnabled: true,
+  browserStorageType: 'local', // local or sync
+  debugMode: false,
 };
 
 // Options stored in chrome.storage.sync
@@ -19,6 +21,8 @@ browser.runtime.onInstalled.addListener(() => {
     let optionsList = [
       "enableExtension",
       "saveLastTweetEnabled",
+      "browserStorageType",
+      "debugMode",
     ];
 
     function extractProperties(names, obj) {
