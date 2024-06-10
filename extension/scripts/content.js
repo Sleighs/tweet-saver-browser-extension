@@ -19,6 +19,10 @@ Features for Tweet Saver
 
 - Make an animation for when a tweet is saved
   - splash animation at cursor
+
+- if there's an image
+  - save image
+  - show image on front end
 */
 
 console.log('Tweet Saver is running');

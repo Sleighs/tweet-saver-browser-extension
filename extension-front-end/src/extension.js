@@ -70,6 +70,26 @@ export async function getTweetUrls() {
   }  
 }
 
+export async function saveQuickDraft(draft) {
+  await API.storage.local.set({ draft })
+    .then(() => { console.log('Draft saved.') });
+}
+
+export async function loadQuickDraft() {
+  let draftData = null;
+
+  try {
+    await API.storage.local.get("draft")
+      .then((result) => { 
+        console.log('Draft received.', result) 
+        draftData = result.draft;
+      });
+  } catch (error) {
+    console.log('loadQuickDraft - Error retrieving draft.', error);
+  }  
+
+  return draftData;
+}
 export async function updateIcon() {
   // send message to background script to update icon
   await API.runtime.sendMessage({ method: 'enableExtension' }, (response) => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSavedTweets, getTweetUrls } from './extension';
+import { getSavedTweets, getTweetUrls, saveQuickDraft, loadQuickDraft } from './extension';
 
 import './App.css'
 
@@ -48,11 +48,12 @@ class Tweet {
 function App() {
   const [savedUrls, setSavedUrls] = useState(null);
   const [savedTweets, setSavedTweets] = useState(null);
-  const [savedDrafts, setSavedDrafts] = useState(null);
+  const [savedDraft, setSavedDraft] = useState(null);
 
   const getData = async () => {
     const tweetData = await getSavedTweets();
     const urlData = await getTweetUrls();
+    const savedDraft = await loadQuickDraft();
 
     if (tweetData) {
       console.log('Tweet data:', tweetData);
@@ -63,41 +64,74 @@ function App() {
       console.log('URL data:', urlData);
       setSavedUrls(JSON.parse(urlData.tweetUrls).reverse());
     }
+
+    if (savedDraft) {
+      setSavedDraft(savedDraft);
+    }
   }
+
+  const handleDraftChange = (event) => {
+    setSavedDraft(event.target.value);
+    clearInterval(saveDraft);
+    saveDraft();
+  }
+
+  const saveDraft = setTimeout(() => {
+    saveQuickDraft(savedDraft); 
+    savedLabel();
+  }, 2500);
+
+ const savedLabel = () => {
+    document.getElementById('quick-draft-label').innerHTML = 'Draft saved';
+    
+    // Clear the saved label after 3 seconds
+    setTimeout(() => {
+      document.getElementById('quick-draft-label').innerHTML = '';
+    }, 3000);
+  }
+
 
   useEffect(() => {
     getData();
   }, []);
 
-  useEffect(() => {
-    console.log('Saved URLs from App.jsx:', savedUrls);
-  }, [savedUrls]);
+  // useEffect(() => {
+  //   console.log('Saved URLs from App.jsx:', savedUrls);
+  // }, [savedUrls]);
 
   return (
     <div>
-      <h1>Tweet Saver</h1>
-      
       <div style={{
-        //display: 'none',
-      }}>
-        <h2>Saved URLs</h2>
-        {savedUrls === null && <p>No saved URLs</p>}
-        <p>
-          Last visited: {savedUrls &&               
-          <a href={savedUrls[0]} target="_blank" rel="noreferrer">{savedUrls[0]}</a>
-        }</p>
-        <ul style={{
-          listStyleType: 'none',
-        }}>
-          {savedUrls && (savedUrls.map((url, index) => (
-            <li key={index} className="">
-              <a href={url} target="_blank" rel="noreferrer">{url}</a>
-            </li>
-          )))}
-        </ul>
-      </div>
+        fontSize: '1.5rem',
+        fontWeight: 'bold',
+      }}>Tweet Saver</div>
 
-      <div>
+       {/* text area for a quick draft */}
+       <div className='quick-draft-container'>
+        <div id="quick-draft-label" 
+          style={{
+            fontSize: '1.5rem',
+            color: 'rgb(178, 255, 126)',
+            position: 'fixed',
+            top: '0',
+            left: '50%',
+            opacity: '0.75',
+            maxHeight: '60px',
+        }}
+        ></div>
+        <textarea
+          style={{
+            width: '100%',
+            height: '100%',
+          }}
+          placeholder="Enter tweet text here"
+          onChange={(e) => handleDraftChange(e)}
+          value={savedDraft ? savedDraft : ''}
+        />
+      </div>
+      
+      {/* List of saved Tweets */}
+      <div className='saved-tweets-container'>
         <h2>Saved Tweets</h2>
         {savedTweets === null && <p>No saved tweets</p>}
         {savedTweets !== null && <div style={{display: 'none'}}>
@@ -121,15 +155,28 @@ function App() {
         </ul>
       </div>
 
-      {/* text area for a quick draft */}
-      <div>
-        <textarea
-          style={{
-            width: '100%',
-          }}
-          placeholder="Enter tweet text here"
-        />
+      {/* List of saved URLs */}
+      <div style={{
+        display: 'none',
+      }}>
+        <h2>Saved URLs</h2>
+        {savedUrls === null && <p>No saved URLs</p>}
+        <p>
+          Last visited: {savedUrls &&               
+          <a href={savedUrls[0]} target="_blank" rel="noreferrer">{savedUrls[0]}</a>
+        }</p>
+        <ul style={{
+          listStyleType: 'none',
+        }}>
+          {savedUrls && (savedUrls.map((url, index) => (
+            <li key={index} className="">
+              <a href={url} target="_blank" rel="noreferrer">{url}</a>
+            </li>
+          )))}
+        </ul>
       </div>
+
+     
     </div>
   )
 }

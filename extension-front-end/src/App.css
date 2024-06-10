@@ -35,23 +35,33 @@
 
  */
 
+.saved-tweets-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px;
+  border: 1px solid white;
+  background-color: rgb(37, 45, 51);
+}
 
- .saved-tweets {
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   list-style: none;
- }
+.saved-tweets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  list-style: none;
+}
 
- .saved-tweets .tweet {
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   margin: 10px;
-   padding: 10px;
-   border: 1px solid white;
-   border-radius: 10px;
- }
+.saved-tweets .tweet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 5px;
+  padding: 10px;
+  border: 1px solid white;
+  border-radius: 5px;
+  background-color: rgb(23, 29, 34);
+
+}
 
 
 
