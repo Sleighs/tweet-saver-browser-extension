@@ -76,6 +76,27 @@ function App() {
   return (
     <div>
       <h1>Tweet Saver</h1>
+      
+      <div style={{
+        //display: 'none',
+      }}>
+        <h2>Saved URLs</h2>
+        {savedUrls === null && <p>No saved URLs</p>}
+        <p>
+          Last visited: {savedUrls &&               
+          <a href={savedUrls[0]} target="_blank" rel="noreferrer">{savedUrls[0]}</a>
+        }</p>
+        <ul style={{
+          listStyleType: 'none',
+        }}>
+          {savedUrls && (savedUrls.map((url, index) => (
+            <li key={index} className="">
+              <a href={url} target="_blank" rel="noreferrer">{url}</a>
+            </li>
+          )))}
+        </ul>
+      </div>
+
       <div>
         <h2>Saved Tweets</h2>
         {savedTweets === null && <p>No saved tweets</p>}
@@ -97,26 +118,6 @@ function App() {
               {`${tweet?.handle}${tweet?.username ? '/' + tweet.username : ''} - ${tweet?.text}`}
             </li>)
           ))}
-        </ul>
-      </div>
-
-      <div style={{
-        display: 'none',
-      }}>
-        <h2>Saved URLs</h2>
-        {savedUrls === null && <p>No saved URLs</p>}
-        <p>
-          Last visited: {savedUrls &&               
-          <a href={savedUrls[0]} target="_blank" rel="noreferrer">{savedUrls[0]}</a>
-        }</p>
-        <ul style={{
-          listStyleType: 'none',
-        }}>
-          {savedUrls && (savedUrls.map((url, index) => (
-            <li key={index} className="">
-              <a href={url} target="_blank" rel="noreferrer">{url}</a>
-            </li>
-          )))}
         </ul>
       </div>
 
