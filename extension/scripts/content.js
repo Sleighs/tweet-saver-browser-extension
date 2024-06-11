@@ -44,6 +44,22 @@ let optionsState = {
   enablePhotoUrlSave: true, 
 };
 
+const defaultOptions = {
+  enableExtension: true,
+  saveLastTweetEnabled: true,
+  browserStorageType: 'local',
+  debugMode: true,
+  enablePhotoUrlSave: true,
+};
+
+const optionsList = [
+  "enableExtension",
+  "saveLastTweetEnabled",
+  "browserStorageType",
+  "debugMode",
+  "enablePhotoUrlSave", 
+];
+
 let enableExtension = true;
 let saveLastTweetEnabled = true;
 let browserStorageType = 'local';
@@ -68,7 +84,7 @@ let savedTweets = [];
 
 class Tweet {
   constructor(tweet) {
-    const { username, handle, time, text, content, likes, replies, retweets, views, fullTweet, url, other, loggedInAccount } = tweet;
+    const { username, handle, time, text, content, likes, replies, retweets, views, fullTweet, url, other, loggedInAccount, links } = tweet;
 
     this.username = username;
     this.handle = handle;
@@ -83,12 +99,19 @@ class Tweet {
     this.url = url;
     this.other = other;
     this.loggedInAccount = loggedInAccount;
+    this.links = links;
   }
 
   async saveTweet() {
+    if (!isUrlSaved(this.url)){
+      savedUrls.push(this.url);
+    }
+
     // Check if the tweet is already saved
     try {
-      if (savedTweets?.some(savedTweet => savedTweet?.url === this.url)) {
+      if (savedTweets?.some(savedTweet => savedTweet?.text === this.text)
+        && savedTweets?.some(savedTweet => savedTweet?.time === this.time)
+      ) {
         console.log('Tweet already saved');
       } else {
         savedTweets.push(this);
@@ -103,11 +126,6 @@ class Tweet {
       }
     } catch (error) {
       if (debugMode) console.error('Tweet.saveTweet - Error saving Tweet:', error);
-    }
-   
-
-    if (!isUrlSaved(this.url)){
-      savedUrls.push(this.url);
     }
   }
 }
@@ -229,8 +247,20 @@ const saveNewTweet = async (tweetElement, currentUrl) => {
     //let tweetAvatar = tweetElement.querySelectorAll('[data-testid^="UserAvatar-Container-"]');
     //console.log('tweetAvatar', tweetAvatar);
 
+    const getUrl = () => {
+      if (!currentUrl) {
+        // Get the current URLfrom links
+        let links = Array.from(tweetElement.querySelectorAll('a'));
+        for (let link of links) {
+          if (isTweetUrl(link.href, true)) {
+            return link.href;
+          }
+        }
+      }
+    }
+
     const tweetObj = new Tweet({
-      url: currentUrl,
+      url: currentUrl || getUrl(),
       fullTweet: tweetElement?.innerText,
       username: tweetUsername[0],
       handle: tweetUsername[1],
@@ -299,6 +329,41 @@ function extractProperties(names, obj) {
   return extracted;
 };
 
+const addSaveButtonsToTweets = async () => {
+  const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+  tweets.forEach(tweet => {
+    if (!tweet.querySelector('.tweet-saver--save-tweet-button')) {
+      const button = document.createElement('button');
+      button.innerText = 'Save';
+      button.classList.add('tweet-saver--save-tweet-button');
+      
+      // Add hover effect
+      button.addEventListener('mouseover', () => {
+        button.style.opacity = '1';
+      });
+      button.addEventListener('mouseout', () => {
+        button.style.opacity = '0.4';
+      });
+
+      button.addEventListener('click', async (event) => {
+        event.stopPropagation(); // Prevent the tweet click event from being triggered
+        await saveNewTweet(tweet, null);
+
+        showSplashEffect(button);
+      });
+
+      tweet.appendChild(button);
+    }
+  });
+};
+
+const showSplashEffect = (button) => {
+  button.classList.add('tweet-saver--splash-effect');
+  setTimeout(() => {
+      button.classList.remove('tweet-saver--splash-effect');
+  }, 500); // Duration should match the animation duration
+};
+
 
 
 
@@ -308,7 +373,7 @@ const isUrlSaved = (urlToCheck) => {
   return savedUrls.includes(urlToCheck);
 };
 
-const isTweetUrl = (urlToCheck) => {
+const isTweetUrl = (urlToCheck, ignorePhotoUrl) => {
   const homepageUrl = "https://x.com/home";
 
   if (urlToCheck.includes('status') 
@@ -317,11 +382,14 @@ const isTweetUrl = (urlToCheck) => {
     && !urlToCheck.includes('retweet') 
     && !urlToCheck.includes('like')
   ) {
-    if (!enablePhotoUrlSave && urlToCheck.includes('photo') )
-    return false;
-  } else {
+    if (!enablePhotoUrlSave && urlToCheck.includes('photo')) {
+      return false;
+    } if (ignorePhotoUrl && urlToCheck.includes('photo')) {
+      return false;
+    }
     return true
   }
+
   return false;
 };
 
@@ -332,41 +400,42 @@ const isTweetUrl = (urlToCheck) => {
 /////// Event listeners ///////
 
 // Add click event listener for saving tweets
-document.addEventListener('click', async function(event) {
-  let tweet = event.target.closest('article');
-  // let tweetEle = event.target.closest('article[data-testid="tweet"]');
+// document.addEventListener('click', async function(event) {
+//   let tweet = event.target.closest('article');
+//   // let tweetEle = event.target.closest('article[data-testid="tweet"]');
   
-  // console.log('page clicked', location.href, tweet, tweetEle);
+//   // console.log('page clicked', location.href, tweet, tweetEle);
 
-  if (tweet) {
-    let tweetUrl = tweet.querySelector('a[href*="status"]')?.href || location.href;
-    console.log(
-      'Tweet clicked', 
-      tweetUrl
-    );
+//   if (tweet) {
+//     let tweetUrl = tweet.querySelector('a[href*="status"]')?.href || location.href;
+//     console.log(
+//       'Tweet clicked', 
+//       tweetUrl
+//     );
 
-    if (isTweetUrl(tweetUrl)) {
-      // Save the tweet URL
-      await saveUrl(tweetUrl);
-    }
+//     if (isTweetUrl(tweetUrl)) {
+//       // Save the tweet URL
+//       await saveUrl(tweetUrl);
+//     }
     
-    // Save the tweet content
-    await saveNewTweet(tweet, tweetUrl);
-  }
-});
+//     // Save the tweet content
+//     await saveNewTweet(tweet, tweetUrl);
+//   }
+// });
 
 
 
 // Observer to detect URL changes
-// const detectUrlChange = async () => {
-//   const observer = new MutationObserver((node) => {
-//     handleUrlChange(node);
-//   });
+const detectUrlChange = async () => {
+  const observer = new MutationObserver((node) => {
+    handleUrlChange(node);
+    addSaveButtonsToTweets();
+  });
 
-//   observer.observe(document, { subtree: true, childList: true });
+  observer.observe(document, { subtree: true, childList: true });
 
-//   window.addEventListener('popstate', handleUrlChange);
-// }
+  window.addEventListener('popstate', handleUrlChange);
+}
 
 // Override pushState and replaceState to detect URL changes
 // (function(history) {
@@ -408,25 +477,10 @@ document.addEventListener('click', async function(event) {
 
 // Retrieve and set options
 const initializeOptions = async () => {
+
   // Retrieve and set options
   await chrome.storage.sync.get("options")
     .then(function (result) {
-
-      const defaultOptions = {
-        enableExtension: true,
-        saveLastTweetEnabled: true,
-        browserStorageType: 'local',
-        debugMode: true,
-        enablePhotoUrlSave: true,
-      };
-
-      const optionsList = [
-        "enableExtension",
-        "saveLastTweetEnabled",
-        "browserStorageType",
-        "debugMode",
-        "enablePhotoUrlSave", 
-      ];
 
       if (result && result.options){
         let newOptionObj = extractProperties(optionsList, result.options);
@@ -458,6 +512,8 @@ const initializeOptions = async () => {
   await initializeOptions(); 
   await getSavedData(); 
   await handleUrlChange();
+  await addSaveButtonsToTweets();
+  await detectUrlChange();
 })();
 
 

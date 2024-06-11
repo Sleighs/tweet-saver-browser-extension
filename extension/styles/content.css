@@ -1,0 +1,67 @@
+/*
+// Style button
+      button.style.marginLeft = '0';
+      // button.style.padding = '2%';
+      // button.style.border = 'solid rgba(255, 255, 255, 0.75) 2px';
+      button.style.border = 'solid rgb(113, 118, 123) 2px';
+      button.style.borderRadius = '5px';
+      // button.style.borderRadius = '50%';
+      button.style.backgroundColor = 'rgba(0, 0, 0, 0)';
+      button.style.color = 'white';
+      // button.style.color = 'rgb(113, 118, 123)';
+      button.style.fontSize = '.75rem';
+      button.style.fontFamily = 'sans-serif';
+      button.style.textAlign = 'center';
+      button.style.cursor = 'pointer';
+      button.style.height = '1.25rem';
+      button.style.width = '3.5rem';
+      button.style.position = 'fixed';
+      button.style.top = '2.5%';
+      button.style.right = '10%';
+      // button.style.bottom = '2%';
+      // button.style.left = '2%';
+      button.style.zIndex = '9999';
+      button.style.opacity = '0.4';
+*/
+
+.tweet-saver--save-tweet-button {
+  border: solid rgb(113, 118, 123) 2px;
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 0);
+  color: white;
+  font-size: .75rem;
+  font-family: sans-serif;
+  text-align: center;
+  cursor: pointer;
+  height: 1.25rem;
+  width: 3.5rem;
+  position: fixed;
+  top: 10px;
+  /* right: 10%; */
+  right: 25%;
+  z-index: 9999;
+  opacity: 0.4;
+}
+
+@keyframes splash {
+  0% {
+      transform: scale(1);
+      opacity: 1;
+  }
+  50% {
+      transform: scale(1.25);
+      opacity: 0.5;
+      color: rgb(3, 161, 3);
+      border-color: rgb(3, 161, 3);
+      box-shadow: 0 0 10px rgb(3, 161, 3);
+
+  }
+  100% {
+      transform: scale(1);
+      opacity: 1;
+  }
+}
+
+.tweet-saver--save-tweet-button.tweet-saver--splash-effect {
+  animation: splash 0.5s ease-in-out;
+}

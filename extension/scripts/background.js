@@ -6,6 +6,7 @@ const defaultOptions = {
   saveLastTweetEnabled: true,
   browserStorageType: 'local', // local or sync
   debugMode: false,
+  enablePhotoUrlSave: true, 
 };
 
 // Options stored in chrome.storage.sync
@@ -23,6 +24,7 @@ browser.runtime.onInstalled.addListener(() => {
       "saveLastTweetEnabled",
       "browserStorageType",
       "debugMode",
+      "enablePhotoUrlSave",
     ];
 
     function extractProperties(names, obj) {
@@ -123,12 +125,6 @@ async function updateIcon() {
 //     console.error('Error getting tweets from storage', error);
 //   }
 // }
-
-
-
-
-
-
 
 
 
