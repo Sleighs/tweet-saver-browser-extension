@@ -97,3 +97,27 @@ export async function updateIcon() {
   })
 
 };
+
+export async function saveDataToStorage(tweetUrls, tweets, browserStorageType) {
+  try {
+    if (browserStorageType === 'sync') {
+      await chrome.storage.sync.set({
+        tweetUrls: JSON.stringify(tweetUrls),
+        tweets: JSON.stringify(tweets),
+      }, function() {
+        if (debugMode) console.log('Data saved successfully:', { tweetUrls, tweets });
+      });
+    } else if (browserStorageType === 'local') {
+      await chrome.storage.local.set({ 
+        tweetUrls: JSON.stringify(tweetUrls),
+        tweets: JSON.stringify(tweets),
+      }, function() {
+          if (debugMode) console.log('Data saved successfully:', { tweetUrls, tweets });
+      });
+    } else {
+      return;
+    }
+  } catch (error) {
+    if (debugMode) console.error('saveDataToStorage - Error saving data:', error, { tweetUrls, tweets });
+  }
+}

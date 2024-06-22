@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSavedTweets, getTweetUrls, saveQuickDraft, loadQuickDraft } from './extension';
+import { getSavedTweets, getTweetUrls, saveQuickDraft, loadQuickDraft, saveDataToStorage } from './extension';
 
 import './App.css'
 
@@ -48,7 +48,8 @@ class Tweet {
 function App() {
   const [savedUrls, setSavedUrls] = useState(null);
   const [savedTweets, setSavedTweets] = useState(null);
-  const [savedDraft, setSavedDraft] = useState(null);
+  const [savedDraft, setSavedDraft] = useState('');
+  const [saveDraftLabelEnabled, setSaveDraftLabelEnabled] = useState(false);
 
   const getData = async () => {
     const tweetData = await getSavedTweets();
@@ -71,23 +72,49 @@ function App() {
   }
 
   const handleDraftChange = (event) => {
-    setSavedDraft(event.target.value);
-    clearInterval(saveDraft);
-    saveDraft();
+    const saveDraftInterval = setTimeout(() => {
+      // Save the draft to state
+      saveQuickDraft(savedDraft); 
+  
+      // Show the saved label
+      document.getElementById('quick-draft-label').innerHTML = 'Draft saved';
+        
+      // Clear the saved label
+      setTimeout(() => {
+        document.getElementById('quick-draft-label').innerHTML = '';
+      }, 2750);
+    }, 2500);
+
+    
+    clearInterval(saveDraftInterval);
+    
+    // Save if draft is new
+    if (event.target.value !== savedDraft) {
+      console.log('Saving draft:', event.target.value);
+      saveDraftInterval();
+      setSavedDraft(event.target.value);
+    }
   }
 
-  const saveDraft = setTimeout(() => {
-    saveQuickDraft(savedDraft); 
-    savedLabel();
-  }, 2500);
+  
 
- const savedLabel = () => {
-    document.getElementById('quick-draft-label').innerHTML = 'Draft saved';
-    
-    // Clear the saved label after 3 seconds
-    setTimeout(() => {
-      document.getElementById('quick-draft-label').innerHTML = '';
-    }, 3000);
+  // const savedLabel = () => {
+  //   document.getElementById('quick-draft-label').innerHTML = 'Draft saved';
+      
+  //   // Clear the saved label
+  //   setTimeout(() => {
+  //     document.getElementById('quick-draft-label').innerHTML = '';
+  //   }, 2750);
+  // }
+
+  const saveTweets = async () => {
+    await saveDataToStorage(savedUrls, savedTweets, 'local');
+  }
+
+  const deleteTweet = async (tweet) => {
+    savedTweets.splice(savedTweets.indexOf(tweet), 1);
+    await saveTweets();
+    await getData();
   }
 
 
@@ -149,7 +176,40 @@ function App() {
             <li key={index} className="tweet"
               onClick={() => window.open(tweet?.url)}
             >
-              {`${tweet?.handle}${tweet?.username ? '/' + tweet.username : ''} - ${tweet?.text}`}
+              
+              <div>
+                {`${tweet?.handle}${tweet?.username ? '/' + tweet.username : ''} - ${tweet?.text}`}
+              </div>
+              <div style={{display: 'none'}}>
+                <div>
+                  {`Likes: ${tweet?.likes}`}
+                </div>
+                <div>
+                  {`Replies: ${tweet?.replies}`}
+                </div>
+                <div>
+                  {`Retweets: ${tweet?.retweets}`}
+                </div>
+                <div>
+                  {`Views: ${tweet?.views}`}
+                </div>
+                <div>
+                  {tweet?.time}
+              </div>
+              </div>
+              <div
+              style={{
+                display: 'flex',
+                border: '1px solid white',
+                borderRadius: '5px',
+                fontSize: '.9rem',
+              }}
+                className="delete-tweet"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteTweet(tweet);
+                }}
+              >Delete</div>
             </li>)
           ))}
         </ul>
