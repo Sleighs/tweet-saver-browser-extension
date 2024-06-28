@@ -23,6 +23,15 @@ Features for Tweet Saver
 - if there's an image
   - save image
   - show image on front end
+
+- Icon ideas
+  - disk
+  - book
+  - floppy disk
+  - cloud
+  - color gradient icon
+
+  -
 */
 
 console.log('Tweet Saver is running');
@@ -332,27 +341,42 @@ function extractProperties(names, obj) {
 const addSaveButtonsToTweets = async () => {
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   tweets.forEach(tweet => {
+    // Check if the tweet already has a save button
     if (!tweet.querySelector('.tweet-saver--save-tweet-button')) {
-      const button = document.createElement('button');
-      button.innerText = 'Save';
-      button.classList.add('tweet-saver--save-tweet-button');
+      // Create button
+      const buttonElement = document.createElement('div');
+      //buttonElement.innerText = 'Save';
+      buttonElement.classList.add('tweet-saver--save-tweet-button');
       
       // Add hover effect
-      button.addEventListener('mouseover', () => {
-        button.style.opacity = '1';
+      buttonElement.addEventListener('mouseover', () => {
+        buttonElement.style.opacity = '1';
       });
-      button.addEventListener('mouseout', () => {
-        button.style.opacity = '0.4';
+      buttonElement.addEventListener('mouseout', () => {
+        buttonElement.style.opacity = '0.4';
       });
 
-      button.addEventListener('click', async (event) => {
+      buttonElement.addEventListener('click', async (event) => {
         event.stopPropagation(); // Prevent the tweet click event from being triggered
         await saveNewTweet(tweet, null);
 
-        showSplashEffect(button);
+        showSplashEffect(buttonElement);
       });
+      
+      // Add cloud icon to button 
+      const cloudIconElement = document.createElement('img');
+      cloudIconElement.src = chrome.runtime.getURL('../images/cloud-icon-gray-128.png');
+      cloudIconElement.classList.add('tweet-saver--cloud-icon');
+      buttonElement.appendChild(cloudIconElement);
 
-      tweet.appendChild(button);
+      // tweet.appendChild(button);
+
+      // Add the button to the tweet - next to the bookmark icon
+      let bookmarkElement = tweet.querySelector('[data-testid="bookmark"]');
+      let parentElement = bookmarkElement?.parentNode || null;
+      if (parentElement){
+        parentElement.insertBefore(buttonElement, bookmarkElement.nextSibling);
+      }
     }
   });
 };
