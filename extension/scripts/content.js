@@ -75,6 +75,11 @@ let browserStorageType = 'local';
 let debugMode = true;
 let enablePhotoUrlSave = true;
 
+// Button icon
+let btnIconUrl = '../images/cloud-icon-gray-128-2.png';
+let btnIconUrl2 = '../images/cloud-fill-64-2.png';
+
+
 // Get initial page URL
 let url = window.location.href;
 const homepageUrl = "https://x.com/home";
@@ -338,6 +343,7 @@ function extractProperties(names, obj) {
   return extracted;
 };
 
+// Save Button
 const addSaveButtonsToTweets = async () => {
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
   tweets.forEach(tweet => {
@@ -365,11 +371,10 @@ const addSaveButtonsToTweets = async () => {
       
       // Add cloud icon to button 
       const cloudIconElement = document.createElement('img');
-      cloudIconElement.src = chrome.runtime.getURL('../images/cloud-icon-gray-128.png');
+      cloudIconElement.src = chrome.runtime.getURL(btnIconUrl);
+      cloudIconElement.alt = 'Save';
       cloudIconElement.classList.add('tweet-saver--cloud-icon');
       buttonElement.appendChild(cloudIconElement);
-
-      // tweet.appendChild(button);
 
       // Add the button to the tweet - next to the bookmark icon
       let bookmarkElement = tweet.querySelector('[data-testid="bookmark"]');

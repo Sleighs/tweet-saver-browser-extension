@@ -25,8 +25,9 @@
 */
 
 .tweet-saver--save-tweet-button {
-  border: solid rgb(113, 118, 123) 2px;
-  border-radius: 5px;
+  /* border: solid rgb(113, 118, 123) 2px; */
+  /* border-radius: 5px; */
+  border-radius: 50%;
   background-color: rgba(0, 0, 0, 0);
   color: white;
   font-size: .3rem;
@@ -36,9 +37,9 @@
   /* height: 1.25rem; */
   /* width: 3.5rem; */
   width: 100%;
-  max-width: 2rem;
   height: 100%;
   margin: auto;
+  margin-left: 25%;
   /* position: fixed; */
   /* top: 10px; */
   /* right: 10%; */
@@ -52,7 +53,9 @@
   height: 100%;
   /* max-width: 2rem;
   max-height: 2rem; */
+  max-width: 1.5rem; 
 }
+
 @keyframes splash {
   0% {
       transform: scale(1);
