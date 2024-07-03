@@ -31,13 +31,24 @@ Features for Tweet Saver
   - cloud
   - color gradient icon
 
-  -
+- Add theme options
 */
 
-console.log('Tweet Saver is running');
+console.log('Tweet Saver is running. ', `Theme: ${getComputedStyle(document.documentElement).getPropertyValue('color-scheme')}`);
 
 
 
+const getColorScheme = () => {
+  const element = document.documentElement;
+  const htmlElement = document.querySelector('html');
+  const colorScheme = getComputedStyle(element).getPropertyValue('color-scheme');
+  const htmlColorScheme = getComputedStyle(htmlElement).getPropertyValue('color-scheme');
+  console.log('Color scheme:', colorScheme, htmlColorScheme);
+  console.log('element', htmlElement, element)
+  return colorScheme || 'dark';
+};
+
+getColorScheme()
 
 
 /////// Declarations ///////
@@ -45,12 +56,20 @@ console.log('Tweet Saver is running');
 const browser = chrome || browser;
 
 // Options
+let enableExtension = true;
+let saveLastTweetEnabled = true;
+let browserStorageType = 'local';
+let debugMode = true;
+let enablePhotoUrlSave = true;
+let styleTheme = getColorScheme();//getComputedStyle(document.documentElement).getPropertyValue('color-scheme') || 'dark';
+
 let optionsState = {
   enableExtension: true,
   saveLastTweetEnabled: true,
   browserStorageType: 'local', // local or sync
   debugMode: true,
   enablePhotoUrlSave: true, 
+  styleTheme: styleTheme
 };
 
 const defaultOptions = {
@@ -59,6 +78,7 @@ const defaultOptions = {
   browserStorageType: 'local',
   debugMode: true,
   enablePhotoUrlSave: true,
+  styleTheme: styleTheme
 };
 
 const optionsList = [
@@ -67,17 +87,16 @@ const optionsList = [
   "browserStorageType",
   "debugMode",
   "enablePhotoUrlSave", 
+  "styleTheme",
 ];
 
-let enableExtension = true;
-let saveLastTweetEnabled = true;
-let browserStorageType = 'local';
-let debugMode = true;
-let enablePhotoUrlSave = true;
 
 // Button icon
 let btnIconUrl = '../images/cloud-icon-gray-128-2.png';
 let btnIconUrl2 = '../images/cloud-fill-64-2.png';
+let bookmarkIcon = '../images/bookmark-icon.svg';
+let plusIconDark = '../images/plus-icon-dark.svg';
+let plusIconLight = '../images/plus-icon-light.svg';
 
 
 // Get initial page URL
@@ -346,13 +365,15 @@ function extractProperties(names, obj) {
 // Save Button
 const addSaveButtonsToTweets = async () => {
   const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+  let iconThemeClassName = `tweet-saver--save-tweet-button-${styleTheme}`;
+
   tweets.forEach(tweet => {
     // Check if the tweet already has a save button
     if (!tweet.querySelector('.tweet-saver--save-tweet-button')) {
       // Create button
       const buttonElement = document.createElement('div');
       //buttonElement.innerText = 'Save';
-      buttonElement.classList.add('tweet-saver--save-tweet-button');
+      buttonElement.classList.add('tweet-saver--save-tweet-button', iconThemeClassName);
       
       // Add hover effect
       buttonElement.addEventListener('mouseover', () => {
@@ -369,13 +390,21 @@ const addSaveButtonsToTweets = async () => {
         showSplashEffect(buttonElement);
       });
       
-      // Add cloud icon to button 
-      const cloudIconElement = document.createElement('img');
-      cloudIconElement.src = chrome.runtime.getURL(btnIconUrl);
-      cloudIconElement.alt = 'Save';
-      cloudIconElement.classList.add('tweet-saver--cloud-icon');
-      buttonElement.appendChild(cloudIconElement);
+      let iconElement = plusIconDark;
 
+      // Add cloud icon to button 
+      if (styleTheme === 'dark') {
+        iconElement = plusIconLight;
+      } else if (styleTheme === 'light' || styleTheme === 'normal') {
+        iconElement = plusIconDark;  
+      }
+
+      const cloudIconElement = document.createElement('img');
+      cloudIconElement.src = chrome.runtime.getURL(iconElement);
+      cloudIconElement.alt = 'Save';
+      cloudIconElement.classList.add('tweet-saver--icon');
+      buttonElement.appendChild(cloudIconElement);
+      
       // Add the button to the tweet - next to the bookmark icon
       let bookmarkElement = tweet.querySelector('[data-testid="bookmark"]');
       let parentElement = bookmarkElement?.parentNode || null;

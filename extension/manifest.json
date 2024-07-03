@@ -21,7 +21,11 @@
         "images/cloud-icon-gray-128.png",
         "images/cloud-icon-gray-128-2.png",
         "images/cloud-fill-64.png",
-        "images/cloud-fill-64-2.png"
+        "images/cloud-fill-64-2.png",
+        "images/plus-icon-dark.svg",
+        "images/plus-icon-light.svg",
+        "images/bookmark-icon.svg",
+        "images/bookmark-icon-2.svg"
       ],
       "matches": ["<all_urls>"]
     }
