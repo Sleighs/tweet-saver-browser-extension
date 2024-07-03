@@ -6,23 +6,10 @@ Features for Tweet Saver
 - Make observer more efficient
   - Disconnect observer when not needed
 
-- Determine if a tweet has media
-
-- Use twitter's data-testid to get tweet elements
-
-- add a web scraper
-  - might be a cleaner way to get tweet data
-
-- Make a place to save quick drafts
-
 - make api 
 
 - Make an animation for when a tweet is saved
   - splash animation at cursor
-
-- if there's an image
-  - save image
-  - show image on front end
 
 - Icon ideas
   - disk
@@ -32,6 +19,19 @@ Features for Tweet Saver
   - color gradient icon
 
 - Add theme options
+
+Front end features
+- Highlight selected tweet if tweet is found on current page
+- Make a place to save quick drafts (account switching benefit)
+- Show images
+
+Other
+- Add a web scraper
+  - Might be a cleaner way to get tweet data
+
+
+
+
 */
 
 console.log('Tweet Saver is running. ', `Theme: ${getComputedStyle(document.documentElement).getPropertyValue('color-scheme')}`);
