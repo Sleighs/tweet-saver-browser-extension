@@ -38,7 +38,7 @@ Bugs
 
 console.log('Tweet Saver is running...');
 
-const getColorScheme = async () => {
+const getColorScheme = () => {
   const htmlElement = document.documentElement; //document.querySelector('html');
   const colorScheme = getComputedStyle(htmlElement).getPropertyValue('color-scheme').trim();
 
@@ -62,7 +62,7 @@ let saveLastTweetEnabled = true;
 let browserStorageType = 'local';
 let debugMode = true;
 let enablePhotoUrlSave = true;
-let styleTheme = await getColorScheme();//getComputedStyle(document.documentElement).getPropertyValue('color-scheme') || 'dark';
+let styleTheme = getColorScheme();//getComputedStyle(document.documentElement).getPropertyValue('color-scheme') || 'dark';
 
 let optionsState = {
   enableExtension: true,
