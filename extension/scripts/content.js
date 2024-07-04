@@ -30,25 +30,26 @@ Other
   - Might be a cleaner way to get tweet data
 
 
+Bugs
+- 
 
 
 */
 
-console.log('Tweet Saver is running. ', `Theme: ${getComputedStyle(document.documentElement).getPropertyValue('color-scheme')}`);
+console.log('Tweet Saver is running...');
 
+const getColorScheme = async () => {
+  const htmlElement = document.documentElement; //document.querySelector('html');
+  const colorScheme = getComputedStyle(htmlElement).getPropertyValue('color-scheme').trim();
 
+  console.log('Color scheme:', colorScheme);
+  console.log('HTML Element:', htmlElement);
 
-const getColorScheme = () => {
-  const element = document.documentElement;
-  const htmlElement = document.querySelector('html');
-  const colorScheme = getComputedStyle(element).getPropertyValue('color-scheme');
-  const htmlColorScheme = getComputedStyle(htmlElement).getPropertyValue('color-scheme');
-  console.log('Color scheme:', colorScheme, htmlColorScheme);
-  console.log('element', htmlElement, element)
   return colorScheme || 'dark';
 };
 
-getColorScheme()
+//console.log(getColorScheme());
+
 
 
 /////// Declarations ///////
@@ -61,7 +62,7 @@ let saveLastTweetEnabled = true;
 let browserStorageType = 'local';
 let debugMode = true;
 let enablePhotoUrlSave = true;
-let styleTheme = getColorScheme();//getComputedStyle(document.documentElement).getPropertyValue('color-scheme') || 'dark';
+let styleTheme = await getColorScheme();//getComputedStyle(document.documentElement).getPropertyValue('color-scheme') || 'dark';
 
 let optionsState = {
   enableExtension: true,
@@ -95,8 +96,8 @@ const optionsList = [
 let btnIconUrl = '../images/cloud-icon-gray-128-2.png';
 let btnIconUrl2 = '../images/cloud-fill-64-2.png';
 let bookmarkIcon = '../images/bookmark-icon.svg';
-let plusIconDark = '../images/plus-icon-dark.svg';
-let plusIconLight = '../images/plus-icon-light.svg';
+let plusIconDarkTheme = '../images/plus-icon-dark.svg';
+let plusIconLightTheme = '../images/plus-icon-light.svg';
 
 
 // Get initial page URL
@@ -390,25 +391,26 @@ const addSaveButtonsToTweets = async () => {
         showSplashEffect(buttonElement);
       });
       
-      let iconElement = plusIconDark;
+      let iconElement = plusIconDarkTheme;
 
       // Add cloud icon to button 
       if (styleTheme === 'dark') {
-        iconElement = plusIconLight;
+        iconElement = plusIconDarkTheme;
       } else if (styleTheme === 'light' || styleTheme === 'normal') {
-        iconElement = plusIconDark;  
+        iconElement = plusIconLightTheme;  
       }
 
       const cloudIconElement = document.createElement('img');
-      cloudIconElement.src = chrome.runtime.getURL(iconElement);
+      cloudIconElement.src = chrome.runtime?.getURL(iconElement);
       cloudIconElement.alt = 'Save';
       cloudIconElement.classList.add('tweet-saver--icon');
       buttonElement.appendChild(cloudIconElement);
       
       // Add the button to the tweet - next to the bookmark icon
-      let bookmarkElement = tweet.querySelector('[data-testid="bookmark"]');
+      let bookmarkElement = tweet.querySelector('[data-testid="bookmark"]') || tweet.querySelector('[data-testid="removeBookmark"]');
       let parentElement = bookmarkElement?.parentNode || null;
       if (parentElement){
+        //console.log('parentElement', parentElement);
         parentElement.insertBefore(buttonElement, bookmarkElement.nextSibling);
       }
     }
@@ -450,6 +452,7 @@ const isTweetUrl = (urlToCheck, ignorePhotoUrl) => {
 
   return false;
 };
+
 
 
 
