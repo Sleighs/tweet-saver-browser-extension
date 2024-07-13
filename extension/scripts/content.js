@@ -184,7 +184,9 @@ const getSavedData = async () => {
         // if (chrome.runtime.lastError) {
         //   console.error('Error:', chrome.runtime.lastError);
         // } else {
-          if (debugMode) console.log('getSavedData - Storage data:', result);
+          if (debugMode) console.log('getSavedData - Storage data:', {
+            tweetUrls: JSON.parse(result.tweetUrls), tweets: JSON.parse(result.tweets)
+          });
           const { tweetUrls, tweets } = result;
           let tweetUrlData = JSON.parse(tweetUrls);
           let tweetData = JSON.parse(tweets);
@@ -200,7 +202,9 @@ const getSavedData = async () => {
         // if (chrome.runtime.lastError) {
         //   console.error('Error:', chrome.runtime.lastError);
         // } else {
-          if (debugMode) console.log('getSavedData - Storage data:', result);
+          if (debugMode) {
+            // console.log('getSavedData - Storage data:', { tweetUrls: JSON.parse(result.tweetUrls), tweets: JSON.parse(result.tweets)});
+          }
           const { tweetUrls, tweets } = result;
           let tweetUrlData = JSON.parse(tweetUrls);
           let tweetData = JSON.parse(tweets);
@@ -252,12 +256,12 @@ const saveUrl = async (currentUrl) => {
       // Save to browser storage
       await saveDataToStorage(savedUrls, savedTweets);
 
-      console.log('URL saved', savedUrls);
+      if (debugMode) console.log('URL saved', savedUrls);
     } else if (!savedTweets?.some(savedTweet => savedTweet?.url === this.url)){
       // Save to browser storage
       await saveDataToStorage(savedUrls, savedTweets);
     } else {
-      console.log('URL already saved');
+      if (debugMode) console.log('URL already saved');
     }
   } catch (error) {
     if (debugMode) console.error('saveUrl - Error saving URL:', error);
@@ -549,14 +553,14 @@ const initializeOptions = async () => {
         enableExtension = newOptionObj.enableExtension;
         saveLastTweetEnabled = newOptionObj.saveLastTweetEnabled;
         browserStorageType = newOptionObj.browserStorageType;
-        debugMode = newOptionObj.debugMode;
+        debugMode = true; //newOptionObj.debugMode;
         
         Object.assign(optionsState, newOptionObj);
       } else {
         enableExtension = defaultOptions.enableExtension;
         saveLastTweetEnabled = defaultOptions.saveLastTweetEnabled;
         browserStorageType = defaultOptions.browserStorageType;
-        debugMode = defaultOptions.debugMode;
+        debugMode = true;//defaultOptions.debugMode;
 
         Object.assign(optionsState, defaultOptions);
       }
@@ -576,5 +580,3 @@ const initializeOptions = async () => {
   await addSaveButtonsToTweets();
   await detectUrlChange();
 })();
-
-

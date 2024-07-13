@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import { getSavedTweets, getTweetUrls, saveQuickDraft, loadQuickDraft, saveDataToStorage } from './extension';
 
+import sampleData from './scripts/sampleData';
+
 import './App.css'
 
+
+const devMode = true;
 
 class Tweet {
   constructor(tweet) {
@@ -52,6 +56,10 @@ function App() {
   const [saveDraftLabelEnabled, setSaveDraftLabelEnabled] = useState(false);
 
   const getData = async () => {
+    if (devMode) {
+
+      return;
+    }
     const tweetData = await getSavedTweets();
     const urlData = await getTweetUrls();
     const savedDraft = await loadQuickDraft();
