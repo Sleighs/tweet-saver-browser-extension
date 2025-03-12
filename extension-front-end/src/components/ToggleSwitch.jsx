@@ -1,6 +1,5 @@
-import React from "react";
 import PropTypes from "prop-types";
-import './style.css';
+import './ToggleSwitch.css';
 
 /*
 Toggle Switch Component
@@ -9,12 +8,19 @@ The props name, small, disabled and optionLabels are optional.
 Usage: <ToggleSwitch id={id} checked={value} onChange={checked => setValue(checked)}} />
 */
 
-const ToggleSwitch = ({ id, name, checked, onChange, optionLabels, small, disabled }) => {
-  function handleKeyPress(e){
+const ToggleSwitch = ({ 
+  id, 
+  name, 
+  checked, 
+  onChange, 
+  optionLabels = ["On", "Off"], 
+  small = false, 
+  disabled = false 
+}) => {
+  function handleKeyPress(e) {
     if (e.keyCode !== 32) return;
-
     e.preventDefault();
-    onChange(!checked)
+    onChange(!checked);
   }
 
   return (
@@ -27,39 +33,36 @@ const ToggleSwitch = ({ id, name, checked, onChange, optionLabels, small, disabl
         checked={checked}
         onChange={e => onChange(e.target.checked)}
         disabled={disabled}
-        />
-        {id ? (
-          <label className="toggle-switch-label"
-            htmlFor={id}
-            tabIndex={ disabled ? -1 : 1 }
-            onKeyDown={ (e) => { handleKeyPress(e) }}>
-            <span
-              className={
-                disabled
-                  ? "toggle-switch-inner toggle-switch-disabled"
-                  : "toggle-switch-inner"
-              }
-              data-yes={optionLabels[0]}
-              data-no={optionLabels[1]}
-              tabIndex={-1}
-            />
-            <span
-              className={
+      />
+      {id ? (
+        <label 
+          className="toggle-switch-label"
+          htmlFor={id}
+          tabIndex={disabled ? -1 : 1}
+          onKeyDown={handleKeyPress}
+        >
+          <span
+            className={
+              disabled
+                ? "toggle-switch-inner toggle-switch-disabled"
+                : "toggle-switch-inner"
+            }
+            data-yes={optionLabels[0]}
+            data-no={optionLabels[1]}
+            tabIndex={-1}
+          />
+          <span
+            className={
               disabled
                 ? "toggle-switch-switch toggle-switch-disabled"
                 : "toggle-switch-switch"
-              }
-              tabIndex={-1}
-            />
-          </label>
-        ) : null}
-      </div>
-    );
-}
-
-// Set optionLabels for rendering.
-ToggleSwitch.defaultProps = {
-  optionLabels: ["On", "Off"],
+            }
+            tabIndex={-1}
+          />
+        </label>
+      ) : null}
+    </div>
+  );
 };
 
 ToggleSwitch.propTypes = {
@@ -67,7 +70,7 @@ ToggleSwitch.propTypes = {
   checked: PropTypes.bool.isRequired,
   onChange: PropTypes.func.isRequired,
   name: PropTypes.string,
-  optionLabels: PropTypes.array,
+  optionLabels: PropTypes.arrayOf(PropTypes.string),
   small: PropTypes.bool,
   disabled: PropTypes.bool
 };

@@ -1,0 +1,151 @@
+.tweet-list-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.tweet-list-controls {
+  background: var(--background-color, #ffffff);
+  border: 1px solid var(--border-color, #cfd9de);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search-and-filter {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 16px;
+  border: 1px solid var(--border-color, #cfd9de);
+  border-radius: 20px;
+  font-size: 14px;
+  color: var(--text-color, #0f1419);
+  background: var(--background-color, #ffffff);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #1d9bf0);
+  box-shadow: 0 0 0 2px var(--primary-color-light, rgba(29, 155, 240, 0.1));
+}
+
+.filter-select,
+.user-select {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color, #cfd9de);
+  border-radius: 20px;
+  font-size: 14px;
+  color: var(--text-color, #0f1419);
+  background: var(--background-color, #ffffff);
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.sort-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sort-button {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color, #cfd9de);
+  border-radius: 20px;
+  font-size: 14px;
+  color: var(--text-color, #0f1419);
+  background: var(--background-color, #ffffff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sort-button:hover {
+  background-color: var(--hover-color, #f7f7f7);
+}
+
+.sort-button.active {
+  background-color: var(--primary-color, #1d9bf0);
+  color: white;
+  border-color: var(--primary-color, #1d9bf0);
+}
+
+.tweets-stats {
+  color: var(--text-secondary, #536471);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.tweet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.no-tweets-message {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary, #536471);
+  font-size: 16px;
+  background: var(--background-color, #ffffff);
+  border: 1px solid var(--border-color, #cfd9de);
+  border-radius: 16px;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  .tweet-list-container {
+    padding: 12px;
+  }
+
+  .search-and-filter {
+    flex-direction: column;
+  }
+
+  .search-input,
+  .filter-select,
+  .user-select {
+    width: 100%;
+  }
+
+  .sort-controls {
+    justify-content: space-between;
+  }
+
+  .sort-button {
+    flex: 1;
+    min-width: calc(50% - 4px);
+    text-align: center;
+  }
+}
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+  .tweet-list-controls,
+  .search-input,
+  .filter-select,
+  .user-select,
+  .sort-button,
+  .no-tweets-message {
+    --background-color: #15202b;
+    --border-color: #38444d;
+    --text-color: #ffffff;
+    --text-secondary: #8b98a5;
+    --hover-color: #1c2732;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-secondary, #8b98a5);
+  }
+
+  .sort-button:not(.active):hover {
+    background-color: var(--hover-color, #1c2732);
+  }
+} 

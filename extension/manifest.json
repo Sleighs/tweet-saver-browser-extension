@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tweet Saver",
-  "version": "0.1.1",
+  "version": "1.0.1",
   "description": "Additional features for X/Twitter",
   "action": {
     "default_icon": {

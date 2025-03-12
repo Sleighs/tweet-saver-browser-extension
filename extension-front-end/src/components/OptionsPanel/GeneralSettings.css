@@ -1,0 +1,110 @@
+.settings-section {
+  padding: 1.5rem;
+}
+
+.settings-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 1.5rem;
+}
+
+.settings-subtitle {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #333;
+  margin: 1.5rem 0 1rem;
+}
+
+.settings-group {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-info {
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.setting-info label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: #333;
+}
+
+.setting-description {
+  font-size: 0.875rem;
+  color: #666;
+  margin: 0;
+}
+
+.setting-select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  font-size: 0.875rem;
+  color: #333;
+  min-width: 120px;
+}
+
+.setting-select:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+  .settings-title {
+    color: #ffffff;
+  }
+
+  .settings-subtitle {
+    color: #e0e0e0;
+  }
+
+  .settings-group {
+    background: #2a2a2a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .setting-item {
+    border-bottom-color: #404040;
+  }
+
+  .setting-info label {
+    color: #e0e0e0;
+  }
+
+  .setting-description {
+    color: #999;
+  }
+
+  .setting-select {
+    background-color: #333;
+    border-color: #404040;
+    color: #e0e0e0;
+  }
+
+  .setting-select:focus {
+    border-color: #3399ff;
+    box-shadow: 0 0 0 2px rgba(51, 153, 255, 0.2);
+  }
+}

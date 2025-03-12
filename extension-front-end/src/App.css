@@ -63,5 +63,288 @@
 
 }
 
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+}
+
+.app-header {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  color: var(--text-color);
+}
+
+.quick-draft-container {
+  margin: 2rem 0;
+  padding: 1rem;
+  background-color: var(--card-background);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.draft-label {
+  font-size: 1.5rem;
+  color: rgb(178, 255, 126);
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0.75;
+  max-height: 60px;
+}
+
+.draft-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-size: 1rem;
+  resize: vertical;
+}
+
+.draft-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(29, 155, 240, 0.2);
+}
+
+.saved-tweets-container {
+  margin-top: 2rem;
+}
+
+.saved-tweets {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tweet {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: var(--card-background);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tweet:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.delete-tweet {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: none;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-tweet:hover {
+  background-color: var(--error-background);
+  color: var(--error-color);
+  border-color: var(--error-color);
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background-color-secondary, #f7f9f9);
+}
+
+.app-header {
+  background-color: var(--background-color, #ffffff);
+  border-bottom: 1px solid var(--border-color, #cfd9de);
+  padding: 16px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.app-header h1 {
+  margin: 0 0 16px 0;
+  color: var(--text-color, #0f1419);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.app-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.tab-button {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  color: var(--text-secondary, #536471);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-button:hover {
+  background-color: var(--hover-background, rgba(15, 20, 25, 0.1));
+  color: var(--text-color, #0f1419);
+}
+
+.tab-button.active {
+  background-color: var(--primary-color, #1d9bf0);
+  color: white;
+}
+
+.tab-icon {
+  font-size: 18px;
+}
+
+.app-main {
+  flex: 1;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.loading-state,
+.error-state {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 40px 20px;
+  text-align: center;
+  background: var(--background-color, #ffffff);
+  border: 1px solid var(--border-color, #cfd9de);
+  border-radius: 16px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 20px;
+  border: 3px solid var(--border-color, #cfd9de);
+  border-top-color: var(--primary-color, #1d9bf0);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-state p,
+.error-state p {
+  color: var(--text-secondary, #536471);
+  font-size: 16px;
+  margin: 0 0 20px;
+}
+
+.error-state button {
+  background: var(--primary-color, #1d9bf0);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.error-state button:hover {
+  background-color: var(--primary-color-dark, #1a8cd8);
+}
+
+.app-footer {
+  background-color: var(--background-color, #ffffff);
+  border-top: 1px solid var(--border-color, #cfd9de);
+  padding: 16px 0;
+  text-align: center;
+}
+
+.app-footer p {
+  color: var(--text-secondary, #536471);
+  font-size: 14px;
+  margin: 0;
+}
+
+.app-footer a {
+  color: var(--primary-color, #1d9bf0);
+  text-decoration: none;
+  margin-left: 8px;
+}
+
+.app-footer a:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  background-color: var(--error-background, rgba(244, 33, 46, 0.1));
+  color: var(--error-color, #f4212e);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-message::before {
+  content: '⚠️';
+}
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-color: #15202b;
+    --background-color-secondary: #1e2732;
+    --text-color: #ffffff;
+    --text-secondary: #8b98a5;
+    --border-color: #38444d;
+    --hover-background: rgba(255, 255, 255, 0.1);
+    --primary-color: #1d9bf0;
+    --error-color: #f4245e;
+    --error-background: rgba(244, 36, 94, 0.1);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  .app-header {
+    padding: 12px 16px;
+  }
+
+  .app-main {
+    padding: 12px;
+  }
+
+  .tab-button {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+}
+
 
 

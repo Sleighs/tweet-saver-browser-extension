@@ -118,12 +118,29 @@ let savedTweets = [];
 
 class Tweet {
   constructor(tweet) {
-    const { username, handle, time, text, content, likes, replies, retweets, views, fullTweet, url, other, loggedInAccount, links } = tweet;
+    const { 
+      username, 
+      handle, 
+      time, 
+      text, 
+      content, 
+      likes, 
+      replies, 
+      retweets, 
+      views, 
+      fullTweet, 
+      url, 
+      other, 
+      loggedInAccount, 
+      links,
+      mediaItems,
+      profileImageUrl
+    } = tweet;
 
     this.username = username;
     this.handle = handle;
     this.time = time;
-    this.text = text;
+    this.text = text || '';  // Ensure text is never undefined
     this.content = content;
     this.likes = likes;
     this.replies = replies;
@@ -134,30 +151,51 @@ class Tweet {
     this.other = other;
     this.loggedInAccount = loggedInAccount;
     this.links = links;
+    this.mediaItems = mediaItems || [];
+    this.profileImageUrl = profileImageUrl;
+    this.savedAt = new Date().toISOString();
+    this.lastUpdated = new Date().toISOString();
   }
 
   async saveTweet() {
-    if (!isUrlSaved(this.url)){
-      savedUrls.push(this.url);
-    }
-
-    // Check if the tweet is already saved
     try {
-      if (savedTweets?.some(savedTweet => savedTweet?.text === this.text)
-        && savedTweets?.some(savedTweet => savedTweet?.time === this.time)
-      ) {
-        console.log('Tweet already saved');
-      } else {
-        savedTweets.push(this);
-              
-        // Save to browser storage
-        await saveDataToStorage(savedUrls, savedTweets);
-        
-        // Save to local storage
-        //localStorage.setItem('tweet-saver--tweets', JSON.stringify(savedTweets));
-
-        console.log('Tweet saved:', this);
+      // First check if URL is already saved
+      if (!isUrlSaved(this.url)) {
+        savedUrls.push(this.url);
       }
+
+      // Find existing tweet index
+      const existingTweetIndex = savedTweets.findIndex(savedTweet => {
+        // Check URL first as it's the most reliable identifier
+        if (savedTweet.url === this.url) {
+          return true;
+        }
+
+        // For tweets without URLs, use a combination of factors
+        const sameText = savedTweet.text === this.text;
+        const sameTime = savedTweet.time === this.time;
+        const sameAuthor = savedTweet.username === this.username && savedTweet.handle === this.handle;
+
+        // Consider it a match if it matches text (if exists) and author
+        return (this.text ? sameText : true) && sameAuthor && sameTime;
+      });
+
+      if (existingTweetIndex !== -1) {
+        // Update existing tweet while preserving original savedAt time
+        const originalSavedAt = savedTweets[existingTweetIndex].savedAt;
+        this.savedAt = originalSavedAt; // Keep original save time
+        this.lastUpdated = new Date().toISOString(); // Update the last updated time
+        savedTweets[existingTweetIndex] = this;
+        if (debugMode) console.log('Tweet updated:', this.url);
+      } else {
+        // Save the new tweet
+        savedTweets.push(this);
+        if (debugMode) console.log('New tweet saved:', this.url);
+      }
+      
+      // Save to browser storage
+      await saveDataToStorage(savedUrls, savedTweets);
+
     } catch (error) {
       if (debugMode) console.error('Tweet.saveTweet - Error saving Tweet:', error);
     }
@@ -268,52 +306,154 @@ const saveUrl = async (currentUrl) => {
   }
 };
 
+const parseNumericValue = (value) => {
+  // Return 0 for null, undefined, or non-string/non-number values
+  if (value === null || value === undefined) return 0;
+  
+  // If it's already a number, return it
+  if (typeof value === 'number') return value;
+  
+  // Convert to string if it isn't already
+  value = String(value).trim();
+  
+  // Return 0 for empty strings
+  if (!value) return 0;
+  
+  // Remove any commas and convert to lowercase
+  value = value.toLowerCase().replace(/,/g, '');
+  
+  try {
+    // Handle 'k' (thousands)
+    if (value.includes('k')) {
+      return Math.round(parseFloat(value.replace('k', '')) * 1000);
+    }
+    
+    // Handle 'M' (millions)
+    if (value.includes('m')) {
+      return Math.round(parseFloat(value.replace('m', '')) * 1000000);
+    }
+    
+    // Handle 'B' (billions)
+    if (value.includes('b')) {
+      return Math.round(parseFloat(value.replace('b', '')) * 1000000000);
+    }
+
+    // If it's just a number, parse it
+    const num = parseInt(value, 10);
+    return isNaN(num) ? 0 : num;
+  } catch (error) {
+    if (debugMode) console.error('Error parsing numeric value:', error, 'Value:', value);
+    return 0;
+  }
+};
 
 const saveNewTweet = async (tweetElement, currentUrl) => {
   if (tweetElement) {
-    let tweetUsername = tweetElement.querySelector('[data-testid="User-Name"]')?.innerText.split('\n');
-    let tweetText = tweetElement.querySelector('[data-testid="tweetText"]')?.innerText;
-    let tweetTime = tweetElement.querySelector('time')?.innerText;
-    let tweetInfo = tweetElement.querySelectorAll('[data-testid="app-text-transition-container"]');
-    let tweetReplies = tweetElement.querySelector('[data-testid="reply"]')?.innerText;
-    let tweetRetweets = tweetElement.querySelector('[data-testid="retweet"]')?.innerText;
-    let tweetLikes = tweetElement.querySelector('[data-testid="like"]')?.innerText;
-    let tweetBookmarkCount = tweetElement.querySelector('[data-testid="bookmark"]')?.innerText;
-    let username = tweetElement.querySelector('[data-testid="AppTabBar_Profile_Link"]')?.innerText || '';
-
-    // check data-testid's that contain UserAvatar-Container-
-    //let tweetAvatar = tweetElement.querySelectorAll('[data-testid^="UserAvatar-Container-"]');
-    //console.log('tweetAvatar', tweetAvatar);
-
-    const getUrl = () => {
-      if (!currentUrl) {
-        // Get the current URLfrom links
-        let links = Array.from(tweetElement.querySelectorAll('a'));
-        for (let link of links) {
-          if (isTweetUrl(link.href, true)) {
-            return link.href;
-          }
+    try {
+      let tweetUsername = tweetElement.querySelector('[data-testid="User-Name"]')?.innerText.split('\n');
+      let tweetText = tweetElement.querySelector('[data-testid="tweetText"]')?.innerText;
+      let tweetTime = tweetElement.querySelector('time')?.innerText;
+      let tweetInfo = tweetElement.querySelectorAll('[data-testid="app-text-transition-container"]');
+      
+      // Get the numeric values and parse them properly, handling both liked and unliked states
+      const getLikeCount = (element) => {
+        // First try the normal like button
+        let count = element.querySelector('[data-testid="like"]')?.innerText;
+        if (!count) {
+          // If not found, try the liked state button
+          count = element.querySelector('[data-testid="unlike"]')?.innerText;
         }
+        return parseNumericValue(count || '0');
+      };
+
+      let tweetReplies = parseNumericValue(tweetElement.querySelector('[data-testid="reply"]')?.innerText || '0');
+      let tweetRetweets = parseNumericValue(tweetElement.querySelector('[data-testid="retweet"]')?.innerText || '0');
+      let tweetLikes = getLikeCount(tweetElement);
+      let tweetBookmarkCount = parseNumericValue(tweetElement.querySelector('[data-testid="bookmark"]')?.innerText || '0');
+      let username = tweetElement.querySelector('[data-testid="AppTabBar_Profile_Link"]')?.innerText || '';
+
+      // Log the values for debugging
+      if (debugMode) {
+        console.log('Tweet engagement stats:', {
+          replies: tweetReplies,
+          retweets: tweetRetweets,
+          likes: tweetLikes,
+          bookmarks: tweetBookmarkCount
+        });
       }
+
+      // Get profile image
+      const profileImageUrl = tweetElement.querySelector('img[src*="profile_images"]')?.src;
+
+      // Get media items (images and videos)
+      const mediaItems = [];
+      
+      // Get images
+      const images = Array.from(tweetElement.querySelectorAll('img[src*="/media/"]'));
+      images.forEach(img => {
+        if (img.src && !mediaItems.some(item => item.url === img.src)) {
+          mediaItems.push({
+            type: 'image',
+            url: img.src,
+            alt: img.alt || '',
+            originalUrl: img.src.replace(/&name=.+$/, "&name=orig") // Get original size image
+          });
+        }
+      });
+
+      // Get videos
+      const videos = Array.from(tweetElement.querySelectorAll('video'));
+      videos.forEach(video => {
+        const poster = video.poster;
+        if (poster) {
+          mediaItems.push({
+            type: 'video',
+            url: video.src || '',
+            thumbnailUrl: poster,
+            alt: video.title || ''
+          });
+        }
+      });
+
+      // Get tweet URL more reliably
+      const getUrl = () => {
+        if (!currentUrl) {
+          const links = Array.from(tweetElement.querySelectorAll('a'));
+          const statusLink = links.find(link => isTweetUrl(link.href, true));
+          return statusLink?.href;
+        }
+        return currentUrl;
+      };
+
+      // Get tweet URL
+      const tweetUrl = getUrl();
+      if (!tweetUrl) {
+        if (debugMode) console.log('Could not find tweet URL');
+        return;
+      }
+
+      const tweetObj = new Tweet({
+        url: tweetUrl,
+        fullTweet: tweetElement?.innerText,
+        username: tweetUsername?.[0],
+        handle: tweetUsername?.[1],
+        text: tweetText,
+        time: tweetTime,
+        views: parseNumericValue(tweetInfo[0]?.innerText || '0'),
+        replies: tweetReplies,
+        retweets: tweetRetweets,
+        likes: tweetLikes,
+        bookmarkCount: tweetBookmarkCount,
+        links: Array.from(tweetElement.querySelectorAll('a')).map(link => link.href),
+        loggedInAccount: username,
+        mediaItems,
+        profileImageUrl
+      });
+
+      await tweetObj.saveTweet();
+    } catch (error) {
+      if (debugMode) console.error('saveNewTweet - Error:', error);
     }
-
-    const tweetObj = new Tweet({
-      url: currentUrl || getUrl(),
-      fullTweet: tweetElement?.innerText,
-      username: tweetUsername[0],
-      handle: tweetUsername[1],
-      text: tweetText,
-      time: tweetTime,
-      views: tweetInfo[0]?.innerText || '',
-      replies: tweetReplies,
-      retweets: tweetRetweets,
-      likes: tweetLikes,
-      bookmarkCount: tweetBookmarkCount,
-      links: Array.from(tweetElement.querySelectorAll('a')).map(link => link.href),
-      loggedInAccount: username,
-    });
-
-    await tweetObj.saveTweet();
   }
 };
 
@@ -369,56 +509,89 @@ function extractProperties(names, obj) {
 
 // Save Button
 const addSaveButtonsToTweets = async () => {
-  const tweets = document.querySelectorAll('article[data-testid="tweet"]');
-  let iconThemeClassName = `tweet-saver--save-tweet-button-${styleTheme}`;
-
-  tweets.forEach(tweet => {
-    // Check if the tweet already has a save button
-    if (!tweet.querySelector('.tweet-saver--save-tweet-button')) {
-      // Create button
-      const buttonElement = document.createElement('div');
-      //buttonElement.innerText = 'Save';
-      buttonElement.classList.add('tweet-saver--save-tweet-button', iconThemeClassName);
-      
-      // Add hover effect
-      buttonElement.addEventListener('mouseover', () => {
-        buttonElement.style.opacity = '1';
-      });
-      buttonElement.addEventListener('mouseout', () => {
-        buttonElement.style.opacity = '0.4';
-      });
-
-      buttonElement.addEventListener('click', async (event) => {
-        event.stopPropagation(); // Prevent the tweet click event from being triggered
-        await saveNewTweet(tweet, null);
-
-        showSplashEffect(buttonElement);
-      });
-      
-      let iconElement = plusIconDarkTheme;
-
-      // Add cloud icon to button 
-      if (styleTheme === 'dark') {
-        iconElement = plusIconDarkTheme;
-      } else if (styleTheme === 'light' || styleTheme === 'normal') {
-        iconElement = plusIconLightTheme;  
-      }
-
-      const cloudIconElement = document.createElement('img');
-      cloudIconElement.src = chrome.runtime?.getURL(iconElement);
-      cloudIconElement.alt = 'Save';
-      cloudIconElement.classList.add('tweet-saver--icon');
-      buttonElement.appendChild(cloudIconElement);
-      
-      // Add the button to the tweet - next to the bookmark icon
-      let bookmarkElement = tweet.querySelector('[data-testid="bookmark"]') || tweet.querySelector('[data-testid="removeBookmark"]');
-      let parentElement = bookmarkElement?.parentNode || null;
-      if (parentElement){
-        //console.log('parentElement', parentElement);
-        parentElement.insertBefore(buttonElement, bookmarkElement.nextSibling);
-      }
+  try {
+    // Check if extension context is still valid
+    if (!chrome.runtime?.id) {
+      console.log('Extension context invalidated - reloading page');
+      window.location.reload();
+      return;
     }
-  });
+
+    const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+    let iconThemeClassName = `tweet-saver--save-tweet-button-${styleTheme}`;
+
+    tweets.forEach(tweet => {
+      try {
+        // Check if the tweet already has a save button
+        if (!tweet.querySelector('.tweet-saver--save-tweet-button')) {
+          // Create button
+          const buttonElement = document.createElement('div');
+          buttonElement.classList.add('tweet-saver--save-tweet-button', iconThemeClassName);
+          
+          // Add hover effect
+          buttonElement.addEventListener('mouseover', () => {
+            buttonElement.style.opacity = '1';
+          });
+          buttonElement.addEventListener('mouseout', () => {
+            buttonElement.style.opacity = '0.4';
+          });
+
+          buttonElement.addEventListener('click', async (event) => {
+            try {
+              event.stopPropagation(); // Prevent the tweet click event from being triggered
+              await saveNewTweet(tweet, null);
+              showSplashEffect(buttonElement);
+            } catch (err) {
+              if (debugMode) console.error('Error in save button click handler:', err);
+              // Check if extension context is still valid
+              if (!chrome.runtime?.id) {
+                window.location.reload();
+                return;
+              }
+            }
+          });
+          
+          let iconElement = plusIconDarkTheme;
+
+          // Add cloud icon to button 
+          if (styleTheme === 'dark') {
+            iconElement = plusIconDarkTheme;
+          } else if (styleTheme === 'light' || styleTheme === 'normal') {
+            iconElement = plusIconLightTheme;  
+          }
+
+          // Check if extension context is valid before getting URL
+          const iconUrl = chrome.runtime?.id ? chrome.runtime.getURL(iconElement) : null;
+          if (!iconUrl) {
+            if (debugMode) console.log('Extension context invalid while getting icon URL');
+            return;
+          }
+
+          const cloudIconElement = document.createElement('img');
+          cloudIconElement.src = iconUrl;
+          cloudIconElement.alt = 'Save';
+          cloudIconElement.classList.add('tweet-saver--icon');
+          buttonElement.appendChild(cloudIconElement);
+          
+          // Add the button to the tweet - next to the bookmark icon
+          let bookmarkElement = tweet.querySelector('[data-testid="bookmark"]') || tweet.querySelector('[data-testid="removeBookmark"]');
+          let parentElement = bookmarkElement?.parentNode || null;
+          if (parentElement) {
+            parentElement.insertBefore(buttonElement, bookmarkElement.nextSibling);
+          }
+        }
+      } catch (err) {
+        if (debugMode) console.error('Error processing tweet:', err);
+      }
+    });
+  } catch (err) {
+    if (debugMode) console.error('Error in addSaveButtonsToTweets:', err);
+    // Check if extension context is still valid
+    if (!chrome.runtime?.id) {
+      window.location.reload();
+      return;
+    }
+  }
 };
 
 const showSplashEffect = (button) => {
@@ -492,13 +665,27 @@ const isTweetUrl = (urlToCheck, ignorePhotoUrl) => {
 
 // Observer to detect URL changes
 const detectUrlChange = async () => {
-  const observer = new MutationObserver((node) => {
-    handleUrlChange(node);
-    addSaveButtonsToTweets();
+  const observer = new MutationObserver((mutations) => {
+    try {
+      // Check if extension context is still valid
+      if (!chrome.runtime?.id) {
+        observer.disconnect();
+        window.location.reload();
+        return;
+      }
+      
+      handleUrlChange(mutations);
+      addSaveButtonsToTweets();
+    } catch (err) {
+      if (debugMode) console.error('Error in mutation observer:', err);
+      if (!chrome.runtime?.id) {
+        observer.disconnect();
+        window.location.reload();
+      }
+    }
   });
 
   observer.observe(document, { subtree: true, childList: true });
-
   window.addEventListener('popstate', handleUrlChange);
 }
 
