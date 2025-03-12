@@ -24,6 +24,15 @@
       button.style.opacity = '0.4';
 */
 
+.tweet-saver--button-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tweet-action-button-size, 36px);
+  min-height: var(--tweet-action-button-size, 36px);
+  margin: 0 8px;
+}
+
 .tweet-saver--save-tweet-button {
   display: flex;
   align-items: center;
@@ -35,7 +44,35 @@
   opacity: 0.4;
   transition: all 0.2s ease;
   position: relative;
-  margin: 0 2px;
+  overflow: hidden;
+}
+
+/* Theme-specific base styles */
+.tweet-saver--save-tweet-button-light {
+  background-color: transparent;
+  border: none;
+}
+
+.tweet-saver--save-tweet-button-dark {
+  background-color: transparent;
+  border: none;
+}
+
+/* Saved state styles */
+.tweet-saver--save-tweet-button.saved {
+  opacity: 1;
+}
+
+.tweet-saver--save-tweet-button.saved .tweet-saver--icon {
+  filter: invert(48%) sepia(98%) saturate(2252%) hue-rotate(179deg) brightness(98%) contrast(93%);
+}
+
+/* Theme-specific hover styles */
+.tweet-saver--save-tweet-button-light:hover,
+.tweet-saver--save-tweet-button-dark:hover,
+.tweet-saver--save-tweet-button.saved:hover {
+  opacity: 1;
+  background-color: rgba(29, 155, 240, 0.1);
 }
 
 /* Button positions */
@@ -53,38 +90,40 @@
 
 /* Hover effects */
 .tweet-saver--save-tweet-button:hover {
-  background-color: rgba(29, 155, 240, 0.1);
   opacity: 1;
+  background-color: rgba(29, 155, 240, 0.1);
 }
 
 .tweet-saver--icon {
   width: 18px;
   height: 18px;
-  transition: transform 0.2s ease;
+  object-fit: contain;
 }
 
-.tweet-saver--save-tweet-button:hover .tweet-saver--icon {
-  transform: scale(1.1);
+/* Splash effect animation */
+.tweet-saver--splash-effect::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(29, 155, 240, 0.4) 0%, transparent 70%);
+  transform: scale(0);
+  animation: splash 0.6s ease-out;
+  border-radius: 50%;
 }
 
-/* Save Animation */
-@keyframes saveSplash {
+@keyframes splash {
   0% {
-    transform: scale(1);
+    transform: scale(0);
     opacity: 1;
   }
   50% {
-    transform: scale(1.2);
-    opacity: 0.8;
+    opacity: 0.7;
   }
   100% {
-    transform: scale(1);
-    opacity: 1;
+    transform: scale(2.5);
+    opacity: 0;
   }
-}
-
-.tweet-saver--splash-effect {
-  animation: saveSplash 0.5s ease-in-out;
 }
 
 /* Dark Theme */
@@ -119,27 +158,30 @@ html[data-color-mode="light"] .tweet-saver--save-tweet-button:hover {
 /* Notification System */
 .tweet-saver--notification {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 12px 20px;
-  border-radius: 8px;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  padding: 12px 24px;
+  border-radius: 4px;
   font-size: 14px;
+  font-weight: 500;
   z-index: 9999;
   opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: #fff;
-  max-width: 300px;
+  max-width: 400px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  pointer-events: none;
 }
 
 .tweet-saver--notification.show {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateX(-50%) translateY(0);
 }
 
 .tweet-saver--notification.success {
-  background-color: #00ba7c;
+  background-color: rgb(29, 155, 240);
 }
 
 .tweet-saver--notification.error {
@@ -147,7 +189,7 @@ html[data-color-mode="light"] .tweet-saver--save-tweet-button:hover {
 }
 
 .tweet-saver--notification.info {
-  background-color: #1d9bf0;
+  background-color: rgb(29, 155, 240);
 }
 
 /* Loading States */
