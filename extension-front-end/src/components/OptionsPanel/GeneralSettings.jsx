@@ -63,7 +63,7 @@ const GeneralSettings = ({ settings, onSettingChange }) => {
           />
         </label>
         <p className="setting-description">
-          Automatically save tweets when clicking the extension button
+          Automatically save tweets when you click on them to view (separate from the save button)
         </p>
       </div>
 

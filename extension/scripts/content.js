@@ -62,7 +62,22 @@ let saveLastTweetEnabled = true;
 let browserStorageType = 'local';
 let debugMode = true;
 let enablePhotoUrlSave = true;
-let styleTheme = getColorScheme();//getComputedStyle(document.documentElement).getPropertyValue('color-scheme') || 'dark';
+let styleTheme = getColorScheme();
+
+// Global settings object that will contain all settings
+let settings = {
+  enableExtension: true,
+  saveLastTweetEnabled: true,
+  browserStorageType: 'local',
+  debugMode: true,
+  enablePhotoUrlSave: true,
+  styleTheme: styleTheme,
+  notificationsEnabled: true, // Default value for notifications
+  autoSave: false,  // Auto-save setting (OFF by default)
+  saveDelay: 500,
+  saveOnlyMedia: false,
+  saveTweetMetadata: true
+};
 
 let optionsState = {
   enableExtension: true,
@@ -357,7 +372,8 @@ const saveNewTweet = async (tweetElement, currentUrl) => {
     try {
       let tweetUsername = tweetElement.querySelector('[data-testid="User-Name"]')?.innerText.split('\n');
       let tweetText = tweetElement.querySelector('[data-testid="tweetText"]')?.innerText;
-      let tweetTime = tweetElement.querySelector('time')?.innerText;
+      let timeElement = tweetElement.querySelector('time');
+      let tweetTime = timeElement?.getAttribute('datetime') || timeElement?.innerText;
       let tweetInfo = tweetElement.querySelectorAll('[data-testid="app-text-transition-container"]');
       
       // Get the numeric values and parse them properly, handling both liked and unliked states
@@ -463,39 +479,58 @@ const saveNewTweet = async (tweetElement, currentUrl) => {
 };
 
 const deleteAllSavedData = async () => {
-  await browser.storage.local.clear();
-
-  // Clear local storage
-  localStorage.removeItem('tweet-saver--urls');
-  localStorage.removeItem('tweet-saver--tweets');
-
-  // browser.runtime.sendMessage({ method: 'deleteAllTweets' }, (response) => {
-  //   if (browser.runtime.lastError) {
-  //     console.error('Error:', browser.runtime.lastError);
-  //   } else {
-  //     console.log('deleteAllSavedData - Storage data:', response);
-  //     const { tweetUrls, tweets } = response;
-  //     // Use tweetUrls and tweets as needed
-  //   }
-  // });
+  try {
+    // Clear browser storage
+    await browser.storage.local.clear();
+    
+    // Clear local arrays
+    savedUrls = [];
+    savedTweets = [];
+    
+    // Clear localStorage
+    localStorage.removeItem('tweet-saver--urls');
+    localStorage.removeItem('tweet-saver--tweets');
+    
+    // Notify background script
+    await browser.runtime.sendMessage({ 
+      method: 'deleteAllTweets'
+    });
+    
+    showNotification('All saved tweets have been deleted', 'info');
+    
+    if (debugMode) console.log('All saved data deleted');
+  } catch (error) {
+    if (debugMode) console.error('Error deleting all saved data:', error);
+    showNotification('Error deleting saved tweets', 'error');
+  }
 }
 
 // Logic for handling URL changes
 const handleUrlChange = async (node) => {
   const currentUrl = location.href;
 
-  // console.log('handleUrlChange', currentUrl);
-  // console.dir(ele)
-
   if (currentUrl !== url) {
     url = currentUrl;
 
     if (isTweetUrl(currentUrl)) {
-      // Save the URL
-      await saveUrl(currentUrl);  
+      // Check if auto-save is enabled
+      if (settings.autoSave) {
+        // Auto-save the tweet if the setting is enabled
+        if (debugMode) console.log('Auto-save is ON, saving tweet at:', currentUrl);
+        
+        // Find the tweet element
+        const tweetElement = document.querySelector('article[data-testid="tweet"]');
+        if (tweetElement) {
+          // Save the new tweet
+          await saveNewTweet(tweetElement, currentUrl);
+        } else {
+          // If we can't find the tweet element, just save the URL
+          await saveUrl(currentUrl);
+        }
+      } else {
+        if (debugMode) console.log('Auto-save is OFF, not saving tweet at:', currentUrl);
+      }
     }
-
-     
   }
 }
 
@@ -562,33 +597,113 @@ const addSaveButtonsToTweets = async () => {
 
           const buttonContainer = document.createElement('div');
           buttonContainer.classList.add('tweet-saver--button-container');
-          buttonContainer.style.display = 'flex';
-          buttonContainer.style.alignItems = 'center';
-          buttonContainer.style.justifyContent = 'center';
           
           const buttonElement = document.createElement('div');
           buttonElement.classList.add('tweet-saver--save-tweet-button', iconThemeClassName);
           if (isSaved) {
             buttonElement.classList.add('saved');
           }
+
+          // Create hover menu
+          const hoverMenu = document.createElement('div');
+          hoverMenu.classList.add('tweet-saver--hover-menu', iconThemeClassName);
+
+          // Add menu items
+          if (isSaved) {
+            const updateButton = document.createElement('button');
+            updateButton.classList.add('tweet-saver--menu-item');
+            updateButton.innerHTML = `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M4 4V9H9M20 20V15H15M20.49 9A9 9 0 0 0 5.64 5.64L4 9M19.95 15L18.36 18.36A9 9 0 0 1 3.51 15" 
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Update info
+            `;
+            updateButton.addEventListener('click', async (event) => {
+              event.stopPropagation();
+              buttonElement.classList.add('tweet-saver--loading');
+              await saveNewTweet(tweet, tweetUrl);
+              buttonElement.classList.remove('tweet-saver--loading');
+            });
+            hoverMenu.appendChild(updateButton);
+
+            const unsaveButton = document.createElement('button');
+            unsaveButton.classList.add('tweet-saver--menu-item', 'unsave');
+            unsaveButton.innerHTML = `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6L18 18" 
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Unsave
+            `;
+            unsaveButton.addEventListener('click', async (event) => {
+              event.stopPropagation();
+              buttonElement.classList.add('tweet-saver--loading');
+              await unsaveTweet(tweetUrl);
+              buttonElement.classList.remove('tweet-saver--loading', 'saved');
+            });
+            hoverMenu.appendChild(unsaveButton);
+          }
           
           buttonElement.addEventListener('click', async (event) => {
             try {
               event.stopPropagation();
-              buttonElement.classList.add('tweet-saver--loading');
-
               if (!buttonElement.classList.contains('saved')) {
+                buttonElement.classList.add('tweet-saver--loading');
                 // Save tweet
                 await saveNewTweet(tweet, null);
                 buttonElement.classList.add('saved');
-              } else {
-                // Unsave tweet
-                if (tweetUrl) {
-                  await unsaveTweet(tweetUrl);
-                  buttonElement.classList.remove('saved');
-                }
-              }
+                
+                // Clear existing menu items first
+                hoverMenu.innerHTML = '';
+                
+                // Add menu items after saving
+                const updateButton = document.createElement('button');
+                updateButton.classList.add('tweet-saver--menu-item');
+                updateButton.innerHTML = `
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 4V9H9M20 20V15H15M20.49 9A9 9 0 0 0 5.64 5.64L4 9M19.95 15L18.36 18.36A9 9 0 0 1 3.51 15" 
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Update info
+                `;
+                updateButton.addEventListener('click', async (e) => {
+                  e.stopPropagation();
+                  buttonElement.classList.add('tweet-saver--loading');
+                  await saveNewTweet(tweet, tweetUrl);
+                  buttonElement.classList.remove('tweet-saver--loading');
+                  hoverMenu.classList.remove('show');
+                });
+                hoverMenu.appendChild(updateButton);
 
+                const unsaveButton = document.createElement('button');
+                unsaveButton.classList.add('tweet-saver--menu-item', 'unsave');
+                unsaveButton.innerHTML = `
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18M6 6L18 18" 
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Unsave
+                `;
+                unsaveButton.addEventListener('click', async (e) => {
+                  e.stopPropagation();
+                  buttonElement.classList.add('tweet-saver--loading');
+                  await unsaveTweet(tweetUrl);
+                  buttonElement.classList.remove('tweet-saver--loading', 'saved');
+                  hoverMenu.innerHTML = '';
+                  hoverMenu.classList.remove('show');
+                });
+                hoverMenu.appendChild(unsaveButton);
+              } else {
+                // Toggle menu visibility for saved tweets
+                const allMenus = document.querySelectorAll('.tweet-saver--hover-menu');
+                allMenus.forEach(menu => {
+                  if (menu !== hoverMenu) {
+                    menu.classList.remove('show');
+                  }
+                });
+                hoverMenu.classList.toggle('show');
+              }
               showSplashEffect(buttonElement);
               buttonElement.classList.remove('tweet-saver--loading');
             } catch (err) {
@@ -616,6 +731,7 @@ const addSaveButtonsToTweets = async () => {
           buttonElement.appendChild(cloudIconElement);
           
           buttonContainer.appendChild(buttonElement);
+          buttonContainer.appendChild(hoverMenu);
           
           let bookmarkElement = tweet.querySelector('[data-testid="bookmark"]') || tweet.querySelector('[data-testid="removeBookmark"]');
           let parentElement = bookmarkElement?.parentNode || null;
@@ -771,33 +887,66 @@ const detectUrlChange = async () => {
 
 // Retrieve and set options
 const initializeOptions = async () => {
+  try {
+    // Get options
+    const optionsResult = await new Promise((resolve) => {
+      chrome.storage.sync.get("options", resolve);
+    });
 
-  // Retrieve and set options
-  await chrome.storage.sync.get("options")
-    .then(function (result) {
+    if (optionsResult && optionsResult.options) {
+      let newOptionObj = extractProperties(optionsList, optionsResult.options);
+      
+      enableExtension = newOptionObj.enableExtension;
+      saveLastTweetEnabled = newOptionObj.saveLastTweetEnabled;
+      browserStorageType = newOptionObj.browserStorageType;
+      debugMode = true; //newOptionObj.debugMode;
+      
+      Object.assign(optionsState, newOptionObj);
+    } else {
+      enableExtension = defaultOptions.enableExtension;
+      saveLastTweetEnabled = defaultOptions.saveLastTweetEnabled;
+      browserStorageType = defaultOptions.browserStorageType;
+      debugMode = true;//defaultOptions.debugMode;
 
-      if (result && result.options){
-        let newOptionObj = extractProperties(optionsList, result.options);
+      Object.assign(optionsState, defaultOptions);
+    }
 
-        enableExtension = newOptionObj.enableExtension;
-        saveLastTweetEnabled = newOptionObj.saveLastTweetEnabled;
-        browserStorageType = newOptionObj.browserStorageType;
-        debugMode = true; //newOptionObj.debugMode;
-        
-        Object.assign(optionsState, newOptionObj);
-      } else {
-        enableExtension = defaultOptions.enableExtension;
-        saveLastTweetEnabled = defaultOptions.saveLastTweetEnabled;
-        browserStorageType = defaultOptions.browserStorageType;
-        debugMode = true;//defaultOptions.debugMode;
+    // Get all settings from chrome.storage
+    const allSettings = await new Promise((resolve) => {
+      chrome.storage.sync.get(null, resolve);
+    });
 
-        Object.assign(optionsState, defaultOptions);
+    // Update the settings object with values from storage
+    if (allSettings) {
+      // Update individual settings
+      for (const key in allSettings) {
+        if (key !== 'options' && key !== 'tweetUrls' && key !== 'tweets') {
+          settings[key] = allSettings[key];
+        }
       }
 
-    })
-    .catch(function (error) {
-      if (debugMode) console.error('initializeOptions - Error retrieving options:', error);
-    });
+      // If specific settings exist in storage, update them
+      if (allSettings.notificationsEnabled !== undefined) {
+        settings.notificationsEnabled = allSettings.notificationsEnabled;
+      }
+      if (allSettings.autoSave !== undefined) {
+        settings.autoSave = allSettings.autoSave;
+      }
+      if (allSettings.saveDelay !== undefined) {
+        settings.saveDelay = allSettings.saveDelay;
+      }
+      if (allSettings.saveOnlyMedia !== undefined) {
+        settings.saveOnlyMedia = allSettings.saveOnlyMedia;
+      }
+      if (allSettings.saveTweetMetadata !== undefined) {
+        settings.saveTweetMetadata = allSettings.saveTweetMetadata;
+      }
+    }
+
+    if (debugMode) console.log('Settings loaded:', settings);
+  } catch (error) {
+    if (debugMode) console.error('initializeOptions - Error retrieving options:', error);
+  }
 }
 
 /////// Initialization ///////
@@ -870,6 +1019,12 @@ addSaveButtonsToTweets();
 // Notification System
 const showNotification = (message, type = 'info', duration = 3000) => {
   try {
+    // Check if notifications are enabled (using the settings object)
+    if (settings && settings.notificationsEnabled === false) {
+      if (debugMode) console.log('Notifications disabled, not showing:', message);
+      return;
+    }
+
     // Remove any existing notifications
     const existingNotification = document.querySelector('.tweet-saver--notification');
     if (existingNotification) {
@@ -900,3 +1055,38 @@ const showNotification = (message, type = 'info', duration = 3000) => {
     if (debugMode) console.error('Error showing notification:', error);
   }
 };
+
+// Listen for messages from options panel
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Basic message handler for other potential needs
+  if (message && message.type === 'SETTINGS_UPDATED') {
+    // Refresh settings if they've been updated
+    initializeOptions();
+    sendResponse({ success: true });
+    return true;
+  }
+  
+  sendResponse({ success: true });
+  return true;
+});
+
+// Listen for messages from the background script
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.method === 'tweetsDeleted') {
+    // Clear local data
+    savedUrls = [];
+    savedTweets = [];
+    localStorage.removeItem('tweet-saver--urls');
+    localStorage.removeItem('tweet-saver--tweets');
+    
+    if (debugMode) console.log('Local data cleared after tweetsDeleted message');
+  }
+});
+
+// Add click outside handler to close menus
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('.tweet-saver--button-container')) {
+    const allMenus = document.querySelectorAll('.tweet-saver--hover-menu');
+    allMenus.forEach(menu => menu.classList.remove('show'));
+  }
+});

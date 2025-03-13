@@ -49,7 +49,7 @@
     }
   ],
   "permissions": [
-    "storage", "activeTab", "scripting"
+    "storage", "activeTab", "scripting", "tabs"
   ],
   "options_page": "dist/index.html"
 }

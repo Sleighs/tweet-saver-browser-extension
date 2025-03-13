@@ -8,7 +8,7 @@ import SettingsService from './services/SettingsService';
 const TABS = [
   {
     id: 'tweets',
-    label: 'Saved Tweets',
+    label: 'Saved Posts',
     icon: '🐦',
     component: TweetList
   },
@@ -26,8 +26,23 @@ const App = () => {
   const [settings, setSettings] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isPopup, setIsPopup] = useState(false);
+
+  const loadTweets = async () => {
+    try {
+      const result = await chrome.storage.local.get('tweets');
+      const tweetsData = result.tweets ? JSON.parse(result.tweets) : [];
+      setSavedTweets(tweetsData);
+    } catch (err) {
+      console.error('Error loading tweets:', err);
+      setError('Failed to load tweets. Please try again.');
+    }
+  };
 
   useEffect(() => {
+    // Check if we're in popup mode by checking window dimensions
+    setIsPopup(window.innerWidth < 800);
+    
     const loadData = async () => {
       try {
         setIsLoading(true);
@@ -35,9 +50,8 @@ const App = () => {
         const currentSettings = await SettingsService.getSettings();
         setSettings(currentSettings);
 
-        // Load tweets (we'll implement this in TweetService)
-        const tweets = await chrome.storage.local.get('tweets');
-        setSavedTweets(JSON.parse(tweets.tweets || '[]'));
+        // Load tweets
+        await loadTweets();
       } catch (err) {
         console.error('Error loading data:', err);
         setError('Failed to load data. Please try again.');
@@ -62,6 +76,22 @@ const App = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    await loadTweets();
+  };
+
+  const handleOpenInTab = () => {
+    if (chrome.runtime?.id) {
+      chrome.tabs.create({
+        url: chrome.runtime.getURL('dist/index.html')
+      });
+      // If we're in the popup, close it
+      if (isPopup) {
+        window.close();
+      }
+    }
+  };
+
   if (isLoading) {
     return <div className="loading">Loading...</div>;
   }
@@ -71,7 +101,15 @@ const App = () => {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Tweet Saver</h1>
+        <div className="header-content">
+          <h1>Tweet Saver</h1>
+          {isPopup && (
+            <button className="open-in-tab-button" onClick={handleOpenInTab}>
+              <span className="tab-icon">🔗</span>
+              Open in Tab
+            </button>
+          )}
+        </div>
         <nav className="app-tabs">
           {TABS.map(tab => (
             <button
@@ -98,6 +136,7 @@ const App = () => {
             <ActiveComponent
               tweets={savedTweets}
               onDeleteTweet={handleDeleteTweet}
+              onRefresh={handleRefresh}
             />
           ) : (
             <ActiveComponent

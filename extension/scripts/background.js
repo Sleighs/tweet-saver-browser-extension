@@ -1,4 +1,3 @@
-
 const browser = chrome || browser;
 
 const defaultOptions = {
@@ -180,8 +179,17 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'deleteAllTweets':
       console.log('deleteAllTweets');
       tweets = [];
+      tweetUrls = [];
       saveToStorage();
-      break
+      // Notify all tabs that tweets have been deleted
+      browser.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          browser.tabs.sendMessage(tab.id, { method: 'tweetsDeleted' }).catch(() => {
+            // Ignore errors for inactive tabs
+          });
+        });
+      });
+      break;
 
     case 'getTweetUrls':
       console.log('getTweetUrls:', tweetUrls);

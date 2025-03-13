@@ -72,95 +72,6 @@
   color: var(--text-secondary);
 }
 
-.app-header {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1.5rem;
-  color: var(--text-color);
-}
-
-.quick-draft-container {
-  margin: 2rem 0;
-  padding: 1rem;
-  background-color: var(--card-background);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px var(--shadow-color);
-}
-
-.draft-label {
-  font-size: 1.5rem;
-  color: rgb(178, 255, 126);
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0.75;
-  max-height: 60px;
-}
-
-.draft-textarea {
-  width: 100%;
-  min-height: 120px;
-  padding: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: var(--background-color);
-  color: var(--text-color);
-  font-size: 1rem;
-  resize: vertical;
-}
-
-.draft-textarea:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(29, 155, 240, 0.2);
-}
-
-.saved-tweets-container {
-  margin-top: 2rem;
-}
-
-.saved-tweets {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.tweet {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  background-color: var(--card-background);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px var(--shadow-color);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tweet:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px var(--shadow-color);
-}
-
-.delete-tweet {
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background: none;
-  color: var(--text-color);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.delete-tweet:hover {
-  background-color: var(--error-background);
-  color: var(--error-color);
-  border-color: var(--error-color);
-}
-
 .app {
   min-height: 100vh;
   display: flex;
@@ -171,31 +82,60 @@
 .app-header {
   background-color: var(--background-color, #ffffff);
   border-bottom: 1px solid var(--border-color, #cfd9de);
-  padding: 16px 20px;
+  padding: 8px 16px;
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 .app-header h1 {
-  margin: 0 0 16px 0;
+  margin: 0;
   color: var(--text-color, #0f1419);
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.open-in-tab-button {
+  background: rgba(29, 155, 240, 0.1);
+  border: 1px solid rgba(29, 155, 240, 0.2);
+  color: var(--primary-color, #1d9bf0);
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.open-in-tab-button:hover {
+  background: rgba(29, 155, 240, 0.2);
+  border-color: rgba(29, 155, 240, 0.3);
 }
 
 .app-tabs {
   display: flex;
   gap: 8px;
-  margin-top: 16px;
 }
 
 .tab-button {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border: none;
   background: none;
   color: var(--text-secondary, #536471);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   border-radius: 20px;
@@ -300,33 +240,33 @@
 }
 
 .error-message {
-  background-color: var(--error-background, rgba(244, 33, 46, 0.1));
-  color: var(--error-color, #f4212e);
+  background-color: var(--error-background, #fee2e2);
+  color: var(--error-color, #ef4444);
   padding: 12px 16px;
+  margin: 16px;
   border-radius: 8px;
-  margin-bottom: 16px;
   font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
-.error-message::before {
-  content: '⚠️';
-}
-
-/* Dark theme */
+/* Dark theme support */
 @media (prefers-color-scheme: dark) {
-  :root {
+  .app {
     --background-color: #15202b;
     --background-color-secondary: #1e2732;
+    --border-color: #38444d;
     --text-color: #ffffff;
     --text-secondary: #8b98a5;
-    --border-color: #38444d;
     --hover-background: rgba(255, 255, 255, 0.1);
-    --primary-color: #1d9bf0;
-    --error-color: #f4245e;
-    --error-background: rgba(244, 36, 94, 0.1);
+  }
+
+  .open-in-tab-button {
+    background: rgba(29, 155, 240, 0.1);
+    border-color: rgba(29, 155, 240, 0.2);
+  }
+
+  .open-in-tab-button:hover {
+    background: rgba(29, 155, 240, 0.2);
+    border-color: rgba(29, 155, 240, 0.3);
   }
 }
 

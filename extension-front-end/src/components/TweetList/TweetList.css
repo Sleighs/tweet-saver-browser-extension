@@ -19,11 +19,12 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .search-input {
   flex: 1;
-  min-width: 200px;
+  /* min-width: 200px; */
   padding: 8px 16px;
   border: 1px solid var(--border-color, #cfd9de);
   border-radius: 20px;
@@ -99,6 +100,41 @@
   border-radius: 16px;
 }
 
+.refresh-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color, #cfd9de);
+  background: var(--background-color, #ffffff);
+  color: var(--text-color, #0f1419);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.refresh-button:hover {
+  background-color: var(--hover-color, #f7f7f7);
+  border-color: var(--primary-color, #1d9bf0);
+  color: var(--primary-color, #1d9bf0);
+}
+
+.refresh-button.refreshing {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Responsive design */
 @media (max-width: 600px) {
   .tweet-list-container {
@@ -107,12 +143,19 @@
 
   .search-and-filter {
     flex-direction: column;
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .search-input,
   .filter-select,
   .user-select {
     width: 100%;
+    box-sizing: border-box;
   }
 
   .sort-controls {

@@ -25,78 +25,149 @@
 */
 
 .tweet-saver--button-container {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: var(--tweet-action-button-size, 36px);
-  min-height: var(--tweet-action-button-size, 36px);
-  margin: 0 8px;
+  min-width: 34.75px;
+  min-height: 34.75px;
+  margin: 0;
 }
 
 .tweet-saver--save-tweet-button {
+  width: 34.75px;
+  height: 34.75px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
   cursor: pointer;
-  opacity: 0.4;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   position: relative;
-  overflow: hidden;
+  padding: 0;
+  margin: 0;
+}
+
+/* Remove all margin overrides */
+.tweet-saver--save-tweet-button[data-position],
+.tweet-saver--button-container[data-position] {
+  margin: 0;
+}
+
+.tweet-saver--hover-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  background: var(--background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 4px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 100px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.tweet-saver--hover-menu.show {
+  display: flex;
+}
+
+.tweet-saver--hover-menu::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: var(--background);
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tweet-saver--menu-item {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--text-color);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: background-color 0.2s ease;
+}
+
+.tweet-saver--menu-item:hover {
+  background-color: var(--hover-background);
+}
+
+.tweet-saver--menu-item.unsave {
+  color: var(--error-color);
+}
+
+.tweet-saver--menu-item.unsave:hover {
+  background-color: var(--error-background);
+}
+
+/* Update existing theme variables */
+.tweet-saver--save-tweet-button-light {
+  --background: #ffffff;
+  --border-color: #cfd9de;
+  --text-color: #0f1419;
+  --hover-background: rgba(15, 20, 25, 0.1);
+  --error-color: #f4212e;
+  --error-background: rgba(244, 33, 46, 0.1);
+}
+
+.tweet-saver--save-tweet-button-dark {
+  --background: #15202b;
+  --border-color: #38444d;
+  --text-color: #e7e9ea;
+  --hover-background: rgba(239, 243, 244, 0.1);
+  --error-color: #f4212e;
+  --error-background: rgba(244, 33, 46, 0.1);
 }
 
 /* Theme-specific base styles */
 .tweet-saver--save-tweet-button-light {
   background-color: transparent;
-  border: none;
 }
 
 .tweet-saver--save-tweet-button-dark {
   background-color: transparent;
-  border: none;
 }
 
 /* Saved state styles */
-.tweet-saver--save-tweet-button.saved {
-  opacity: 1;
-}
-
 .tweet-saver--save-tweet-button.saved .tweet-saver--icon {
   filter: invert(48%) sepia(98%) saturate(2252%) hue-rotate(179deg) brightness(98%) contrast(93%);
 }
 
 /* Theme-specific hover styles */
-.tweet-saver--save-tweet-button-light:hover,
-.tweet-saver--save-tweet-button-dark:hover,
+.tweet-saver--save-tweet-button:hover {
+  background-color: var(--hover-background);
+}
+
 .tweet-saver--save-tweet-button.saved:hover {
-  opacity: 1;
   background-color: rgba(29, 155, 240, 0.1);
-}
-
-/* Button positions */
-[role="group"] .tweet-saver--save-tweet-button {
-  margin: 0 4px;
-}
-
-[role="group"] .tweet-saver--save-tweet-button:first-child {
-  margin-left: 0;
-}
-
-[role="group"] .tweet-saver--save-tweet-button:last-child {
-  margin-right: 0;
 }
 
 /* Hover effects */
 .tweet-saver--save-tweet-button:hover {
-  opacity: 1;
-  background-color: rgba(29, 155, 240, 0.1);
+  background-color: var(--hover-background);
 }
 
 .tweet-saver--icon {
-  width: 18px;
-  height: 18px;
+  width: 18.75px;
+  height: 18.75px;
   object-fit: contain;
 }
 
@@ -106,9 +177,9 @@
   position: absolute;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle, rgba(29, 155, 240, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--hover-background) 0%, transparent 70%);
   transform: scale(0);
-  animation: splash 0.6s ease-out;
+  animation: splash 0.3s ease-out;
   border-radius: 50%;
 }
 
@@ -117,11 +188,8 @@
     transform: scale(0);
     opacity: 1;
   }
-  50% {
-    opacity: 0.7;
-  }
   100% {
-    transform: scale(2.5);
+    transform: scale(2);
     opacity: 0;
   }
 }
@@ -134,25 +202,6 @@ html[data-color-mode="dark"] .tweet-saver--save-tweet-button:hover {
 /* Light Theme */
 html[data-color-mode="light"] .tweet-saver--save-tweet-button:hover {
   background-color: rgba(15, 20, 25, 0.1);
-}
-
-/* Button Position Variants */
-.tweet-saver--save-tweet-button[data-position="start-of-actions"] {
-  margin-right: 8px;
-}
-
-.tweet-saver--save-tweet-button[data-position="end-of-actions"] {
-  margin-left: 8px;
-}
-
-.tweet-saver--save-tweet-button[data-position="after-like"],
-.tweet-saver--save-tweet-button[data-position="after-retweet"],
-.tweet-saver--save-tweet-button[data-position="after-bookmark"] {
-  margin-left: 4px;
-}
-
-.tweet-saver--save-tweet-button[data-position="before-bookmark"] {
-  margin-right: 4px;
 }
 
 /* Notification System */

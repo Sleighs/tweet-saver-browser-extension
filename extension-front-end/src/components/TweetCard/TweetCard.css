@@ -49,37 +49,112 @@
 
 .tweet-actions {
   display: flex;
-  gap: 8px;
   align-items: center;
+  gap: 8px;
+}
+
+.tweet-action-button {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color, #cfd9de);
+  background: var(--background-color, #ffffff);
+  color: var(--text-color, #0f1419);
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tweet-action-button:hover {
+  background: var(--hover-color, #f7f7f7);
+}
+
+.tweet-action-button.primary {
+  color: var(--primary-color, #1d9bf0);
+}
+
+.tweet-action-button.primary:hover {
+  background: var(--primary-color-light, rgba(29, 155, 240, 0.1));
+  border-color: var(--primary-color, #1d9bf0);
+}
+
+.tweet-action-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tweet-action-button.refresh svg {
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tweet-action-button.refresh.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.tweet-action-button.refresh.loading svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .view-on-twitter {
   color: var(--primary-color, #1d9bf0);
   text-decoration: none;
   font-size: 14px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  transition: background-color 0.2s ease;
+  font-weight: 500;
 }
 
 .view-on-twitter:hover {
-  background-color: var(--primary-color-light, rgba(29, 155, 240, 0.1));
+  text-decoration: underline;
 }
 
-.delete-tweet {
-  background: none;
-  border: none;
-  color: var(--text-secondary, #536471);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 4px 8px;
+.delete-button {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
+  background: var(--background-color, #ffffff);
+  border: 1px solid var(--border-color, #cfd9de);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
   transition: all 0.2s ease;
+  padding: 0;
 }
 
-.delete-tweet:hover {
-  color: var(--error-color, #f4212e);
-  background-color: var(--error-color-light, rgba(244, 33, 46, 0.1));
+.delete-button:hover {
+  background: var(--error-color-light, rgba(244, 33, 46, 0.1));
+  border-color: var(--error-color, #f4212e);
+}
+
+.delete-button:hover svg {
+  stroke: var(--error-color, #f4212e);
+}
+
+.delete-button svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--text-secondary, #536471);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.2s ease;
 }
 
 .tweet-content {
@@ -87,16 +162,17 @@
 }
 
 .tweet-text {
+  margin: 0;
   color: var(--text-color, #0f1419);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.5;
-  margin: 0 0 12px 0;
   white-space: pre-wrap;
 }
 
 .tweet-media-grid {
   display: grid;
   gap: 2px;
+  margin-top: 12px;
   border-radius: 16px;
   overflow: hidden;
 }
@@ -111,10 +187,7 @@
 
 .media-count-3 {
   grid-template-columns: repeat(2, 1fr);
-}
-
-.media-count-3 .tweet-media-item:first-child {
-  grid-column: 1 / -1;
+  grid-template-rows: repeat(2, 1fr);
 }
 
 .media-count-4 {
@@ -132,16 +205,12 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.tweet-media-item a:hover img {
-  transform: scale(1.05);
 }
 
 .tweet-video-container {
   position: relative;
-  cursor: pointer;
+  width: 100%;
+  height: 100%;
 }
 
 .video-thumbnail {
@@ -157,7 +226,7 @@
   transform: translate(-50%, -50%);
   width: 48px;
   height: 48px;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.5);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -170,9 +239,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-color, #cfd9de);
+  color: var(--text-secondary, #536471);
+  font-size: 14px;
 }
 
 .tweet-metrics {
@@ -180,14 +248,8 @@
   gap: 16px;
 }
 
-.tweet-metrics span {
-  color: var(--text-secondary, #536471);
-  font-size: 14px;
-}
-
 .tweet-time {
   color: var(--text-secondary, #536471);
-  font-size: 14px;
 }
 
 /* Dark theme */
@@ -199,6 +261,12 @@
     --text-secondary: #8b98a5;
     --hover-color: #1c2732;
     --primary-color-light: rgba(29, 155, 240, 0.1);
+    --error-color: #f4212e;
     --error-color-light: rgba(244, 33, 46, 0.1);
+  }
+
+  .delete-button {
+    --background-color: #15202b;
+    --border-color: #38444d;
   }
 } 

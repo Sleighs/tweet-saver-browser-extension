@@ -47,22 +47,206 @@
 }
 
 .options-panel {
-  padding: 20px;
+  width: 100%;
   max-width: 800px;
   margin: 0 auto;
+  padding: 0;
+  background-color: #ffffff;
+  color: #0f1419;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .options-header {
+  background: linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%);
+  padding: 1.5rem;
+  color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .options-header h1 {
   margin: 0;
-  font-size: 24px;
-  color: var(--text-color);
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.open-in-tab-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.open-in-tab-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.options-tabs {
+  background: #f7f9f9;
+  padding: 0.5rem 1rem;
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid #e1e8ed;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  color: #536471;
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+  background: rgba(15, 20, 25, 0.1);
+  color: #0f1419;
+}
+
+.tab-button.active {
+  background: #0f1419;
+  color: white;
+}
+
+.tab-icon {
+  font-size: 1.1rem;
+}
+
+.options-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.settings-section {
+  margin-bottom: 2rem;
+}
+
+.settings-section h2 {
+  color: #0f1419;
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.setting-group {
+  margin-bottom: 1.5rem;
+}
+
+.setting-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.setting-description {
+  color: #536471;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Delete button styling */
+.delete-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f7f9f9;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.delete-button:hover {
+  background: #fee2e2;
+}
+
+.delete-button svg {
+  width: 16px;
+  height: 16px;
+  stroke: #ef4444;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .options-panel {
+    background-color: #15202b;
+    color: #ffffff;
+  }
+
+  .options-header {
+    background: linear-gradient(135deg, #1d9bf0 0%, #1a8cd8 100%);
+  }
+
+  .options-tabs {
+    background: #192734;
+    border-bottom-color: #38444d;
+  }
+
+  .tab-button {
+    color: #8b98a5;
+  }
+
+  .tab-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+
+  .tab-button.active {
+    background: #ffffff;
+    color: #0f1419;
+  }
+
+  .settings-section h2 {
+    color: #ffffff;
+  }
+
+  .setting-description {
+    color: #8b98a5;
+  }
+
+  .delete-button {
+    background: #192734;
+  }
+
+  .delete-button:hover {
+    background: #fee2e2;
+  }
 }
 
 .save-button {
@@ -102,43 +286,6 @@
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-}
-
-.settings-section {
-  background-color: var(--background-color);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-}
-
-.settings-section h2 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
-  color: var(--text-color);
-}
-
-.setting-group {
-  margin-bottom: 24px;
-}
-
-.setting-group:last-child {
-  margin-bottom: 0;
-}
-
-.setting-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: var(--text-color);
-}
-
-.setting-description {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: var(--text-secondary);
 }
 
 .setting-label input[type="checkbox"] {
