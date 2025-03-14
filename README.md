@@ -107,3 +107,19 @@ For support, please open an issue in the GitHub repository or contact us at [you
 
 - Twitter for their platform
 - Contributors and users of Tweet Saver
+
+
+***
+# Tweet Saver 
+
+Tweet Saver adds a button to every post on X that saves the post. Each saved post is accessible in the extension icon.
+
+I made this extension to help make bookmarking tweets annd returning to previously viewed posts more accesible when switching between accounts. 
+
+## Installation
+- Download the zip at https://drive.google.com/file/d/14FcdoSPzIWffbULIGAl-uv72lI5kpOAe/view?usp=drive_link
+- Unzip
+- Load it as unpacked in your Chrome based browser (Chrome, Brave, Chromium). For anyone who wants to use it on Firefox, let me know and I'll help you install it.
+
+It's not yet published to the Chrome Web Store. Tweet Saver started as a personal project to make browsing X easier. If there's enough demand I'll make a production version ASAP.
+ 
