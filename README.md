@@ -1,23 +1,28 @@
 
 # Tweet Saver
 
-Tweet Saver is a browser extension that allows you to easily save and organize tweets for later reference. It seamlessly integrates with Twitter's interface to provide a smooth user experience for saving and managing tweets.
+Tweet Saver is a browser extension that allows you to easily save X posts for later reference. It seamlessly integrates with X's interface to provide a smooth user experience for saving and managing posts.
 
 ## Features
 
-- 🔄 Save tweets with one click
+- 🔄 Save X posts with one click
 - 🌓 Supports both light and dark themes
 - 💾 Local storage with browser sync
 - 🔍 Quick access to saved tweets
-- 🎨 Seamless integration with Twitter's UI
+- 🎨 Seamless integration with X's UI
 - 🔄 Account switching support
-- 🖼️ Optional photo URL saving
 
 ## Installation
 
+### Download Option 1
+- Download the zip at https://drive.google.com/file/d/14FcdoSPzIWffbULIGAl-uv72lI5kpOAe/view?usp=drive_link
+- Unzip
+- Load it as unpacked in your Chrome based browser (Chrome, Brave, Chromium). For anyone who wants to use it on Firefox, let me know and I'll help you install it.
+
+### Download Option 2
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/tweet-saver.git
+git clone https://github.com/sleighs/tweet-saver-browser-extension/extension
 ```
 
 2. Load the extension in Chrome:
@@ -27,7 +32,7 @@ git clone https://github.com/yourusername/tweet-saver.git
 
 ## Usage
 
-1. Navigate to Twitter (twitter.com)
+1. Navigate to X (X.com)
 2. Click the "+" button next to any tweet to save it
 3. Access your saved tweets through the extension popup
 4. Manage your saved tweets in the dashboard
@@ -37,10 +42,12 @@ git clone https://github.com/yourusername/tweet-saver.git
 The extension can be configured through the options page:
 
 - Enable/disable the extension
+- Automatically save posts
 - Choose storage type (local/sync)
 - Toggle photo URL saving
-- Switch between light/dark themes
+- Coming soon - Switch between light/dark themes
 - Enable/disable debug mode
+- Delete all saved posts
 
 ## Development
 
@@ -57,25 +64,6 @@ extension/
 ├── images/             # Extension icons and assets
 └── pages/
     └── options.html    # Options page
-```
-
-### Building
-
-1. Install dependencies:
-```bash
-npm install
-```
-
-2. Build the extension:
-```bash
-npm run build
-```
-
-### Testing
-
-Run the test suite:
-```bash
-npm test
 ```
 
 ## Contributing
@@ -96,10 +84,6 @@ npm test
 - [ ] Batch operations
 - [ ] API access
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## Support
 
 For support, please open an issue in the GitHub repository or contact us at [your-email].
@@ -118,11 +102,6 @@ For support, please open an issue in the GitHub repository or contact us at [you
 Tweet Saver adds a button to every post on X that saves the post. Each saved post is accessible in the extension icon.
 
 I made this extension to help make bookmarking tweets annd returning to previously viewed posts more accesible when switching between accounts. 
-
-## Installation
-- Download the zip at https://drive.google.com/file/d/14FcdoSPzIWffbULIGAl-uv72lI5kpOAe/view?usp=drive_link
-- Unzip
-- Load it as unpacked in your Chrome based browser (Chrome, Brave, Chromium). For anyone who wants to use it on Firefox, let me know and I'll help you install it.
 
 It's not yet published to the Chrome Web Store. Tweet Saver started as a personal project to make browsing X easier. If there's enough demand I'll make a production version ASAP.
  
