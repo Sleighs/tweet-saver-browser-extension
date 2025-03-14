@@ -1,45 +1,35 @@
-/*
-Features for Tweet Saver
-- Stay on page after switching accounts
-  - Detect account change
-- add right click support
-- Make observer more efficient
-  - Disconnect observer when not needed
+///* Welcome to Tweet Saver *///
 
-- make api 
+// Simple debug logging system
+const debug = {
+  enabled: true, // Default to true since debug mode is working
+  log: (message, ...args) => {
+    if (debug.enabled) {
+      console.log(`[Tweet Saver] ${message}`, ...args);
+    }
+  },
+  error: (message, error, ...args) => {
+    if (debug.enabled) {
+      console.error(`[Tweet Saver] ${message}:`, error, ...args);
+    }
+  },
+  warn: (message, ...args) => {
+    if (debug.enabled) {
+      console.warn(`[Tweet Saver] ${message}`, ...args);
+    }
+  }
+};
 
-- Make an animation for when a tweet is saved
-  - splash animation at cursor
-
-- Icon ideas
-  - disk
-  - book
-  - floppy disk
-  - cloud
-  - color gradient icon
-
-- Add theme options
-
-Front end features
-- Highlight selected tweet if tweet is found on current page
-- Make a place to save quick drafts (account switching benefit)
-- Show images
-
-Other
-- Add a web scraper
-  - Might be a cleaner way to get tweet data
-
-
-Bugs
-- 
-
-
-*/
-
-console.log('Tweet Saver is running...');
+// Export debug functions for use throughout the code
+const debugLog = debug.log;
+const debugError = debug.error;
+const debugWarn = debug.warn;
+const initializeDebugMode = (enabled) => {
+  debug.enabled = enabled;
+};
 
 const getColorScheme = () => {
-  const htmlElement = document.documentElement; //document.querySelector('html');
+  const htmlElement = document.documentElement;
   const colorScheme = getComputedStyle(htmlElement).getPropertyValue('color-scheme').trim();
 
   console.log('Color scheme:', colorScheme);
@@ -604,106 +594,23 @@ const addSaveButtonsToTweets = async () => {
             buttonElement.classList.add('saved');
           }
 
-          // Create hover menu
-          const hoverMenu = document.createElement('div');
-          hoverMenu.classList.add('tweet-saver--hover-menu', iconThemeClassName);
-
-          // Add menu items
-          if (isSaved) {
-            const updateButton = document.createElement('button');
-            updateButton.classList.add('tweet-saver--menu-item');
-            updateButton.innerHTML = `
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M4 4V9H9M20 20V15H15M20.49 9A9 9 0 0 0 5.64 5.64L4 9M19.95 15L18.36 18.36A9 9 0 0 1 3.51 15" 
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              Update info
-            `;
-            updateButton.addEventListener('click', async (event) => {
-              event.stopPropagation();
-              buttonElement.classList.add('tweet-saver--loading');
-              await saveNewTweet(tweet, tweetUrl);
-              buttonElement.classList.remove('tweet-saver--loading');
-            });
-            hoverMenu.appendChild(updateButton);
-
-            const unsaveButton = document.createElement('button');
-            unsaveButton.classList.add('tweet-saver--menu-item', 'unsave');
-            unsaveButton.innerHTML = `
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M18 6L6 18M6 6L18 18" 
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              Unsave
-            `;
-            unsaveButton.addEventListener('click', async (event) => {
-              event.stopPropagation();
-              buttonElement.classList.add('tweet-saver--loading');
-              await unsaveTweet(tweetUrl);
-              buttonElement.classList.remove('tweet-saver--loading', 'saved');
-            });
-            hoverMenu.appendChild(unsaveButton);
-          }
-          
           buttonElement.addEventListener('click', async (event) => {
             try {
               event.stopPropagation();
+              buttonElement.classList.add('tweet-saver--loading');
+              
               if (!buttonElement.classList.contains('saved')) {
-                buttonElement.classList.add('tweet-saver--loading');
                 // Save tweet
                 await saveNewTweet(tweet, null);
                 buttonElement.classList.add('saved');
-                
-                // Clear existing menu items first
-                hoverMenu.innerHTML = '';
-                
-                // Add menu items after saving
-                const updateButton = document.createElement('button');
-                updateButton.classList.add('tweet-saver--menu-item');
-                updateButton.innerHTML = `
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 4V9H9M20 20V15H15M20.49 9A9 9 0 0 0 5.64 5.64L4 9M19.95 15L18.36 18.36A9 9 0 0 1 3.51 15" 
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Update info
-                `;
-                updateButton.addEventListener('click', async (e) => {
-                  e.stopPropagation();
-                  buttonElement.classList.add('tweet-saver--loading');
-                  await saveNewTweet(tweet, tweetUrl);
-                  buttonElement.classList.remove('tweet-saver--loading');
-                  hoverMenu.classList.remove('show');
-                });
-                hoverMenu.appendChild(updateButton);
-
-                const unsaveButton = document.createElement('button');
-                unsaveButton.classList.add('tweet-saver--menu-item', 'unsave');
-                unsaveButton.innerHTML = `
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M18 6L6 18M6 6L18 18" 
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  Unsave
-                `;
-                unsaveButton.addEventListener('click', async (e) => {
-                  e.stopPropagation();
-                  buttonElement.classList.add('tweet-saver--loading');
-                  await unsaveTweet(tweetUrl);
-                  buttonElement.classList.remove('tweet-saver--loading', 'saved');
-                  hoverMenu.innerHTML = '';
-                  hoverMenu.classList.remove('show');
-                });
-                hoverMenu.appendChild(unsaveButton);
+                showNotification('Tweet saved successfully', 'success');
               } else {
-                // Toggle menu visibility for saved tweets
-                const allMenus = document.querySelectorAll('.tweet-saver--hover-menu');
-                allMenus.forEach(menu => {
-                  if (menu !== hoverMenu) {
-                    menu.classList.remove('show');
-                  }
-                });
-                hoverMenu.classList.toggle('show');
+                // Unsave tweet
+                await unsaveTweet(tweetUrl);
+                buttonElement.classList.remove('saved');
+                showNotification('Tweet removed from saved', 'info');
               }
+              
               showSplashEffect(buttonElement);
               buttonElement.classList.remove('tweet-saver--loading');
             } catch (err) {
@@ -731,7 +638,6 @@ const addSaveButtonsToTweets = async () => {
           buttonElement.appendChild(cloudIconElement);
           
           buttonContainer.appendChild(buttonElement);
-          buttonContainer.appendChild(hoverMenu);
           
           let bookmarkElement = tweet.querySelector('[data-testid="bookmark"]') || tweet.querySelector('[data-testid="removeBookmark"]');
           let parentElement = bookmarkElement?.parentNode || null;

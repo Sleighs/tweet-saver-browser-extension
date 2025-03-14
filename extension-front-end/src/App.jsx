@@ -103,18 +103,17 @@ const App = () => {
       <header className="app-header">
         <div className="header-content">
           <h1>Tweet Saver</h1>
-          {isPopup && (
+          {isPopup && ( 
             <button className="open-in-tab-button" onClick={handleOpenInTab}>
-              <span className="tab-icon">🔗</span>
-              Open in Tab
+              Open in Tab<span className="open-in-tab-icon">🔎</span> 
             </button>
-          )}
-        </div>
+         )}
+      </div>
         <nav className="app-tabs">
           {TABS.map(tab => (
             <button
               key={tab.id}
-              className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+              className={`app-header-tab ${activeTab === tab.id ? 'active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
               <span className="tab-icon">{tab.icon}</span>
@@ -127,7 +126,7 @@ const App = () => {
       {error && (
         <div className="error-message">
           {error}
-        </div>
+      </div>
       )}
 
       <main className="app-main">

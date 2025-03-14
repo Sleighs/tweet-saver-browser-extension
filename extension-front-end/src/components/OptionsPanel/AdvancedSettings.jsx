@@ -81,9 +81,9 @@ const AdvancedSettings = ({ settings, onSettingChange }) => {
         </p>
       </div>
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
-          <span>Custom CSS</span>
+          <span>Custom CSS (Coming soon)</span>
         </label>
         <textarea
           className="setting-textarea"
@@ -91,50 +91,54 @@ const AdvancedSettings = ({ settings, onSettingChange }) => {
           onChange={handleCustomCSSChange}
           placeholder="Enter custom CSS rules..."
           rows={4}
+          disabled={true}
         />
         <p className="setting-description">
-          Add custom CSS to modify the extension's appearance
+          Add custom CSS to modify the extension&apos;s appearance
         </p>
-      </div>
+      </div> */}
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
-          <span>Retry Attempts</span>
+          <span>Retry Attempts (Coming soon)</span>
           <input
             type="number"
             min="0"
             max="10"
             value={retryAttempts}
             onChange={handleRetryAttemptsChange}
+            disabled={true}
           />
         </label>
         <p className="setting-description">
           Number of times to retry failed operations (0-10)
         </p>
-      </div>
+      </div> */}
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
-          <span>Retry Delay (ms)</span>
+          <span>Retry Delay (ms) (Coming soon)</span>
           <input
             type="number"
             min="0"
             max="5000"
             value={retryDelay}
             onChange={handleRetryDelayChange}
+            disabled={true}
           />
         </label>
         <p className="setting-description">
           Delay between retry attempts (0-5000 milliseconds)
         </p>
-      </div>
+      </div> */}
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
-          <span>Custom API Endpoint</span>
+          <span>Custom API Endpoint (Coming soon)</span>
         </label>
         <input
           type="text"
+          disabled={true}
           className="setting-input"
           value={customEndpoint}
           onChange={handleCustomEndpointChange}
@@ -143,7 +147,7 @@ const AdvancedSettings = ({ settings, onSettingChange }) => {
         <p className="setting-description">
           Override the default API endpoint (advanced users only)
         </p>
-      </div>
+      </div> */}
 
       <div className="setting-group danger-zone">
         <h3>Danger Zone</h3>

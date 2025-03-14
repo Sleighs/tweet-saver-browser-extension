@@ -65,7 +65,7 @@ const OptionsPanel = () => {
 
   return (
     <div className="options-panel">
-      <header className="options-header">
+      {/* <header className="options-header">
         <h1>
           <span className="tab-icon">⚙️</span>
           Tweet Saver Settings
@@ -76,22 +76,22 @@ const OptionsPanel = () => {
             Open in Tab
           </button>
         </div>
-      </header>
+      </header> */}
 
       <nav className="options-tabs">
         <button
-          className={`tab-button ${activeTab === 'general' ? 'active' : ''}`}
+          className={`options-tab-button ${activeTab === 'general' ? 'active' : ''}`}
           onClick={() => setActiveTab('general')}
         >
           <span className="tab-icon">⚙️</span>
-          General
+          General Settings
         </button>
         <button
-          className={`tab-button ${activeTab === 'advanced' ? 'active' : ''}`}
+          className={`options-tab-button ${activeTab === 'advanced' ? 'active' : ''}`}
           onClick={() => setActiveTab('advanced')}
         >
           <span className="tab-icon">🔧</span>
-          Advanced
+          Advanced Settings
         </button>
       </nav>
 

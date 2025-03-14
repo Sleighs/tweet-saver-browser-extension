@@ -1,14 +1,15 @@
 .tweet-list-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 0 20px 20px 20px;
 }
 
 .tweet-list-controls {
   background: var(--background-color, #ffffff);
-  border: 1px solid var(--border-color, #cfd9de);
-  border-radius: 16px;
-  padding: 16px;
+  /* border-top: 1px solid var(--border-color, #cfd9de); */
+  /* border-bottom: 1px solid var(--border-color, #cfd9de); */
+  border-radius: 0;
+  padding: 20px;
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
@@ -42,6 +43,7 @@
 .filter-select,
 .user-select {
   padding: 8px 16px;
+  padding-right: 32px;
   border: 1px solid var(--border-color, #cfd9de);
   border-radius: 20px;
   font-size: 14px;
@@ -49,6 +51,11 @@
   background: var(--background-color, #ffffff);
   cursor: pointer;
   min-width: 120px;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
 }
 
 .sort-controls {
@@ -82,6 +89,7 @@
   color: var(--text-secondary, #536471);
   font-size: 14px;
   margin-bottom: 16px;
+  padding: 0 20px;
 }
 
 .tweet-list {
@@ -96,8 +104,8 @@
   color: var(--text-secondary, #536471);
   font-size: 16px;
   background: var(--background-color, #ffffff);
-  border: 1px solid var(--border-color, #cfd9de);
-  border-radius: 16px;
+  /* border: 1px solid var(--border-color, #cfd9de); */
+  border-radius: 0px;
 }
 
 .refresh-button {
@@ -138,7 +146,7 @@
 /* Responsive design */
 @media (max-width: 600px) {
   .tweet-list-container {
-    padding: 12px;
+    padding: 0;
   }
 
   .search-and-filter {

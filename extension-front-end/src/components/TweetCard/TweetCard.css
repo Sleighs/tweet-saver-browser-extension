@@ -1,14 +1,15 @@
 .tweet-card {
   background: var(--background-color, #ffffff);
-  border: 1px solid var(--border-color, #cfd9de);
-  border-radius: 16px;
+  border-top: 1px solid var(--border-color, #cfd9de);
+  border-bottom: 1px solid var(--border-color, #cfd9de);
+  border-radius: 0px;
   padding: 16px;
-  margin-bottom: 16px;
+  /* margin-bottom: 16px; */
   transition: background-color 0.2s ease;
 }
 
 .tweet-card:hover {
-  background-color: var(--hover-color, #f7f7f7);
+  /* background-color: var(--hover-color, #f7f7f7); */
 }
 
 .tweet-card-header {

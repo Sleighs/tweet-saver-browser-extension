@@ -143,7 +143,7 @@ const TweetCard = ({ tweet, onDelete, onRefresh }) => {
             <ExternalLinkIcon />
             View
           </button>
-          <button 
+          {/* <button 
             className={`tweet-action-button refresh ${isRefreshing ? 'loading' : ''}`}
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -151,7 +151,7 @@ const TweetCard = ({ tweet, onDelete, onRefresh }) => {
           >
             <RefreshIcon />
             {isRefreshing ? 'Updating' : 'Update'}
-          </button>
+          </button> */}
           <button 
             onClick={() => onDelete(tweet)} 
             className="delete-button"
