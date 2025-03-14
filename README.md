@@ -15,9 +15,12 @@ Tweet Saver is a browser extension that allows you to easily save X posts for la
 ## Installation
 
 ### Download Option 1
-- Download the zip at https://drive.google.com/file/d/14FcdoSPzIWffbULIGAl-uv72lI5kpOAe/view?usp=drive_link
-- Unzip
-- Load it as unpacked in your Chrome based browser (Chrome, Brave, Chromium). For anyone who wants to use it on Firefox, let me know and I'll help you install it.
+1. Download the zip at https://drive.google.com/file/d/14FcdoSPzIWffbULIGAl-uv72lI5kpOAe/view?usp=drive_link
+2. Unzip
+3. Load the extension in Chrome:
+   - Open Chrome and navigate to `chrome://extensions/`
+   - Enable "Developer mode" in the top right
+   - Click "Load unpacked" and select the unzipped folder
 
 ### Download Option 2
 1. Clone this repository:
