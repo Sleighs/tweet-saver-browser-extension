@@ -1,136 +1,152 @@
-import { useEffect, useState } from 'react'
-import { getSavedTweets, getTweetUrls } from './extension';
+/* global chrome */
+import { useState, useEffect } from 'react';
+import './App.css';
+import TweetList from './components/TweetList/TweetList';
+import OptionsPanel from './components/OptionsPanel/OptionsPanel';
+import SettingsService from './services/SettingsService';
 
-import './App.css'
-
-
-class Tweet {
-  constructor(tweet) {
-    const { username, handle, time, text, content, likes, replies, retweets, views, fullTweet, url, other, loggedInAccount } = tweet;
-
-    this.username = username;
-    this.handle = handle;
-    this.time = time;
-    this.text = text;
-    this.content = content;
-    this.likes = likes;
-    this.replies = replies;
-    this.retweets = retweets;
-    this.views = views;
-    this.fullTweet = fullTweet;
-    this.url = url;
-    this.other = other;
-    this.loggedInAccount = loggedInAccount;
+const TABS = [
+  {
+    id: 'tweets',
+    label: 'Saved Posts',
+    icon: '🐦',
+    component: TweetList
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: '⚙️',
+    component: OptionsPanel
   }
+];
 
-  async saveTweet() {
-    // Check if the tweet is already saved
-    if (savedTweets?.some(savedTweet => savedTweet.url === this.url)) {
-      console.log('Tweet already saved');
-    } else {
-      savedTweets.push(this);
+const App = () => {
+  const [activeTab, setActiveTab] = useState('tweets');
+  const [savedTweets, setSavedTweets] = useState([]);
+  const [settings, setSettings] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isPopup, setIsPopup] = useState(false);
 
-      if (isTweetUrl(this.url) && !isUrlSaved(this.url)){
-        savedUrls.push(this.url);
-      }
-            
-      // Save to browser storage
-      // await saveDataToStorage(savedUrls, savedTweets);
-      
-      // Save to local storage
-      // localStorage.setItem('tweet-saver--tweets', JSON.stringify(savedTweets));
-
-      console.log('Tweet saved:', this);
+  const loadTweets = async () => {
+    try {
+      const result = await chrome.storage.local.get('tweets');
+      const tweetsData = result.tweets ? JSON.parse(result.tweets) : [];
+      setSavedTweets(tweetsData);
+    } catch (err) {
+      console.error('Error loading tweets:', err);
+      setError('Failed to load tweets. Please try again.');
     }
-  }
-}
-
-function App() {
-  const [savedUrls, setSavedUrls] = useState(null);
-  const [savedTweets, setSavedTweets] = useState(null);
-  const [savedDrafts, setSavedDrafts] = useState(null);
-
-  const getData = async () => {
-    const tweetData = await getSavedTweets();
-    const urlData = await getTweetUrls();
-
-    if (tweetData) {
-      console.log('Tweet data:', tweetData);
-      setSavedTweets(JSON.parse(tweetData.tweets).reverse());
-    }
-
-    if (urlData) {
-      console.log('URL data:', urlData);
-      setSavedUrls(JSON.parse(urlData.tweetUrls).reverse());
-    }
-  }
+  };
 
   useEffect(() => {
-    getData();
+    // Check if we're in popup mode by checking window dimensions
+    setIsPopup(window.innerWidth < 800);
+    
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        // Load settings
+        const currentSettings = await SettingsService.getSettings();
+        setSettings(currentSettings);
+
+        // Load tweets
+        await loadTweets();
+      } catch (err) {
+        console.error('Error loading data:', err);
+        setError('Failed to load data. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
-  useEffect(() => {
-    console.log('Saved URLs from App.jsx:', savedUrls);
-  }, [savedUrls]);
+  const handleDeleteTweet = async (tweet) => {
+    try {
+      const updatedTweets = savedTweets.filter(t => t.url !== tweet.url);
+      setSavedTweets(updatedTweets);
+      await chrome.storage.local.set({
+        tweets: JSON.stringify(updatedTweets)
+      });
+    } catch (err) {
+      console.error('Error deleting tweet:', err);
+      setError('Failed to delete tweet. Please try again.');
+    }
+  };
+
+  const handleRefresh = async () => {
+    await loadTweets();
+  };
+
+  const handleOpenInTab = () => {
+    if (chrome.runtime?.id) {
+      chrome.tabs.create({
+        url: chrome.runtime.getURL('dist/index.html')
+      });
+      // If we're in the popup, close it
+      if (isPopup) {
+        window.close();
+      }
+    }
+  };
+
+  if (isLoading) {
+    return <div className="loading">Loading...</div>;
+  }
+
+  const ActiveComponent = TABS.find(tab => tab.id === activeTab)?.component;
 
   return (
-    <div>
-      <h1>Tweet Saver</h1>
-      <div>
-        <h2>Saved Tweets</h2>
-        {savedTweets === null && <p>No saved tweets</p>}
-        {savedTweets !== null && <div style={{display: 'none'}}>
-          <h3>Sort Options</h3>
-          <button>Date</button>
-          <button>Likes</button>
-          <button>Replies</button>
-          <button>Retweets</button>
-          <button>Views</button>
-        </div>}
-        <ul 
-          className="saved-tweets"
-        >
-          {savedTweets && (savedTweets.map((tweet, index) => (
-            <li key={index} className="tweet"
-              onClick={() => window.open(tweet?.url)}
+    <div className="app">
+      <header className="app-header">
+        <div className="header-content">
+          <h1>Tweet Saver</h1>
+          {isPopup && ( 
+            <button className="open-in-tab-button" onClick={handleOpenInTab}>
+              Open in Tab<span className="open-in-tab-icon">🔎</span> 
+            </button>
+         )}
+      </div>
+        <nav className="app-tabs">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              className={`app-header-tab ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
             >
-              {`${tweet?.handle}${tweet?.username ? '/' + tweet.username : ''} - ${tweet?.text}`}
-            </li>)
+              <span className="tab-icon">{tab.icon}</span>
+              {tab.label}
+            </button>
           ))}
-        </ul>
-      </div>
+        </nav>
+      </header>
 
-      <div style={{
-        display: 'none',
-      }}>
-        <h2>Saved URLs</h2>
-        {savedUrls === null && <p>No saved URLs</p>}
-        <p>
-          Last visited: {savedUrls &&               
-          <a href={savedUrls[0]} target="_blank" rel="noreferrer">{savedUrls[0]}</a>
-        }</p>
-        <ul style={{
-          listStyleType: 'none',
-        }}>
-          {savedUrls && (savedUrls.map((url, index) => (
-            <li key={index} className="">
-              <a href={url} target="_blank" rel="noreferrer">{url}</a>
-            </li>
-          )))}
-        </ul>
+      {error && (
+        <div className="error-message">
+          {error}
       </div>
+      )}
 
-      {/* text area for a quick draft */}
-      <div>
-        <textarea
-          style={{
-            width: '100%',
-          }}
-          placeholder="Enter tweet text here"
-        />
-      </div>
+      <main className="app-main">
+        {ActiveComponent && (
+          activeTab === 'tweets' ? (
+            <ActiveComponent
+              tweets={savedTweets}
+              onDeleteTweet={handleDeleteTweet}
+              onRefresh={handleRefresh}
+            />
+          ) : (
+            <ActiveComponent
+              settings={settings}
+              onSettingChange={(key, value) => setSettings({ ...settings, [key]: value })}
+            />
+          )
+        )}
+      </main>
     </div>
-  )
-}
+  );
+};
 
-export default App
+export default App;

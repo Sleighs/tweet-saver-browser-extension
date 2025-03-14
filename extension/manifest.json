@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tweet Saver",
-  "version": "0.2",
+  "version": "1.0.1",
   "description": "Additional features for X/Twitter",
   "action": {
     "default_icon": {
@@ -15,8 +15,24 @@
     "16": "favicon/favicon-16x16.png", 
     "32": "favicon/favicon-32x32.png"
   },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "images/cloud-icon-gray-128.png",
+        "images/cloud-icon-gray-128-2.png",
+        "images/cloud-fill-64.png",
+        "images/cloud-fill-64-2.png",
+        "images/plus-icon-dark.svg",
+        "images/plus-icon-light.svg",
+        "images/bookmark-icon.svg",
+        "images/bookmark-icon-2.svg"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "background": {
-    "service_worker": "scripts/background.js"
+    "service_worker": "scripts/background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
@@ -27,11 +43,15 @@
       "js": [
         "scripts/content.js"
       ],
-      "run_at": "document_idle"
+      "css": [
+        "styles/content.css"
+      ],
+      "run_at": "document_idle",
+      "type": "module"
     }
   ],
   "permissions": [
-    "storage", "activeTab", "scripting"
+    "storage", "activeTab", "scripting", "tabs"
   ],
   "options_page": "dist/index.html"
 }

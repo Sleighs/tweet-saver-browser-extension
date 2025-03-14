@@ -1,3 +1,42 @@
+// Fallback debug logging system
+const fallbackDebug = {
+  enabled: false,
+  log: (message, ...args) => {
+    if (fallbackDebug.enabled) {
+      console.log(`[Tweet Saver] ${message}`, ...args);
+    }
+  },
+  error: (message, error, ...args) => {
+    if (fallbackDebug.enabled) {
+      console.error(`[Tweet Saver] ${message}:`, error, ...args);
+    }
+  },
+  warn: (message, ...args) => {
+    if (fallbackDebug.enabled) {
+      console.warn(`[Tweet Saver] ${message}`, ...args);
+    }
+  }
+};
+
+// Initialize debug logging system
+let debugLog, debugError, debugWarn, initializeDebugMode;
+(async () => {
+  try {
+    const debugModule = await import('../utils/debug.js');
+    debugLog = debugModule.debugLog;
+    debugError = debugModule.debugError;
+    debugWarn = debugModule.debugWarn;
+    initializeDebugMode = debugModule.initializeDebugMode;
+  } catch (error) {
+    console.warn('Failed to import debug module, using fallback:', error);
+    debugLog = fallbackDebug.log;
+    debugError = fallbackDebug.error;
+    debugWarn = fallbackDebug.warn;
+    initializeDebugMode = (enabled) => {
+      fallbackDebug.enabled = enabled;
+    };
+  }
+})();
 
 const browser = chrome || browser;
 
@@ -6,6 +45,7 @@ const defaultOptions = {
   saveLastTweetEnabled: true,
   browserStorageType: 'local', // local or sync
   debugMode: false,
+  enablePhotoUrlSave: true, 
 };
 
 // Options stored in chrome.storage.sync
@@ -23,6 +63,7 @@ browser.runtime.onInstalled.addListener(() => {
       "saveLastTweetEnabled",
       "browserStorageType",
       "debugMode",
+      "enablePhotoUrlSave",
     ];
 
     function extractProperties(names, obj) {
@@ -35,15 +76,17 @@ browser.runtime.onInstalled.addListener(() => {
 
     if (result && result.options) {
       let newOptionObj = extractProperties(optionsList, result.options);
+      initializeDebugMode(newOptionObj.debugMode);
 
       browser.storage.sync.set({ options: newOptionObj })
         .then(() => {
-          console.log("Installed - set options", newOptionObj);
+          debugLog("Installed - set options", newOptionObj);
         });
     } else {
+      initializeDebugMode(defaultOptions.debugMode);
       browser.storage.sync.set({ options: defaultOptions })
         .then(() => {
-          console.log("Installed - default options", defaultOptions);
+          debugLog("Installed - default options", defaultOptions);
         });
     }
   });
@@ -132,12 +175,6 @@ async function updateIcon() {
 
 
 
-
-
-
-
-
-
 // On extension installation or update
 // browser.runtime.onInstalled.addListener(() => {
 //   // Get options from storage
@@ -184,8 +221,17 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'deleteAllTweets':
       console.log('deleteAllTweets');
       tweets = [];
+      tweetUrls = [];
       saveToStorage();
-      break
+      // Notify all tabs that tweets have been deleted
+      browser.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          browser.tabs.sendMessage(tab.id, { method: 'tweetsDeleted' }).catch(() => {
+            // Ignore errors for inactive tabs
+          });
+        });
+      });
+      break;
 
     case 'getTweetUrls':
       console.log('getTweetUrls:', tweetUrls);
