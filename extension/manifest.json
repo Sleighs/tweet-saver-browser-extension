@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tweet Saver",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Additional features for X/Twitter",
   "action": {
     "default_icon": {
@@ -18,6 +18,14 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "images/save-icons/plus-light.svg",
+        "images/save-icons/plus-dark.svg",
+        "images/save-icons/heart-light.svg",
+        "images/save-icons/heart-dark.svg",
+        "images/save-icons/star-light.svg",
+        "images/save-icons/star-dark.svg",
+        "images/save-icons/cloud-light.svg",
+        "images/save-icons/cloud-dark.svg",
         "images/cloud-icon-gray-128.png",
         "images/cloud-icon-gray-128-2.png",
         "images/cloud-fill-64.png",

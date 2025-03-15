@@ -26,14 +26,19 @@ const debugError = debug.error;
 const debugWarn = debug.warn;
 const initializeDebugMode = (enabled) => {
   debug.enabled = enabled;
+  if (enabled) {
+    console.log('Debug mode initialized:', enabled);
+  }
 };
 
 const getColorScheme = () => {
   const htmlElement = document.documentElement;
   const colorScheme = getComputedStyle(htmlElement).getPropertyValue('color-scheme').trim();
 
-  console.log('Color scheme:', colorScheme);
-  console.log('HTML Element:', htmlElement);
+  if (debugMode) {
+    console.log('Color scheme:', colorScheme);
+    console.log('HTML Element:', htmlElement);
+  }
 
   return colorScheme || 'dark';
 };
@@ -50,30 +55,52 @@ const browser = chrome || browser;
 let enableExtension = true;
 let saveLastTweetEnabled = true;
 let browserStorageType = 'local';
-let debugMode = true;
+let debugMode = false;
 let enablePhotoUrlSave = true;
 let styleTheme = getColorScheme();
+
+// Button icon paths
+const iconPaths = {
+  plus: {
+    light: '../images/save-icons/plus-light.svg',
+    dark: '../images/save-icons/plus-dark.svg'
+  },
+  heart: {
+    light: '../images/save-icons/heart-light.svg',
+    dark: '../images/save-icons/heart-dark.svg'
+  },
+  star: {
+    light: '../images/save-icons/star-light.svg',
+    dark: '../images/save-icons/star-dark.svg'
+  },
+  cloud: {
+    light: '../images/save-icons/cloud-light.svg',
+    dark: '../images/save-icons/cloud-dark.svg'
+  }
+};
 
 // Global settings object that will contain all settings
 let settings = {
   enableExtension: true,
   saveLastTweetEnabled: true,
   browserStorageType: 'local',
-  debugMode: true,
+  debugMode: false,
   enablePhotoUrlSave: true,
   styleTheme: styleTheme,
-  notificationsEnabled: true, // Default value for notifications
-  autoSave: false,  // Auto-save setting (OFF by default)
+  notificationsEnabled: true,
+  autoSave: false,
   saveDelay: 500,
   saveOnlyMedia: false,
-  saveTweetMetadata: true
+  saveTweetMetadata: true,
+  saveIconStyle: 'plus',
+  saveIconPosition: 'bottom'
 };
 
 let optionsState = {
   enableExtension: true,
   saveLastTweetEnabled: true,
   browserStorageType: 'local', // local or sync
-  debugMode: true,
+  debugMode: false,
   enablePhotoUrlSave: true, 
   styleTheme: styleTheme
 };
@@ -82,7 +109,7 @@ const defaultOptions = {
   enableExtension: true,
   saveLastTweetEnabled: true,
   browserStorageType: 'local',
-  debugMode: true,
+  debugMode: false,
   enablePhotoUrlSave: true,
   styleTheme: styleTheme
 };
@@ -95,14 +122,6 @@ const optionsList = [
   "enablePhotoUrlSave", 
   "styleTheme",
 ];
-
-
-// Button icon
-let btnIconUrl = '../images/cloud-icon-gray-128-2.png';
-let btnIconUrl2 = '../images/cloud-fill-64-2.png';
-let bookmarkIcon = '../images/bookmark-icon.svg';
-let plusIconDarkTheme = '../images/plus-icon-dark.svg';
-let plusIconLightTheme = '../images/plus-icon-light.svg';
 
 
 // Get initial page URL
@@ -503,8 +522,8 @@ const handleUrlChange = async (node) => {
     url = currentUrl;
 
     if (isTweetUrl(currentUrl)) {
-      // Check if auto-save is enabled
-      if (settings.autoSave) {
+      // Check if extension is enabled and auto-save is enabled
+      if (enableExtension && settings.autoSave) {
         // Auto-save the tweet if the setting is enabled
         if (debugMode) console.log('Auto-save is ON, saving tweet at:', currentUrl);
         
@@ -518,7 +537,7 @@ const handleUrlChange = async (node) => {
           await saveUrl(currentUrl);
         }
       } else {
-        if (debugMode) console.log('Auto-save is OFF, not saving tweet at:', currentUrl);
+        if (debugMode) console.log('Extension disabled or auto-save is OFF, not saving tweet at:', currentUrl);
       }
     }
   }
@@ -563,99 +582,169 @@ const unsaveTweet = async (tweetUrl) => {
   }
 };
 
-// Update the click handler in addSaveButtonsToTweets
-const addSaveButtonsToTweets = async () => {
+// Add this function before addSaveButtonsToTweets
+const getTweetUrl = (tweetElement) => {
   try {
-    if (!chrome.runtime?.id) {
-      console.log('Extension context invalidated - reloading page');
-      window.location.reload();
-      return;
+    // First try to find the link in the tweet's header
+    const headerLink = tweetElement.querySelector('[data-testid="User-Name"] a[href*="/status/"]');
+    if (headerLink) {
+      return headerLink.href;
     }
 
-    const tweets = document.querySelectorAll('article[data-testid="tweet"]');
-    const theme = detectTheme();
-    let iconThemeClassName = `tweet-saver--save-tweet-button-${theme}`;
+    // Then try to find any link with a status ID
+    const statusLink = tweetElement.querySelector('a[href*="/status/"]');
+    if (statusLink) {
+      return statusLink.href;
+    }
 
-    tweets.forEach(tweet => {
-      try {
-        if (!tweet.querySelector('.tweet-saver--save-tweet-button')) {
-          // Get tweet URL to check if it's saved
-          const links = Array.from(tweet.querySelectorAll('a'));
-          const statusLink = links.find(link => isTweetUrl(link.href, true));
-          const tweetUrl = statusLink?.href;
-          const isSaved = tweetUrl ? isUrlSaved(tweetUrl) : false;
+    // Finally, try to get the URL from the current page if we're on a tweet page
+    if (isTweetUrl(window.location.href)) {
+      return window.location.href;
+    }
 
-          const buttonContainer = document.createElement('div');
-          buttonContainer.classList.add('tweet-saver--button-container');
+    return null;
+  } catch (err) {
+    if (debugMode) console.error('Error getting tweet URL:', err);
+    return null;
+  }
+};
+
+// Update the addSaveButtonsToTweets function
+const addSaveButtonsToTweets = async () => {
+  // First, remove any duplicate buttons
+  document.querySelectorAll('.tweet-saver--button-container').forEach(container => {
+    const tweet = container.closest('article[data-testid="tweet"]');
+    if (tweet) {
+      const existingContainers = tweet.querySelectorAll('.tweet-saver--button-container');
+      if (existingContainers.length > 1) {
+        // Keep only the first container, remove others
+        for (let i = 1; i < existingContainers.length; i++) {
+          existingContainers[i].remove();
+        }
+      }
+    }
+  });
+
+  const tweets = document.querySelectorAll('article[data-testid="tweet"]:not(.tweet-saver--processed)');
+  const theme = getColorScheme();
+  
+  tweets.forEach(tweet => {
+    try {
+      // Skip if tweet already has a save button
+      if (tweet.querySelector('.tweet-saver--button-container')) {
+        tweet.classList.add('tweet-saver--processed');
+        return;
+      }
+
+      tweet.classList.add('tweet-saver--processed');
+      
+      const tweetUrl = getTweetUrl(tweet);
+      if (!tweetUrl) return;
+      
+      const buttonContainer = document.createElement('div');
+      buttonContainer.classList.add('tweet-saver--button-container');
+      
+      // Set position based on settings
+      buttonContainer.dataset.position = settings.saveIconPosition;
+      
+      const buttonElement = document.createElement('button');
+      buttonElement.classList.add('tweet-saver--save-tweet-button');
+      buttonElement.classList.add(`tweet-saver--save-tweet-button-${theme}`);
+      buttonElement.title = 'Save Tweet';
+      
+      if (savedUrls.includes(tweetUrl)) {
+        buttonElement.classList.add('saved');
+      }
+      
+      buttonElement.addEventListener('click', async (event) => {
+        try {
+          event.stopPropagation();
+          buttonElement.classList.add('tweet-saver--loading');
           
-          const buttonElement = document.createElement('div');
-          buttonElement.classList.add('tweet-saver--save-tweet-button', iconThemeClassName);
-          if (isSaved) {
+          if (!buttonElement.classList.contains('saved')) {
+            await saveNewTweet(tweet, null);
             buttonElement.classList.add('saved');
+            showNotification('Tweet saved successfully', 'success');
+          } else {
+            await unsaveTweet(tweetUrl);
+            buttonElement.classList.remove('saved');
+            showNotification('Tweet removed from saved', 'info');
           }
-
-          buttonElement.addEventListener('click', async (event) => {
-            try {
-              event.stopPropagation();
-              buttonElement.classList.add('tweet-saver--loading');
-              
-              if (!buttonElement.classList.contains('saved')) {
-                // Save tweet
-                await saveNewTweet(tweet, null);
-                buttonElement.classList.add('saved');
-                showNotification('Tweet saved successfully', 'success');
-              } else {
-                // Unsave tweet
-                await unsaveTweet(tweetUrl);
-                buttonElement.classList.remove('saved');
-                showNotification('Tweet removed from saved', 'info');
-              }
-              
-              showSplashEffect(buttonElement);
-              buttonElement.classList.remove('tweet-saver--loading');
-            } catch (err) {
-              if (debugMode) console.error('Error in save button click handler:', err);
-              buttonElement.classList.remove('tweet-saver--loading');
-              showNotification('Failed to update tweet', 'error');
-              if (!chrome.runtime?.id) {
-                window.location.reload();
-                return;
-              }
-            }
-          });
           
-          let iconElement = theme === 'dark' ? plusIconDarkTheme : plusIconLightTheme;
-          const iconUrl = chrome.runtime?.id ? chrome.runtime.getURL(iconElement) : null;
-          if (!iconUrl) {
-            if (debugMode) console.log('Extension context invalid while getting icon URL');
+          showSplashEffect(buttonElement);
+          buttonElement.classList.remove('tweet-saver--loading');
+        } catch (err) {
+          if (debugMode) console.error('Error in save button click handler:', err);
+          buttonElement.classList.remove('tweet-saver--loading');
+          showNotification('Failed to update tweet', 'error');
+          if (!chrome.runtime?.id) {
+            window.location.reload();
             return;
           }
-
-          const cloudIconElement = document.createElement('img');
-          cloudIconElement.src = iconUrl;
-          cloudIconElement.alt = 'Save';
-          cloudIconElement.classList.add('tweet-saver--icon');
-          buttonElement.appendChild(cloudIconElement);
-          
+        }
+      });
+      
+      // Get the appropriate icon based on settings and theme
+      const iconStyle = settings.saveIconStyle;
+      const iconPath = iconPaths[iconStyle][theme];
+      const iconUrl = chrome.runtime?.id ? chrome.runtime.getURL(iconPath) : null;
+      
+      if (!iconUrl) {
+        if (debugMode) console.log('Extension context invalid while getting icon URL');
+        return;
+      }
+      
+      const iconElement = document.createElement('img');
+      iconElement.src = iconUrl;
+      iconElement.alt = 'Save';
+      iconElement.classList.add('tweet-saver--icon');
+      buttonElement.appendChild(iconElement);
+      
+      // Insert button based on position setting
+      if (settings.saveIconPosition === 'top') {
+        const actionsTop = tweet.querySelector('[role="group"]');
+        if (actionsTop) {
           buttonContainer.appendChild(buttonElement);
-          
-          let bookmarkElement = tweet.querySelector('[data-testid="bookmark"]') || tweet.querySelector('[data-testid="removeBookmark"]');
-          let parentElement = bookmarkElement?.parentNode || null;
-          if (parentElement) {
-            parentElement.insertBefore(buttonContainer, bookmarkElement.nextSibling);
+          actionsTop.insertBefore(buttonContainer, actionsTop.firstChild);
+        }
+      } else {
+        // Find the action buttons group
+        const actionGroup = tweet.querySelector('[role="group"]');
+        if (!actionGroup) return;
+
+        // Find the bookmark button
+        const bookmarkButton = tweet.querySelector('[data-testid="bookmark"]');
+        if (!bookmarkButton) return;
+
+        // Find the share button
+        const shareButton = tweet.querySelector('[data-testid="share"]');
+        
+        // Create a wrapper div with the same structure as other buttons
+        const buttonWrapper = document.createElement('div');
+        buttonWrapper.setAttribute('class', 'css-175oi2r r-18u37iz r-1h0z5md r-13awgt0');
+        
+        // Add our button container to the wrapper
+        buttonContainer.appendChild(buttonElement);
+        buttonWrapper.appendChild(buttonContainer);
+
+        if (shareButton) {
+          // For replies, insert between bookmark and share
+          const shareWrapper = shareButton.closest('.css-175oi2r');
+          if (shareWrapper) {
+            shareWrapper.parentNode.insertBefore(buttonWrapper, shareWrapper);
+          }
+        } else {
+          // For regular tweets, insert after bookmark
+          const bookmarkWrapper = bookmarkButton.closest('.css-175oi2r');
+          if (bookmarkWrapper) {
+            bookmarkWrapper.parentNode.insertBefore(buttonWrapper, bookmarkWrapper.nextSibling);
           }
         }
-      } catch (err) {
-        if (debugMode) console.error('Error processing tweet:', err);
       }
-    });
-  } catch (err) {
-    if (debugMode) console.error('Error in addSaveButtonsToTweets:', err);
-    if (!chrome.runtime?.id) {
-      window.location.reload();
-      return;
+    } catch (err) {
+      if (debugMode) console.error('Error adding save button to tweet:', err);
     }
-  }
+  });
 };
 
 const showSplashEffect = (button) => {
@@ -729,6 +818,12 @@ const isTweetUrl = (urlToCheck, ignorePhotoUrl) => {
 
 // Observer to detect URL changes
 const detectUrlChange = async () => {
+  // Don't create observer if extension is disabled
+  if (!enableExtension) {
+    if (debugMode) console.log('Extension disabled, URL change detection disabled');
+    return;
+  }
+
   const observer = new MutationObserver((mutations) => {
     try {
       // Check if extension context is still valid
@@ -805,14 +900,14 @@ const initializeOptions = async () => {
       enableExtension = newOptionObj.enableExtension;
       saveLastTweetEnabled = newOptionObj.saveLastTweetEnabled;
       browserStorageType = newOptionObj.browserStorageType;
-      debugMode = true; //newOptionObj.debugMode;
+      debugMode = newOptionObj.debugMode ?? false;
       
       Object.assign(optionsState, newOptionObj);
     } else {
       enableExtension = defaultOptions.enableExtension;
       saveLastTweetEnabled = defaultOptions.saveLastTweetEnabled;
       browserStorageType = defaultOptions.browserStorageType;
-      debugMode = true;//defaultOptions.debugMode;
+      debugMode = defaultOptions.debugMode ?? false;
 
       Object.assign(optionsState, defaultOptions);
     }
@@ -858,11 +953,45 @@ const initializeOptions = async () => {
 /////// Initialization ///////
 
 (async function () {
-  await initializeOptions(); 
-  await getSavedData(); 
-  await handleUrlChange();
-  await addSaveButtonsToTweets();
-  await detectUrlChange();
+  try {
+    // Initialize debug mode first
+    initializeDebugMode(false);
+    
+    // Load settings and options
+    await initializeOptions();
+    
+    // Load saved data
+    await getSavedData();
+    
+    // Add save buttons to existing tweets
+    await addSaveButtonsToTweets();
+    
+    // Set up URL change detection
+    await detectUrlChange();
+    
+    // Set up a single mutation observer for new tweets
+    const observer = new MutationObserver((mutations) => {
+      if (enableExtension) {
+        // Debounce the addSaveButtonsToTweets call
+        if (observer.timeout) {
+          clearTimeout(observer.timeout);
+        }
+        observer.timeout = setTimeout(() => {
+          addSaveButtonsToTweets();
+        }, 100);
+      }
+    });
+    
+    // Start observing the document for new tweets
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    if (debugMode) console.log('Tweet Saver initialized successfully');
+  } catch (error) {
+    if (debugMode) console.error('Error initializing Tweet Saver:', error);
+  }
 })();
 
 function detectTheme() {
@@ -898,29 +1027,6 @@ function updateButtonStyle() {
     saveButton.style.border = '1px solid #cfd9de';
   }
 }
-
-// Update the observer to call addSaveButtonsToTweets directly
-const observer = new MutationObserver(() => {
-  addSaveButtonsToTweets();
-});
-
-// Start observing theme changes when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-  const mainElement = document.querySelector('main');
-  if (mainElement) {
-    observer.observe(mainElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-      subtree: true
-    });
-  }
-  
-  // Initial button addition
-  addSaveButtonsToTweets();
-});
-
-// Initial setup when script loads
-addSaveButtonsToTweets();
 
 // Notification System
 const showNotification = (message, type = 'info', duration = 3000) => {
@@ -964,12 +1070,32 @@ const showNotification = (message, type = 'info', duration = 3000) => {
 
 // Listen for messages from options panel
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Basic message handler for other potential needs
-  if (message && message.type === 'SETTINGS_UPDATED') {
-    // Refresh settings if they've been updated
-    initializeOptions();
-    sendResponse({ success: true });
-    return true;
+  if (message.type === 'SETTINGS_UPDATED') {
+    // Get all settings from sync storage
+    chrome.storage.sync.get(null, (result) => {
+      // Update settings object with values from storage
+      for (const key in result) {
+        if (key !== 'options' && key !== 'tweetUrls' && key !== 'tweets') {
+          settings[key] = result[key];
+        }
+      }
+      
+      // Update debug mode
+      debugMode = result.debugMode ?? false;
+      initializeDebugMode(debugMode);
+      
+      // Remove existing save buttons and re-add them with new settings
+      document.querySelectorAll('.tweet-saver--processed').forEach(tweet => {
+        tweet.classList.remove('tweet-saver--processed');
+        const buttonContainer = tweet.querySelector('.tweet-saver--button-container');
+        if (buttonContainer) {
+          buttonContainer.remove();
+        }
+      });
+      
+      // Re-add save buttons with new settings
+      addSaveButtonsToTweets();
+    });
   }
   
   sendResponse({ success: true });

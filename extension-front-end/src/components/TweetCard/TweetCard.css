@@ -3,7 +3,7 @@
   border-top: 1px solid var(--border-color, #cfd9de);
   border-bottom: 1px solid var(--border-color, #cfd9de);
   border-radius: 0px;
-  padding: 16px;
+  padding: 24px;
   /* margin-bottom: 16px; */
   transition: background-color 0.2s ease;
 }
@@ -271,3 +271,10 @@
     --border-color: #38444d;
   }
 } 
+
+@media (max-width: 600px) {
+  .tweet-card {
+    padding: 16px;
+  }
+}
+
