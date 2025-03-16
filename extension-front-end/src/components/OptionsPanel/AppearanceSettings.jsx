@@ -51,7 +51,7 @@ const AppearanceSettings = ({ settings, onSettingChange }) => {
     <div className="settings-section">
       <h2>Appearance Settings</h2>
       
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
           <span>Dark Mode</span>
           <input
@@ -63,9 +63,9 @@ const AppearanceSettings = ({ settings, onSettingChange }) => {
         <p className="setting-description">
           Enable dark mode for a more comfortable viewing experience in low-light conditions
         </p>
-      </div>
+      </div> */}
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
           <span>Font Size</span>
           <select value={fontSize} onChange={handleFontSizeChange}>
@@ -77,9 +77,9 @@ const AppearanceSettings = ({ settings, onSettingChange }) => {
         <p className="setting-description">
           Adjust the size of text throughout the extension
         </p>
-      </div>
+      </div> */}
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
           <span>Compact Mode</span>
           <input
@@ -91,14 +91,14 @@ const AppearanceSettings = ({ settings, onSettingChange }) => {
         <p className="setting-description">
           Display tweets in a more compact layout
         </p>
-      </div>
+      </div> */}
 
       <div className="setting-group">
         <label className="setting-label">
           <span>Save Icon Style</span>
           <select value={saveIconStyle} onChange={handleSaveIconStyleChange}>
             <option value="plus">Plus Sign</option>
-            <option value="heart">Heart</option>
+            {/* <option value="heart">Heart</option> */}
             <option value="star">Star</option>
             <option value="cloud">Cloud</option>
           </select>
@@ -113,7 +113,7 @@ const AppearanceSettings = ({ settings, onSettingChange }) => {
           <span>Save Icon Position</span>
           <select value={saveIconPosition} onChange={handleSaveIconPositionChange}>
             <option value="bottom">Bottom (Next to Bookmark)</option>
-            <option value="top">Top (Near Post Options)</option>
+            <option value="top" disabled={true}>Top (Near Post Options)</option>
           </select>
         </label>
         <p className="setting-description">

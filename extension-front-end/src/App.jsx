@@ -131,11 +131,11 @@ const App = () => {
     <div className="app">
       <header className="app-header">
         <div className="header-content">
-          <h1>Tweet Saver</h1>
+          <h1>X Post Saver</h1>
           <div className="header-controls">
             <div className="extension-toggle">
               <label className="toggle-label" htmlFor="extension-toggle">
-                {isEnabled ? 'Enabled' : 'Disabled'}
+                {isEnabled ? 'On' : 'Off'}
               </label>
               <button
                 id="extension-toggle"

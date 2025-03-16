@@ -192,7 +192,7 @@
 }
 
 /* Delete button styling */
-.delete-button {
+/* .delete-button {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -208,7 +208,7 @@
 
 .delete-button:hover {
   background: #fee2e2;
-}
+} */
 
 .delete-button svg {
   width: 16px;
@@ -266,10 +266,6 @@
 
   .delete-button {
     background: #192734;
-  }
-
-  .delete-button:hover {
-    background: #fee2e2;
   }
 }
 

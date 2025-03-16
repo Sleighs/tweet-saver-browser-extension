@@ -140,12 +140,7 @@
 }
 
 .delete-button:hover {
-  background: var(--error-color-light, rgba(244, 33, 46, 0.1));
-  border-color: var(--error-color, #f4212e);
-}
-
-.delete-button:hover svg {
-  stroke: var(--error-color, #f4212e);
+  background: var(--error-color, #f4212e) !important;
 }
 
 .delete-button svg {
@@ -218,6 +213,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  cursor: pointer;
 }
 
 .video-play-button {
@@ -266,10 +262,10 @@
     --error-color-light: rgba(244, 33, 46, 0.1);
   }
 
-  .delete-button {
+  /* .delete-button {
     --background-color: #15202b;
     --border-color: #38444d;
-  }
+  } */
 } 
 
 @media (max-width: 600px) {
