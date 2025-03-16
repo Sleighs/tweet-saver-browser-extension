@@ -12,7 +12,12 @@ const defaultSettings = {
   autoSave: false,
   saveDelay: 500,
   saveOnlyMedia: false,
-  saveTweetMetadata: true
+  saveTweetMetadata: true,
+  saveIconStyle: 'plus',
+  saveIconPosition: 'bottom',
+  darkMode: false,
+  fontSize: 'medium',
+  compactMode: false
 };
 
 // Mock storage for development

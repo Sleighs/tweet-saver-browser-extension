@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "Tweet Saver",
-  "version": "1.0.1",
-  "description": "Additional features for X/Twitter",
+  "name": "X Post Saver",
+  "version": "1.0.21",
+  "description": "An easy way to save posts on X",
   "action": {
     "default_icon": {
       "16": "favicon/favicon-16x16.png",
       "32": "favicon/favicon-32x32.png"
     },
-    "default_title": "Tweet Extension",
+    "default_title": "X Post Saver",
     "default_popup": "dist/index.html"
   },
   "icons": {
@@ -18,14 +18,14 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "images/cloud-icon-gray-128.png",
-        "images/cloud-icon-gray-128-2.png",
-        "images/cloud-fill-64.png",
-        "images/cloud-fill-64-2.png",
-        "images/plus-icon-dark.svg",
-        "images/plus-icon-light.svg",
-        "images/bookmark-icon.svg",
-        "images/bookmark-icon-2.svg"
+        "images/save-icons/plus-light.svg",
+        "images/save-icons/plus-dark.svg",
+        "images/save-icons/heart-light.svg",
+        "images/save-icons/heart-dark.svg",
+        "images/save-icons/star-light.svg",
+        "images/save-icons/star-dark.svg",
+        "images/save-icons/cloud-light.svg",
+        "images/save-icons/cloud-dark.svg"
       ],
       "matches": ["<all_urls>"]
     }

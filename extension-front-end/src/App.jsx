@@ -27,6 +27,7 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isPopup, setIsPopup] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(true);
 
   const loadTweets = async () => {
     try {
@@ -49,6 +50,7 @@ const App = () => {
         // Load settings
         const currentSettings = await SettingsService.getSettings();
         setSettings(currentSettings);
+        setIsEnabled(currentSettings.enableExtension);
 
         // Load tweets
         await loadTweets();
@@ -92,6 +94,33 @@ const App = () => {
     }
   };
 
+  const handleToggleExtension = async () => {
+    try {
+      const newEnabledState = !isEnabled;
+      setIsEnabled(newEnabledState);
+      
+      // Update settings in storage
+      const updatedSettings = {
+        ...settings,
+        enableExtension: newEnabledState
+      };
+      
+      await SettingsService.updateSettings(updatedSettings);
+      setSettings(updatedSettings);
+
+      // Notify content script
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        chrome.tabs.sendMessage(tab.id, {
+          type: 'SETTINGS_UPDATED'
+        });
+      }
+    } catch (err) {
+      console.error('Error toggling extension:', err);
+      setError('Failed to update extension state. Please try again.');
+    }
+  };
+
   if (isLoading) {
     return <div className="loading">Loading...</div>;
   }
@@ -102,13 +131,31 @@ const App = () => {
     <div className="app">
       <header className="app-header">
         <div className="header-content">
-          <h1>Tweet Saver</h1>
-          {isPopup && ( 
-            <button className="open-in-tab-button" onClick={handleOpenInTab}>
-              Open in Tab<span className="open-in-tab-icon">🔎</span> 
-            </button>
-         )}
-      </div>
+          <h1>X Post Saver</h1>
+          <div className="header-controls">
+            <div className="extension-toggle">
+              <label className="toggle-label" htmlFor="extension-toggle">
+                {isEnabled ? 'On' : 'Off'}
+              </label>
+              <button
+                id="extension-toggle"
+                className={`toggle-switch ${isEnabled ? 'enabled' : 'disabled'}`}
+                onClick={handleToggleExtension}
+                aria-label={`Extension is ${isEnabled ? 'enabled' : 'disabled'}`}
+                role="switch"
+                aria-checked={isEnabled}
+              >
+                <span className="toggle-track"></span>
+                <span className="toggle-thumb"></span>
+              </button>
+            </div>
+            {isPopup && ( 
+              <button className="open-in-tab-button" onClick={handleOpenInTab}>
+                Open in Tab<span className="open-in-tab-icon">🔎</span> 
+              </button>
+            )}
+          </div>
+        </div>
         <nav className="app-tabs">
           {TABS.map(tab => (
             <button
@@ -126,7 +173,7 @@ const App = () => {
       {error && (
         <div className="error-message">
           {error}
-      </div>
+        </div>
       )}
 
       <main className="app-main">

@@ -32,6 +32,17 @@
   min-width: 34.75px;
   min-height: 34.75px;
   margin: 0;
+  user-select: none;
+  transform: translateY(1px); /* Slight vertical adjustment to align with other buttons */
+}
+
+/* Position-specific styles */
+.tweet-saver--button-container[data-position="top"] {
+  margin-right: 24px; /* Increased spacing */
+}
+
+.tweet-saver--button-container[data-position="bottom"] {
+  margin-left: 24px; /* Increased spacing */
 }
 
 .tweet-saver--save-tweet-button {
@@ -47,12 +58,6 @@
   transition: all 0.15s ease;
   position: relative;
   padding: 0;
-  margin: 0;
-}
-
-/* Remove all margin overrides */
-.tweet-saver--save-tweet-button[data-position],
-.tweet-saver--button-container[data-position] {
   margin: 0;
 }
 
@@ -77,24 +82,65 @@
   background-color: transparent;
 }
 
-/* Saved state styles */
-.tweet-saver--save-tweet-button.saved .tweet-saver--icon {
-  filter: invert(48%) sepia(98%) saturate(2252%) hue-rotate(179deg) brightness(98%) contrast(93%);
+/* Icon styles */
+.tweet-saver--save-tweet-button img {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) saturate(100%) invert(45%) sepia(8%) saturate(825%) hue-rotate(182deg) brightness(92%) contrast(86%); /* Twitter gray */
+  transition: filter 0.2s ease;
+  /* transform: translateX(1px); */
 }
 
-/* Theme-specific hover styles */
+/* Hover effect - blue background and icon */
 .tweet-saver--save-tweet-button:hover {
-  background-color: var(--hover-background);
+  background-color: rgba(29, 155, 240, 0.1); /* Twitter blue with opacity */
 }
 
-.tweet-saver--save-tweet-button.saved:hover {
-  background-color: rgba(29, 155, 240, 0.1);
+.tweet-saver--save-tweet-button:hover img {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(98%) saturate(2252%) hue-rotate(179deg) brightness(98%) contrast(93%); /* Twitter blue */
 }
 
-.tweet-saver--icon {
-  width: 18.75px;
-  height: 18.75px;
-  object-fit: contain;
+/* Saved state - blue icon */
+.tweet-saver--save-tweet-button.saved img {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(98%) saturate(2252%) hue-rotate(179deg) brightness(98%) contrast(93%); /* Twitter blue */
+}
+
+/* Active/clicked state */
+.tweet-saver--save-tweet-button:active {
+  background-color: rgba(29, 155, 240, 0.2);
+  /* transform: scale(0.95); */ /* Commented out click animation */
+}
+
+/* Icon-specific styles */
+.tweet-saver--save-tweet-button[data-icon-style="heart"] .tweet-saver--icon {
+  transform: scale(1.1);
+}
+
+.tweet-saver--save-tweet-button[data-icon-style="star"] .tweet-saver--icon {
+  transform: scale(1.2);
+}
+
+.tweet-saver--save-tweet-button[data-icon-style="cloud"] .tweet-saver--icon {
+  transform: scale(1.1);
+}
+
+/* Loading state */
+.tweet-saver--save-tweet-button.tweet-saver--loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.tweet-saver--save-tweet-button.tweet-saver--loading .tweet-saver--icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Splash effect animation */
@@ -118,16 +164,6 @@
     transform: scale(2);
     opacity: 0;
   }
-}
-
-/* Dark Theme */
-html[data-color-mode="dark"] .tweet-saver--save-tweet-button:hover {
-  background-color: rgba(239, 243, 244, 0.1);
-}
-
-/* Light Theme */
-html[data-color-mode="light"] .tweet-saver--save-tweet-button:hover {
-  background-color: rgba(15, 20, 25, 0.1);
 }
 
 /* Notification System */

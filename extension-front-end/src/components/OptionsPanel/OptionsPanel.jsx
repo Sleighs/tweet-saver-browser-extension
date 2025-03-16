@@ -4,6 +4,7 @@ import './OptionsPanel.css';
 import SettingsService from '../../services/SettingsService';
 import GeneralSettings from './GeneralSettings';
 import AdvancedSettings from './AdvancedSettings';
+import AppearanceSettings from './AppearanceSettings';
 
 const OptionsPanel = () => {
   const [activeTab, setActiveTab] = useState('general');
@@ -17,7 +18,12 @@ const OptionsPanel = () => {
     customCSS: '',
     retryAttempts: 3,
     retryDelay: 1000,
-    customEndpoint: ''
+    customEndpoint: '',
+    darkMode: false,
+    fontSize: 'medium',
+    compactMode: false,
+    saveIconStyle: 'plus',
+    saveIconPosition: 'bottom'
   });
 
   useEffect(() => {
@@ -65,40 +71,38 @@ const OptionsPanel = () => {
 
   return (
     <div className="options-panel">
-      {/* <header className="options-header">
-        <h1>
-          <span className="tab-icon">⚙️</span>
-          Tweet Saver Settings
-        </h1>
-        <div className="header-actions">
-          <button className="open-in-tab-button" onClick={handleOpenInTab}>
-            <span className="tab-icon">🔗</span>
-            Open in Tab
-          </button>
-        </div>
-      </header> */}
-
       <nav className="options-tabs">
         <button
           className={`options-tab-button ${activeTab === 'general' ? 'active' : ''}`}
           onClick={() => setActiveTab('general')}
         >
           <span className="tab-icon">⚙️</span>
-          General Settings
+          General
+        </button>
+        <button
+          className={`options-tab-button ${activeTab === 'appearance' ? 'active' : ''}`}
+          onClick={() => setActiveTab('appearance')}
+        >
+          <span className="tab-icon">🎨</span>
+          Appearance
         </button>
         <button
           className={`options-tab-button ${activeTab === 'advanced' ? 'active' : ''}`}
           onClick={() => setActiveTab('advanced')}
         >
           <span className="tab-icon">🔧</span>
-          Advanced Settings
+          Advanced
         </button>
       </nav>
 
       <main className="options-content">
-        {activeTab === 'general' ? (
+        {activeTab === 'general' && (
           <GeneralSettings settings={settings} onSettingChange={handleSettingChange} />
-        ) : (
+        )}
+        {activeTab === 'appearance' && (
+          <AppearanceSettings settings={settings} onSettingChange={handleSettingChange} />
+        )}
+        {activeTab === 'advanced' && (
           <AdvancedSettings settings={settings} onSettingChange={handleSettingChange} />
         )}
       </main>

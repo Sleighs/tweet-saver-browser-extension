@@ -216,7 +216,7 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh }) => {
             className={`sort-button ${sortBy === 'username' ? 'active' : ''}`}
             onClick={() => handleSortChange('username')}
           >
-            User {sortBy === 'username' && (sortOrder === 'desc' ? '↓' : '↑')}
+            User {sortBy === 'username' && (sortOrder === 'desc' ? 'A-Z ↓' : 'Z-A ↑')}
           </button>
         </div>
       </div>

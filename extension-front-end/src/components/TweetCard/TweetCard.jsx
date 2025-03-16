@@ -171,11 +171,12 @@ const TweetCard = ({ tweet, onDelete, onRefresh }) => {
               <div key={index} className="tweet-media-item">
                 {media.type === 'image' ? (
                   <a 
-                    href={media.originalUrl} 
+                    href={url} 
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
                     <img 
+                      //onClick={() => window.open(media.originalUrl, '_blank')}
                       src={media.url} 
                       alt={media.alt || 'Tweet image'} 
                       loading="lazy"
@@ -187,6 +188,7 @@ const TweetCard = ({ tweet, onDelete, onRefresh }) => {
                       src={media.thumbnailUrl} 
                       alt={media.alt || 'Video thumbnail'} 
                       className="video-thumbnail"
+                      onClick={() => window.open(url, '_blank')}
                     />
                     <div className="video-play-button">▶</div>
                   </div>

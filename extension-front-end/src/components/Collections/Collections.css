@@ -1,0 +1,132 @@
+.collections-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.collections-create {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.collections-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.collections-create-button {
+  padding: 8px 16px;
+  background-color: #1da1f2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.collections-create-button:hover {
+  background-color: #1991db;
+}
+
+.collections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.collections-card {
+  border: 1px solid #e1e8ed;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: white;
+}
+
+.collections-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.collections-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #14171a;
+}
+
+.collections-delete-button {
+  padding: 6px 12px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.collections-delete-button:hover {
+  background-color: #cc0000;
+}
+
+.collections-tweets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.collections-tweet {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.collections-tweet span {
+  flex: 1;
+  margin-right: 12px;
+  font-size: 14px;
+  color: #14171a;
+}
+
+.collections-remove-button {
+  padding: 4px 8px;
+  background-color: #e1e8ed;
+  color: #657786;
+  border: none;
+  border-radius: 9990px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.collections-remove-button:hover {
+  background-color: #ccd6dd;
+}
+
+.collections-add-section {
+  margin-top: 16px;
+}
+
+.collections-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+}
+
+.collections-error {
+  color: #ff4444;
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: #fff5f5;
+  border-radius: 4px;
+  font-size: 14px;
+}
