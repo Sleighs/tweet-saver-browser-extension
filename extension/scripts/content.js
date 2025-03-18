@@ -54,7 +54,7 @@ const browser = chrome || browser;
 // Options
 let enableExtension = true;
 let saveLastTweetEnabled = true;
-let browserStorageType = 'local';
+let browserStorageType = 'sync';
 let debugMode = false;
 let enablePhotoUrlSave = true;
 let styleTheme = getColorScheme();
@@ -96,7 +96,7 @@ const initializeIconUrls = () => {
 let settings = {
   enableExtension: true,
   saveLastTweetEnabled: true,
-  browserStorageType: 'local',
+  browserStorageType: 'sync',
   debugMode: false,
   enablePhotoUrlSave: true,
   styleTheme: styleTheme,
@@ -106,13 +106,14 @@ let settings = {
   saveOnlyMedia: false,
   saveTweetMetadata: true,
   saveIconStyle: 'plus',
-  saveIconPosition: 'bottom'
+  saveIconPosition: 'bottom',
+  storageType: 'sync'
 };
 
 let optionsState = {
   enableExtension: true,
   saveLastTweetEnabled: true,
-  browserStorageType: 'local', // local or sync
+  browserStorageType: 'sync', // local or sync
   debugMode: false,
   enablePhotoUrlSave: true, 
   styleTheme: styleTheme
@@ -121,7 +122,7 @@ let optionsState = {
 const defaultOptions = {
   enableExtension: true,
   saveLastTweetEnabled: true,
-  browserStorageType: 'local',
+  browserStorageType: 'sync',
   debugMode: false,
   enablePhotoUrlSave: true,
   styleTheme: styleTheme
@@ -192,6 +193,7 @@ class Tweet {
     this.profileImageUrl = profileImageUrl;
     this.savedAt = new Date().toISOString();
     this.lastUpdated = new Date().toISOString();
+    this.storageType = settings.storageType; // Add storageType from current settings
   }
 
   async saveTweet() {
@@ -226,6 +228,7 @@ class Tweet {
         const originalSavedAt = savedTweets[existingTweetIndex].savedAt;
         this.savedAt = originalSavedAt;
         this.lastUpdated = new Date().toISOString();
+        this.storageType = settings.storageType; // Update storage type when updating tweet
         savedTweets[existingTweetIndex] = this;
         if (debugMode) console.log('Tweet updated:', this.url);
       } else {
@@ -254,45 +257,22 @@ class Tweet {
 //////// Main functions ///////
 
 const getSavedData = async () => {
-  // Directly get data from local storage
   try {
-    if (browserStorageType === 'sync') {
-      await chrome.storage.sync.get([
-        'tweetUrls', 
-        'tweets'
-      ], (result) => {
-        // if (chrome.runtime.lastError) {
-        //   console.error('Error:', chrome.runtime.lastError);
-        // } else {
-          if (debugMode) console.log('getSavedData - Storage data:', {
-            tweetUrls: JSON.parse(result.tweetUrls), tweets: JSON.parse(result.tweets)
-          });
-          const { tweetUrls, tweets } = result;
-          let tweetUrlData = JSON.parse(tweetUrls);
-          let tweetData = JSON.parse(tweets);
-          savedTweets = [...tweetData];
-          savedUrls = [...tweetUrlData];
-        // }
-      });
-    } else if (browserStorageType === 'local') {
-      await chrome.storage.local.get([
-        'tweetUrls', 
-        'tweets'
-      ], (result) => {
-        // if (chrome.runtime.lastError) {
-        //   console.error('Error:', chrome.runtime.lastError);
-        // } else {
-          if (debugMode) {
-            // console.log('getSavedData - Storage data:', { tweetUrls: JSON.parse(result.tweetUrls), tweets: JSON.parse(result.tweets)});
-          }
-          const { tweetUrls, tweets } = result;
-          let tweetUrlData = JSON.parse(tweetUrls);
-          let tweetData = JSON.parse(tweets);
-          savedTweets = [...tweetData];
-          savedUrls = [...tweetUrlData];
-        // }
-      });
-    }
+    const storageArea = settings.storageType === 'sync' ? chrome.storage.sync : chrome.storage.local;
+    
+    await storageArea.get([
+      'tweetUrls', 
+      'tweets'
+    ], (result) => {
+      if (debugMode) {
+        console.log('getSavedData - Storage data from ' + settings.storageType + ' storage:', result);
+      }
+      const { tweetUrls, tweets } = result;
+      let tweetUrlData = JSON.parse(tweetUrls || '[]');
+      let tweetData = JSON.parse(tweets || '[]');
+      savedTweets = [...tweetData];
+      savedUrls = [...tweetUrlData];
+    });
   } catch (error) {
     if (debugMode) console.error('getSavedData - Error getting saved data:', error);
   }
@@ -300,25 +280,14 @@ const getSavedData = async () => {
 
 const saveDataToStorage = async (tweetUrls, tweets) => {
   try {
-    if (browserStorageType === 'sync') {
-      await chrome.storage.sync.set({
-        tweetUrls: JSON.stringify(tweetUrls),
-        tweets: JSON.stringify(tweets),
-      }, function() {
-        if (debugMode) console.log('Data saved successfully:', { tweetUrls, tweets });
-      });
-    } else if (browserStorageType === 'local') {
-      await chrome.storage.local.set({ 
-        tweetUrls: JSON.stringify(tweetUrls),
-        tweets: JSON.stringify(tweets),
-      }, function() {
-        // if (chrome.runtime.lastError) {
-        //   console.error('Error saving data:', chrome.runtime.lastError);
-        // } else {
-          if (debugMode) console.log('Data saved successfully:', { tweetUrls, tweets });
-        // }
-      });
-    }
+    const storageArea = settings.storageType === 'sync' ? chrome.storage.sync : chrome.storage.local;
+    
+    await storageArea.set({ 
+      tweetUrls: JSON.stringify(tweetUrls),
+      tweets: JSON.stringify(tweets),
+    }, function() {
+      if (debugMode) console.log('Data saved successfully to ' + settings.storageType + ' storage:', { tweetUrls, tweets });
+    });
   } catch (error) {
     if (debugMode) console.error('saveDataToStorage - Error saving data:', error, { tweetUrls, tweets });
   }
@@ -415,16 +384,6 @@ const saveNewTweet = async (tweetElement, currentUrl) => {
       let tweetBookmarkCount = parseNumericValue(tweetElement.querySelector('[data-testid="bookmark"]')?.innerText || '0');
       let username = tweetElement.querySelector('[data-testid="AppTabBar_Profile_Link"]')?.innerText || '';
 
-      // Log the values for debugging
-      if (debugMode) {
-        console.log('Tweet engagement stats:', {
-          replies: tweetReplies,
-          retweets: tweetRetweets,
-          likes: tweetLikes,
-          bookmarks: tweetBookmarkCount
-        });
-      }
-
       // Get profile image
       const profileImageUrl = tweetElement.querySelector('img[src*="profile_images"]')?.src;
 
@@ -458,18 +417,8 @@ const saveNewTweet = async (tweetElement, currentUrl) => {
         }
       });
 
-      // Get tweet URL more reliably
-      const getUrl = () => {
-        if (!currentUrl) {
-          const links = Array.from(tweetElement.querySelectorAll('a'));
-          const statusLink = links.find(link => isTweetUrl(link.href, true));
-          return statusLink?.href;
-        }
-        return currentUrl;
-      };
-
       // Get tweet URL
-      const tweetUrl = getUrl();
+      const tweetUrl = currentUrl || getTweetUrl(tweetElement);
       if (!tweetUrl) {
         if (debugMode) console.log('Could not find tweet URL');
         return;
@@ -1058,12 +1007,19 @@ const showNotification = (message, type = 'info', duration = 3000) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'SETTINGS_UPDATED') {
     // Get all settings from sync storage
-    chrome.storage.sync.get(null, (result) => {
+    chrome.storage.sync.get(null, async (result) => {
+      const oldStorageType = settings.storageType;
+      
       // Update settings object with values from storage
       for (const key in result) {
         if (key !== 'options' && key !== 'tweetUrls' && key !== 'tweets') {
           settings[key] = result[key];
         }
+      }
+      
+      // If storage type changed, transfer data
+      if (oldStorageType !== settings.storageType) {
+        await transferStorageData(oldStorageType, settings.storageType);
       }
       
       // Update debug mode
@@ -1108,3 +1064,122 @@ document.addEventListener('click', (event) => {
     allMenus.forEach(menu => menu.classList.remove('show'));
   }
 });
+
+// Add function to transfer data between storage types
+const transferStorageData = async (fromType, toType) => {
+  try {
+    const fromStorage = fromType === 'sync' ? chrome.storage.sync : chrome.storage.local;
+    const toStorage = toType === 'sync' ? chrome.storage.sync : chrome.storage.local;
+
+    // Get data from old storage
+    fromStorage.get(['tweetUrls', 'tweets'], async (result) => {
+      if (result.tweetUrls || result.tweets) {
+        // Save to new storage
+        await toStorage.set({
+          tweetUrls: result.tweetUrls || '[]',
+          tweets: result.tweets || '[]'
+        });
+
+        // Clear old storage
+        await fromStorage.remove(['tweetUrls', 'tweets']);
+
+        if (debugMode) console.log(`Data transferred from ${fromType} to ${toType} storage`);
+        showNotification(`Tweets transferred to ${toType} storage successfully`, 'success');
+      }
+    });
+  } catch (error) {
+    if (debugMode) console.error('Error transferring data between storage types:', error);
+    showNotification('Error transferring tweets between storage types', 'error');
+  }
+};
+
+// Save tweet to storage
+async function saveTweet(tweet) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'SAVE_TWEET',
+      tweet
+    });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    showNotification('Tweet saved successfully', 'success');
+    return true;
+  } catch (error) {
+    console.error('Error saving tweet:', error);
+    showNotification('Failed to save tweet', 'error');
+    return false;
+  }
+}
+
+// Delete tweet from storage
+async function deleteTweet(tweetUrl) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'DELETE_TWEET',
+      tweetUrl
+    });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    showNotification('Tweet deleted successfully', 'success');
+    return true;
+  } catch (error) {
+    console.error('Error deleting tweet:', error);
+    showNotification('Failed to delete tweet', 'error');
+    return false;
+  }
+}
+
+// Get all saved tweets
+async function getAllTweets() {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'GET_ALL_TWEETS'
+    });
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+
+    return response.tweets;
+  } catch (error) {
+    console.error('Error getting tweets:', error);
+    return [];
+  }
+}
+
+// Listen for storage type changes
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'STORAGE_TYPE_CHANGED') {
+    // Refresh the UI to reflect the new storage type
+    refreshTweetButtons();
+  }
+});
+
+// Function to refresh tweet buttons
+async function refreshTweetButtons() {
+  const tweets = await getAllTweets();
+  const savedUrls = tweets.map(tweet => tweet.url);
+  
+  // Update all tweet buttons to reflect current save state
+  document.querySelectorAll('.tweet-saver--button').forEach(button => {
+    const tweetElement = button.closest('[data-testid="tweet"]');
+    if (tweetElement) {
+      const tweetUrl = getTweetUrl(tweetElement);
+      const isSaved = savedUrls.includes(tweetUrl);
+      updateButtonState(button, isSaved);
+    }
+  });
+}
+
+// Function to update button state
+function updateButtonState(button, isSaved) {
+  button.classList.toggle('saved', isSaved);
+  button.title = isSaved ? 'Unsave Tweet' : 'Save Tweet';
+  button.innerHTML = isSaved ? '✓' : '+';
+}

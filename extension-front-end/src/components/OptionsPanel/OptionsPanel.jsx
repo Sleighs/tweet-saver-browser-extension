@@ -5,6 +5,7 @@ import SettingsService from '../../services/SettingsService';
 import GeneralSettings from './GeneralSettings';
 import AdvancedSettings from './AdvancedSettings';
 import AppearanceSettings from './AppearanceSettings';
+import StorageSettings from './StorageSettings';
 
 const OptionsPanel = () => {
   const [activeTab, setActiveTab] = useState('general');
@@ -23,7 +24,13 @@ const OptionsPanel = () => {
     fontSize: 'medium',
     compactMode: false,
     saveIconStyle: 'plus',
-    saveIconPosition: 'bottom'
+    saveIconPosition: 'bottom',
+    maxTweets: 1000,
+    autoCleanup: false,
+    cleanupThreshold: 900,
+    backupEnabled: false,
+    backupFrequency: 'weekly',
+    storageType: 'sync'
   });
 
   useEffect(() => {
@@ -80,6 +87,13 @@ const OptionsPanel = () => {
           General
         </button>
         <button
+          className={`options-tab-button ${activeTab === 'storage' ? 'active' : ''}`}
+          onClick={() => setActiveTab('storage')}
+        >
+          <span className="tab-icon">💾</span>
+          Storage
+        </button>
+        <button
           className={`options-tab-button ${activeTab === 'appearance' ? 'active' : ''}`}
           onClick={() => setActiveTab('appearance')}
         >
@@ -98,6 +112,9 @@ const OptionsPanel = () => {
       <main className="options-content">
         {activeTab === 'general' && (
           <GeneralSettings settings={settings} onSettingChange={handleSettingChange} />
+        )}
+        {activeTab === 'storage' && (
+          <StorageSettings settings={settings} onSettingChange={handleSettingChange} />
         )}
         {activeTab === 'appearance' && (
           <AppearanceSettings settings={settings} onSettingChange={handleSettingChange} />

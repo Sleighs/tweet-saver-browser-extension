@@ -6,14 +6,14 @@ const AppearanceSettings = ({ settings, onSettingChange }) => {
   const [isDarkMode, setIsDarkMode] = useState(settings.darkMode ?? false);
   const [fontSize, setFontSize] = useState(settings.fontSize ?? 'medium');
   const [compactMode, setCompactMode] = useState(settings.compactMode ?? false);
-  const [saveIconStyle, setSaveIconStyle] = useState(settings.saveIconStyle ?? 'plus');
+  const [saveIconStyle, setSaveIconStyle] = useState(settings.saveIconStyle ?? 'star');
   const [saveIconPosition, setSaveIconPosition] = useState(settings.saveIconPosition ?? 'bottom');
 
   useEffect(() => {
     setIsDarkMode(settings.darkMode ?? false);
     setFontSize(settings.fontSize ?? 'medium');
     setCompactMode(settings.compactMode ?? false);
-    setSaveIconStyle(settings.saveIconStyle ?? 'plus');
+    setSaveIconStyle(settings.saveIconStyle ?? 'star');
     setSaveIconPosition(settings.saveIconPosition ?? 'bottom');
   }, [settings]);
 
@@ -97,10 +97,10 @@ const AppearanceSettings = ({ settings, onSettingChange }) => {
         <label className="setting-label">
           <span>Save Icon Style</span>
           <select value={saveIconStyle} onChange={handleSaveIconStyleChange}>
-            <option value="plus">Plus Sign</option>
             {/* <option value="heart">Heart</option> */}
             <option value="star">Star</option>
             <option value="cloud">Cloud</option>
+            <option value="plus">Plus Sign</option>
           </select>
         </label>
         <p className="setting-description">

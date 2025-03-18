@@ -52,7 +52,7 @@ const GeneralSettings = ({ settings, onSettingChange }) => {
   return (
     <div className="settings-section">
       <h2>General Settings</h2>
-      
+
       <div className="setting-group">
         <label className="setting-label">
           <span>Auto-Save Tweets</span>

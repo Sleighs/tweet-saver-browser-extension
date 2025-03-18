@@ -31,35 +31,16 @@ class SettingsService {
   }
 
   static async getSettings() {
+    console.log('SettingsService.getSettings called');
     try {
-      // Use mock storage in development
       if (this.isDevelopment()) {
+        console.log('Using mock storage:', mockStorage.settings);
         return mockStorage.settings;
       }
 
-      // Get all settings from Chrome storage
-      const result = await chrome.storage.sync.get(null);
-      
-      // Start with default settings
-      const settings = { ...defaultSettings };
-      
-      // Override with any settings from storage
-      for (const key in defaultSettings) {
-        if (result[key] !== undefined) {
-          settings[key] = result[key];
-        }
-      }
-      
-      // For backwards compatibility, check for settings in the options object
-      if (result.options) {
-        for (const key in result.options) {
-          if (settings[key] === undefined || settings[key] === defaultSettings[key]) {
-            settings[key] = result.options[key];
-          }
-        }
-      }
-      
-      return settings;
+      const result = await chrome.storage.sync.get('settings');
+      console.log('Settings from chrome storage:', result);
+      return result.settings || defaultSettings;
     } catch (error) {
       console.error('Error getting settings:', error);
       return defaultSettings;

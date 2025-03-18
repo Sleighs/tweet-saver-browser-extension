@@ -3,7 +3,9 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import TweetList from './components/TweetList/TweetList';
 import OptionsPanel from './components/OptionsPanel/OptionsPanel';
+import Collections from './components/Collections/Collections';
 import SettingsService from './services/SettingsService';
+import StorageManager from './services/StorageManager';
 
 const TABS = [
   {
@@ -12,6 +14,12 @@ const TABS = [
     icon: '🐦',
     component: TweetList
   },
+  // {
+  //   id: 'collections',
+  //   label: 'Collections',
+  //   icon: '📑',
+  //   component: Collections
+  // },
   {
     id: 'settings',
     label: 'Settings',
@@ -31,9 +39,8 @@ const App = () => {
 
   const loadTweets = async () => {
     try {
-      const result = await chrome.storage.local.get('tweets');
-      const tweetsData = result.tweets ? JSON.parse(result.tweets) : [];
-      setSavedTweets(tweetsData);
+      const tweets = await StorageManager.getAllTweets();
+      setSavedTweets(tweets);
     } catch (err) {
       console.error('Error loading tweets:', err);
       setError('Failed to load tweets. Please try again.');
@@ -67,11 +74,8 @@ const App = () => {
 
   const handleDeleteTweet = async (tweet) => {
     try {
-      const updatedTweets = savedTweets.filter(t => t.url !== tweet.url);
-      setSavedTweets(updatedTweets);
-      await chrome.storage.local.set({
-        tweets: JSON.stringify(updatedTweets)
-      });
+      await StorageManager.deleteTweet(tweet.url);
+      await loadTweets(); // Reload tweets to get updated list
     } catch (err) {
       console.error('Error deleting tweet:', err);
       setError('Failed to delete tweet. Please try again.');
@@ -133,6 +137,11 @@ const App = () => {
         <div className="header-content">
           <h1>X Post Saver</h1>
           <div className="header-controls">
+            {isPopup && ( 
+              <button className="open-in-tab-button" onClick={handleOpenInTab}>
+                Open in Tab<span className="open-in-tab-icon">🔎</span> 
+              </button>
+            )}
             <div className="extension-toggle">
               <label className="toggle-label" htmlFor="extension-toggle">
                 {isEnabled ? 'On' : 'Off'}
@@ -149,11 +158,7 @@ const App = () => {
                 <span className="toggle-thumb"></span>
               </button>
             </div>
-            {isPopup && ( 
-              <button className="open-in-tab-button" onClick={handleOpenInTab}>
-                Open in Tab<span className="open-in-tab-icon">🔎</span> 
-              </button>
-            )}
+           
           </div>
         </div>
         <nav className="app-tabs">
@@ -177,12 +182,18 @@ const App = () => {
       )}
 
       <main className="app-main">
+        {console.log('Debug - activeTab:', activeTab, 'settings:', settings)}
         {ActiveComponent && (
           activeTab === 'tweets' ? (
             <ActiveComponent
               tweets={savedTweets}
               onDeleteTweet={handleDeleteTweet}
               onRefresh={handleRefresh}
+            />
+          ) : activeTab === 'collections' ? (
+            <ActiveComponent
+              tweets={savedTweets}
+              onUpdateTweet={handleRefresh}
             />
           ) : (
             <ActiveComponent
