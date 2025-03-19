@@ -5,7 +5,6 @@ import TweetList from './components/TweetList/TweetList';
 import OptionsPanel from './components/OptionsPanel/OptionsPanel';
 import Collections from './components/Collections/Collections';
 import SettingsService from './services/SettingsService';
-import StorageManager from './services/StorageManager';
 
 const TABS = [
   {
@@ -39,8 +38,23 @@ const App = () => {
 
   const loadTweets = async () => {
     try {
-      const tweets = await StorageManager.getAllTweets();
-      setSavedTweets(tweets);
+      // Get tweets from both storage types
+      const [localResult, syncResult] = await Promise.all([
+        chrome.storage.local.get('tweets'),
+        chrome.storage.sync.get('tweets')
+      ]);
+
+      // Parse tweets from both storages
+      const localTweets = localResult.tweets ? JSON.parse(localResult.tweets) : [];
+      const syncTweets = syncResult.tweets ? JSON.parse(syncResult.tweets) : [];
+
+      // Combine and deduplicate tweets based on URL
+      const allTweets = [...localTweets, ...syncTweets];
+      const uniqueTweets = Array.from(
+        new Map(allTweets.map(tweet => [tweet.url, tweet])).values()
+      );
+
+      setSavedTweets(uniqueTweets);
     } catch (err) {
       console.error('Error loading tweets:', err);
       setError('Failed to load tweets. Please try again.');
@@ -74,8 +88,44 @@ const App = () => {
 
   const handleDeleteTweet = async (tweet) => {
     try {
-      await StorageManager.deleteTweet(tweet.url);
-      await loadTweets(); // Reload tweets to get updated list
+      // Get current tweets and URLs from both storages
+      const [localData, syncData] = await Promise.all([
+        chrome.storage.local.get(['tweets', 'tweetUrls']),
+        chrome.storage.sync.get(['tweets', 'tweetUrls'])
+      ]);
+
+      // Parse tweets and URLs from both storages
+      const localTweets = localData.tweets ? JSON.parse(localData.tweets) : [];
+      const syncTweets = syncData.tweets ? JSON.parse(syncData.tweets) : [];
+      const localUrls = localData.tweetUrls ? JSON.parse(localData.tweetUrls) : [];
+      const syncUrls = syncData.tweetUrls ? JSON.parse(syncData.tweetUrls) : [];
+
+      // Remove tweet from both arrays
+      const updatedLocalTweets = localTweets.filter(t => t.url !== tweet.url);
+      const updatedSyncTweets = syncTweets.filter(t => t.url !== tweet.url);
+
+      // Remove URL from both arrays
+      const updatedLocalUrls = localUrls.filter(url => url !== tweet.url);
+      const updatedSyncUrls = syncUrls.filter(url => url !== tweet.url);
+
+      // Save back to both storages
+      await Promise.all([
+        chrome.storage.local.set({
+          tweets: JSON.stringify(updatedLocalTweets),
+          tweetUrls: JSON.stringify(updatedLocalUrls)
+        }),
+        chrome.storage.sync.set({
+          tweets: JSON.stringify(updatedSyncTweets),
+          tweetUrls: JSON.stringify(updatedSyncUrls)
+        })
+      ]);
+
+      // Update the UI with combined remaining tweets
+      const allTweets = [...updatedLocalTweets, ...updatedSyncTweets];
+      const uniqueTweets = Array.from(
+        new Map(allTweets.map(t => [t.url, t])).values()
+      );
+      setSavedTweets(uniqueTweets);
     } catch (err) {
       console.error('Error deleting tweet:', err);
       setError('Failed to delete tweet. Please try again.');

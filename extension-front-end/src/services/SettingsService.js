@@ -17,7 +17,8 @@ const defaultSettings = {
   saveIconPosition: 'bottom',
   darkMode: false,
   fontSize: 'medium',
-  compactMode: false
+  compactMode: false,
+  storageType: 'local'
 };
 
 // Mock storage for development
@@ -27,7 +28,7 @@ const mockStorage = {
 
 class SettingsService {
   static isDevelopment() {
-    return !chrome?.storage?.sync;
+    return !chrome?.storage?.local;
   }
 
   static async getSettings() {
@@ -38,7 +39,7 @@ class SettingsService {
         return mockStorage.settings;
       }
 
-      const result = await chrome.storage.sync.get('settings');
+      const result = await chrome.storage.local.get('settings');
       console.log('Settings from chrome storage:', result);
       return result.settings || defaultSettings;
     } catch (error) {
@@ -67,11 +68,11 @@ class SettingsService {
 
       // Save each setting individually at the top level
       for (const key in newSettings) {
-        await chrome.storage.sync.set({ [key]: newSettings[key] });
+        await chrome.storage.local.set({ [key]: newSettings[key] });
       }
 
       // Also keep the options object for backwards compatibility
-      await chrome.storage.sync.set({ options: mergedSettings });
+      await chrome.storage.local.set({ options: mergedSettings });
 
       // Notify the extension that settings have changed
       if (chrome?.runtime?.sendMessage) {
@@ -91,7 +92,7 @@ class SettingsService {
   static async updateSetting(key, value) {
     try {
       // Save the individual setting at the top level
-      await chrome.storage.sync.set({ [key]: value });
+      await chrome.storage.local.set({ [key]: value });
       
       // Update options object for backwards compatibility
       const currentSettings = await this.getSettings();
@@ -99,9 +100,7 @@ class SettingsService {
         ...currentSettings,
         [key]: value
       };
-      
-      // Also update the options object
-      await chrome.storage.sync.set({ options: newSettings });
+      await chrome.storage.local.set({ options: newSettings });
 
       // Notify the extension that settings have changed
       if (chrome?.runtime?.sendMessage) {
@@ -113,25 +112,19 @@ class SettingsService {
 
       return newSettings;
     } catch (error) {
-      console.error(`Error updating setting ${key}:`, error);
+      console.error('Error updating setting:', error);
       throw error;
     }
   }
 
   static onSettingsChanged(callback) {
-    if (this.isDevelopment()) {
-      // No need for change listener in development
-      return;
-    }
-
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === 'sync') {
-        // If individual settings changed, get the full settings object and notify
-        if (changes.options || Object.keys(changes).some(key => key in defaultSettings)) {
-          this.getSettings().then(settings => callback(settings));
+    if (!this.isDevelopment() && chrome?.storage?.onChanged) {
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'local') {
+          callback(changes);
         }
-      }
-    });
+      });
+    }
   }
 }
 

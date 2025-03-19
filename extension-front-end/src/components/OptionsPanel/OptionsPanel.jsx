@@ -30,7 +30,7 @@ const OptionsPanel = () => {
     cleanupThreshold: 900,
     backupEnabled: false,
     backupFrequency: 'weekly',
-    storageType: 'sync'
+    storageType: 'local'
   });
 
   useEffect(() => {

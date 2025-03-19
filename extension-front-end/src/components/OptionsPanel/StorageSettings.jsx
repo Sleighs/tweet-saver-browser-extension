@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import './OptionsPanel.css';
-import StorageManager from '../../services/StorageManager';
 
 const StorageSettings = ({ settings, onSettingChange }) => {
   const [maxTweets, setMaxTweets] = useState(settings.maxTweets ?? 1000);
@@ -10,16 +9,6 @@ const StorageSettings = ({ settings, onSettingChange }) => {
   const [cleanupThreshold, setCleanupThreshold] = useState(settings.cleanupThreshold ?? 900);
   const [backupEnabled, setBackupEnabled] = useState(settings.backupEnabled ?? false);
   const [backupFrequency, setBackupFrequency] = useState(settings.backupFrequency ?? 'weekly');
-  const [syncStorage, setSyncStorage] = useState(settings.storageType === 'sync');
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  useEffect(() => {
-    const loadStorageType = async () => {
-      const currentType = await StorageManager.getCurrentStorageType();
-      setSyncStorage(currentType === 'sync');
-    };
-    loadStorageType();
-  }, []);
 
   useEffect(() => {
     setMaxTweets(settings.maxTweets ?? 1000);
@@ -63,38 +52,25 @@ const StorageSettings = ({ settings, onSettingChange }) => {
     onSettingChange('backupFrequency', value);
   };
 
-  const handleSyncStorageChange = async (e) => {
-    try {
-      setIsProcessing(true);
-      const value = e.target.checked;
-      const newStorageType = value ? 'sync' : 'local';
-      
-      // Update storage type and migrate data
-      await StorageManager.setStorageType(newStorageType);
-      
-      setSyncStorage(value);
-      onSettingChange('storageType', newStorageType);
-      
-      // Show success notification
-      if (window.showNotification) {
-        window.showNotification(`Successfully switched to ${newStorageType} storage`, 'success');
-      }
-    } catch (error) {
-      console.error('Error changing storage type:', error);
-      if (window.showNotification) {
-        window.showNotification('Failed to change storage type', 'error');
-      }
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const handleExportData = async () => {
     try {
-      setIsProcessing(true);
-      const allTweets = await StorageManager.getAllTweets();
-      
-      const dataStr = JSON.stringify({ tweets: allTweets }, null, 2);
+      // Get data from both storage types to not lose any tweets
+      const [localData, syncData] = await Promise.all([
+        chrome.storage.local.get('tweets'),
+        chrome.storage.sync.get('tweets')
+      ]);
+
+      // Parse and combine the data
+      const localTweets = localData.tweets ? JSON.parse(localData.tweets) : [];
+      const syncTweets = syncData.tweets ? JSON.parse(syncData.tweets) : [];
+      const allTweets = [...localTweets, ...syncTweets];
+
+      // Remove duplicates based on URL
+      const uniqueTweets = Array.from(
+        new Map(allTweets.map(tweet => [tweet.url, tweet])).values()
+      );
+
+      const dataStr = JSON.stringify({ tweets: uniqueTweets });
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(dataBlob);
       
@@ -105,40 +81,43 @@ const StorageSettings = ({ settings, onSettingChange }) => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-
-      if (window.showNotification) {
-        window.showNotification('Tweets exported successfully', 'success');
-      }
     } catch (error) {
       console.error('Error exporting data:', error);
-      if (window.showNotification) {
-        window.showNotification('Error exporting tweets', 'error');
-      }
-    } finally {
-      setIsProcessing(false);
     }
   };
 
   const handleCopyToClipboard = async () => {
     try {
-      setIsProcessing(true);
-      const allTweets = await StorageManager.getAllTweets();
+      // Get data from both storage types
+      const [localData, syncData] = await Promise.all([
+        chrome.storage.local.get('tweets'),
+        chrome.storage.sync.get('tweets')
+      ]);
+
+      // Parse and combine the data
+      const localTweets = localData.tweets ? JSON.parse(localData.tweets) : [];
+      const syncTweets = syncData.tweets ? JSON.parse(syncData.tweets) : [];
+      const allTweets = [...localTweets, ...syncTweets];
+
+      // Remove duplicates based on URL
+      const uniqueTweets = Array.from(
+        new Map(allTweets.map(tweet => [tweet.url, tweet])).values()
+      );
 
       // Format tweets for clipboard
-      const formattedTweets = allTweets.map(tweet => {
+      const formattedTweets = uniqueTweets.map(tweet => {
         return `Tweet by ${tweet.username} (${tweet.handle})
 Text: ${tweet.text || 'No text'}
 URL: ${tweet.url}
 Time: ${new Date(tweet.time).toLocaleString()}
 Saved: ${new Date(tweet.savedAt).toLocaleString()}
-Storage: ${tweet.storageType}
 Stats: ${tweet.likes} likes, ${tweet.retweets} retweets, ${tweet.replies} replies
 ${tweet.mediaItems?.length ? `Media: ${tweet.mediaItems.length} items\n` : ''}
 ----------------------------------------`;
       }).join('\n');
 
       await navigator.clipboard.writeText(formattedTweets);
-      
+      // Show success message using the existing notification system if available
       if (window.showNotification) {
         window.showNotification('Tweets copied to clipboard', 'success');
       }
@@ -147,32 +126,14 @@ ${tweet.mediaItems?.length ? `Media: ${tweet.mediaItems.length} items\n` : ''}
       if (window.showNotification) {
         window.showNotification('Error copying tweets to clipboard', 'error');
       }
-    } finally {
-      setIsProcessing(false);
     }
   };
 
   return (
     <div className="settings-section">
       <h2>Storage Settings</h2>
-
-      <div className="setting-group">
-        <label className="setting-label">
-          <span>Save across all browsers</span>
-          <input
-            type="checkbox"
-            checked={syncStorage}
-            onChange={handleSyncStorageChange}
-            disabled={isProcessing}
-          />
-        </label>
-        <p className="setting-description">
-          {isProcessing ? 'Processing storage change...' : 
-            'Sync saved tweets across all browsers where you\'re signed in with your account'}
-        </p>
-      </div>
       
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
           <span>Maximum Saved Tweets</span>
           <input
@@ -186,7 +147,7 @@ ${tweet.mediaItems?.length ? `Media: ${tweet.mediaItems.length} items\n` : ''}
         <p className="setting-description">
           Maximum number of tweets to store (1-10000)
         </p>
-      </div>
+      </div> */}
 
       <div className="setting-group">
         <label className="setting-label">
@@ -221,53 +182,13 @@ ${tweet.mediaItems?.length ? `Media: ${tweet.mediaItems.length} items\n` : ''}
       )}
 
       <div className="setting-group">
-        <label className="setting-label">
-          <span>Automatic Backup</span>
-          <input
-            type="checkbox"
-            checked={backupEnabled}
-            onChange={handleBackupEnabledChange}
-          />
-        </label>
-        <p className="setting-description">
-          Automatically backup your saved tweets
-        </p>
-      </div>
-
-      {backupEnabled && (
-        <div className="setting-group">
-          <label className="setting-label">
-            <span>Backup Frequency</span>
-            <select value={backupFrequency} onChange={handleBackupFrequencyChange}>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-          </label>
-          <p className="setting-description">
-            How often to create automatic backups
-          </p>
-        </div>
-      )}
-
-      <div className="setting-group export-section">
         <h3>Export Options</h3>
         <div className="export-buttons">
-          <button
-            onClick={handleExportData}
-            disabled={isProcessing}
-            className="export-button"
-            title="Download tweets as JSON file"
-          >
+          <button onClick={handleExportData} className="export-button">
             <span className="button-icon">📥</span>
             Export to File
           </button>
-          <button
-            onClick={handleCopyToClipboard}
-            disabled={isProcessing}
-            className="copy-button"
-            title="Copy formatted tweet list to clipboard"
-          >
+          <button onClick={handleCopyToClipboard} className="export-button">
             <span className="button-icon">📋</span>
             Copy to Clipboard
           </button>
@@ -286,8 +207,7 @@ StorageSettings.propTypes = {
     autoCleanup: PropTypes.bool,
     cleanupThreshold: PropTypes.number,
     backupEnabled: PropTypes.bool,
-    backupFrequency: PropTypes.string,
-    storageType: PropTypes.string
+    backupFrequency: PropTypes.string
   }).isRequired,
   onSettingChange: PropTypes.func.isRequired
 };

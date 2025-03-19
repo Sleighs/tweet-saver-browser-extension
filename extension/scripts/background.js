@@ -1,6 +1,3 @@
-/* global chrome */
-import StorageManager from '../services/StorageManager';
-
 // Fallback debug logging system
 const fallbackDebug = {
   enabled: false,
@@ -46,10 +43,10 @@ const browser = chrome || browser;
 const defaultOptions = {
   enableExtension: true,
   saveLastTweetEnabled: true,
-  browserStorageType: 'sync',
+  browserStorageType: 'sync', // local or sync
   debugMode: false,
   enablePhotoUrlSave: true,
-  storageType: 'sync'
+  storageType: 'sync' // Add new storage type option
 };
 
 // Options stored in chrome.storage.sync
@@ -59,27 +56,46 @@ let options = {};
 let tweetUrls = [];
 let tweets = [];
 
-// Initialize extension
-browser.runtime.onInstalled.addListener(async () => {
-  try {
-    // Initialize settings
-    const result = await browser.storage.sync.get('options');
-    if (!result.options) {
-      await browser.storage.sync.set({ options: defaultOptions });
+// Initial setup
+browser.runtime.onInstalled.addListener(() => {
+  browser.storage.sync.get("options").then((result) => {
+    let optionsList = [
+      "enableExtension",
+      "saveLastTweetEnabled",
+      "browserStorageType",
+      "debugMode",
+      "enablePhotoUrlSave",
+    ];
+
+    function extractProperties(names, obj) {
+      let extracted = {};
+      names.forEach(name => {
+        extracted[name] = obj[name] ?? defaultOptions[name];
+      });
+      return extracted;
     }
 
-    // Initialize storage type
-    const storageType = await StorageManager.getCurrentStorageType();
-    if (!storageType) {
-      await StorageManager.setStorageType('sync');
+    if (result && result.options) {
+      let newOptionObj = extractProperties(optionsList, result.options);
+      initializeDebugMode(newOptionObj.debugMode);
+
+      browser.storage.sync.set({ options: newOptionObj })
+        .then(() => {
+          debugLog("Installed - set options", newOptionObj);
+        });
+    } else {
+      initializeDebugMode(defaultOptions.debugMode);
+      browser.storage.sync.set({ options: defaultOptions })
+        .then(() => {
+          debugLog("Installed - default options", defaultOptions);
+        });
     }
-  } catch (error) {
-    console.error('Error initializing extension:', error);
-  }
+  });
 
   updateIcon();
   getTweetsFromStorage();
 });
+
 
 async function updateIcon() {
   try {
@@ -101,33 +117,55 @@ async function updateIcon() {
   }
 }
 
-// Handle messages from content script and popup
+// async function getTweetsFromStorage() {
+//   try {
+//     const resultUrls = await browser.storage.local.get('tweetUrls');
+//     if (resultUrls.urls) {
+//       console.log('Saved tweetUrls:', resultUrls);
+//       tweetUrls = resultUrls.urls;
+//       browser.storage.local.set({ urls });
+//     }
+
+//     const resultTweets = await browser.storage.local.get('tweets');
+//     if (resultTweets.tweets) {
+//       console.log('Saved tweets:', resultTweets);
+//       tweets = resultTweets.tweets;
+//       browser.storage.local.set({ tweets });
+//     }
+//   } catch (error) {
+//     console.error('Error getting tweets from storage', error);
+//   }
+// }
+
+
+
+
+
+
+
+
+
+// On extension installation or update
+// browser.runtime.onInstalled.addListener(() => {
+//   // Get options from storage
+//   browser.storage.sync.get("options").then((result) => {
+//     if (result && result.options) {
+//       options = { ...defaultOptions, ...result.options };
+//     } else {
+//       options = defaultOptions;
+//       browser.storage.sync.set({ options: defaultOptions });
+//     }
+//     console.log("Options initialized:", options);
+//   }).catch(error => console.error('Error initializing options:', error));
+
+//   // Get saved URLs and tweets from storage
+//   getTweetsFromStorage();
+//   updateIcon();
+// });
+
+// Handle messages from the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  switch (message.type) {
-    case 'SAVE_TWEET':
-      handleSaveTweet(message.tweet)
-        .then(response => sendResponse(response))
-        .catch(error => sendResponse({ error: error.message }));
-      break;
-
-    case 'DELETE_TWEET':
-      handleDeleteTweet(message.tweetUrl)
-        .then(response => sendResponse(response))
-        .catch(error => sendResponse({ error: error.message }));
-      break;
-
-    case 'GET_ALL_TWEETS':
-      StorageManager.getAllTweets()
-        .then(tweets => sendResponse({ tweets }))
-        .catch(error => sendResponse({ error: error.message }));
-      break;
-
-    case 'CHANGE_STORAGE_TYPE':
-      handleStorageTypeChange(message.newType)
-        .then(response => sendResponse(response))
-        .catch(error => sendResponse({ error: error.message }));
-      break;
-
+  switch (message.method) {
     case 'enableExtension':
       updateIcon();
       break;
@@ -171,12 +209,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
 
     default:
-      console.warn('Unknown message method:', message.type);
+      console.warn('Unknown message method:', message.method);
   }
 
-  // Required for async response
+  // Required to return true to use sendResponse asynchronously
   return true;
 });
+
+
 
 // Fetch tweets and URLs from local storage
 async function getTweetsFromStorage() {
@@ -211,12 +251,29 @@ async function saveToStorage() {
 // Function to get data from storage
 async function getDataFromStorage() {
   try {
-    // Get current storage type setting
-    const { options } = await chrome.storage.sync.get('options');
-    const storageArea = options?.storageType === 'sync' ? chrome.storage.sync : chrome.storage.local;
+    // Get data from both storages
+    const [localData, syncData] = await Promise.all([
+      chrome.storage.local.get(['tweetUrls', 'tweets']),
+      chrome.storage.sync.get(['tweetUrls', 'tweets'])
+    ]);
+
+    // Parse and combine data
+    const localTweetUrls = JSON.parse(localData.tweetUrls || '[]');
+    const syncTweetUrls = JSON.parse(syncData.tweetUrls || '[]');
+    const localTweets = JSON.parse(localData.tweets || '[]');
+    const syncTweets = JSON.parse(syncData.tweets || '[]');
+
+    // Combine and deduplicate
+    const allTweets = [...localTweets, ...syncTweets];
+    const allUrls = [...localTweetUrls, ...syncTweetUrls];
     
-    const data = await storageArea.get(['tweetUrls', 'tweets']);
-    return data;
+    const uniqueTweets = Array.from(new Map(allTweets.map(tweet => [tweet.url, tweet])).values());
+    const uniqueUrls = [...new Set(allUrls)];
+
+    return {
+      tweetUrls: uniqueUrls,
+      tweets: uniqueTweets
+    };
   } catch (error) {
     debugError('Error getting data from storage:', error);
     return { tweetUrls: [], tweets: [] };
@@ -236,52 +293,5 @@ browser.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'sync' && changes.options?.newValue?.storageType !== changes.options?.oldValue?.storageType) {
     // Storage type has changed, refresh data from new storage
     getTweetsFromStorage();
-  }
-});
-
-async function handleSaveTweet(tweet) {
-  try {
-    await StorageManager.saveTweet(tweet);
-    return { success: true };
-  } catch (error) {
-    console.error('Error saving tweet:', error);
-    throw new Error('Failed to save tweet');
-  }
-}
-
-async function handleDeleteTweet(tweetUrl) {
-  try {
-    await StorageManager.deleteTweet(tweetUrl);
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting tweet:', error);
-    throw new Error('Failed to delete tweet');
-  }
-}
-
-async function handleStorageTypeChange(newType) {
-  try {
-    await StorageManager.setStorageType(newType);
-    return { success: true };
-  } catch (error) {
-    console.error('Error changing storage type:', error);
-    throw new Error('Failed to change storage type');
-  }
-}
-
-// Listen for storage changes
-chrome.storage.onChanged.addListener((changes, areaName) => {
-  // If storage type changed, notify content scripts
-  if (changes.storageType) {
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach(tab => {
-        chrome.tabs.sendMessage(tab.id, {
-          type: 'STORAGE_TYPE_CHANGED',
-          newType: changes.storageType.newValue
-        }).catch(() => {
-          // Ignore errors for inactive tabs
-        });
-      });
-    });
   }
 });
