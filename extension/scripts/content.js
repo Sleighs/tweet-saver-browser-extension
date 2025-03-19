@@ -63,19 +63,27 @@ let styleTheme = getColorScheme();
 const iconPaths = {
   plus: {
     light: '../images/save-icons/plus-light.svg',
-    dark: '../images/save-icons/plus-dark.svg'
+    dark: '../images/save-icons/plus-dark.svg',
+    lightFilled: '../images/save-icons/plus-light-filled.svg',
+    darkFilled: '../images/save-icons/plus-dark-filled.svg'
   },
   heart: {
     light: '../images/save-icons/heart-light.svg',
-    dark: '../images/save-icons/heart-dark.svg'
+    dark: '../images/save-icons/heart-dark.svg',
+    lightFilled: '../images/save-icons/heart-light-filled.svg',
+    darkFilled: '../images/save-icons/heart-dark-filled.svg'
   },
   star: {
     light: '../images/save-icons/star-light.svg',
-    dark: '../images/save-icons/star-dark.svg'
+    dark: '../images/save-icons/star-dark.svg',
+    lightFilled: '../images/save-icons/star-light-filled.svg',
+    darkFilled: '../images/save-icons/star-dark-filled.svg'
   },
   cloud: {
     light: '../images/save-icons/cloud-light.svg',
-    dark: '../images/save-icons/cloud-dark.svg'
+    dark: '../images/save-icons/cloud-dark.svg',
+    lightFilled: '../images/save-icons/cloud-light-filled.svg',
+    darkFilled: '../images/save-icons/cloud-dark-filled.svg'
   }
 };
 
@@ -87,7 +95,9 @@ const initializeIconUrls = () => {
   for (const style in iconPaths) {
     cachedIconUrls[style] = {
       light: chrome.runtime.getURL(iconPaths[style].light),
-      dark: chrome.runtime.getURL(iconPaths[style].dark)
+      dark: chrome.runtime.getURL(iconPaths[style].dark),
+      lightFilled: chrome.runtime.getURL(iconPaths[style].lightFilled),
+      darkFilled: chrome.runtime.getURL(iconPaths[style].darkFilled)
     };
   }
 };
@@ -615,6 +625,16 @@ const getTweetUrl = (tweetElement) => {
   }
 };
 
+// Update the icon source based on saved state
+const updateIconSource = (buttonElement, iconStyle, theme, isSaved) => {
+  const iconElement = buttonElement.querySelector('img');
+  if (iconElement) {
+    iconElement.src = isSaved 
+      ? cachedIconUrls[iconStyle][theme === 'light' ? 'lightFilled' : 'darkFilled']
+      : cachedIconUrls[iconStyle][theme];
+  }
+};
+
 // Simplify the button addition function
 const addSaveButtonsToTweets = () => {
   if (!enableExtension) return;
@@ -682,11 +702,13 @@ const addSaveButtonsToTweets = () => {
               // Unsave the tweet
               await unsaveTweet(tweetUrl);
               buttonElement.classList.remove('saved');
+              updateIconSource(buttonElement, settings.saveIconStyle, theme, false);
               showNotification('Tweet removed from saved', 'info');
             } else {
               // Save the tweet
               await saveNewTweet(tweetElement, tweetUrl);
               buttonElement.classList.add('saved');
+              updateIconSource(buttonElement, settings.saveIconStyle, theme, true);
               showNotification('Tweet saved successfully', 'success');
             }
             
@@ -700,9 +722,11 @@ const addSaveButtonsToTweets = () => {
           }
         });
 
-        // Add icon
+        // Add icon with initial state
         const iconElement = document.createElement('img');
-        iconElement.src = cachedIconUrls[settings.saveIconStyle][theme];
+        iconElement.src = savedUrls.includes(tweetUrl)
+          ? cachedIconUrls[settings.saveIconStyle][theme === 'light' ? 'lightFilled' : 'darkFilled']
+          : cachedIconUrls[settings.saveIconStyle][theme];
         iconElement.alt = 'Save';
         buttonElement.appendChild(iconElement);
         buttonContainer.appendChild(buttonElement);
@@ -1090,7 +1114,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Listen for messages from the background script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.method === 'tweetsDeleted') {
+  if (message.type === 'SETTINGS_UPDATED') {
+    // Update settings object with new values
+    Object.assign(settings, message.settings);
+    
+    // Update all existing buttons with new icon style
+    const buttons = document.querySelectorAll('.tweet-saver--save-tweet-button');
+    const theme = detectTheme();
+    
+    buttons.forEach(button => {
+      const container = button.closest('.tweet-saver--button-container');
+      const tweetUrl = container?.getAttribute('data-tweet-url');
+      const isSaved = savedUrls.includes(tweetUrl);
+      updateIconSource(button, settings.saveIconStyle, theme, isSaved);
+    });
+    
+    if (debugMode) console.log('Settings updated:', settings);
+  } else if (message.method === 'tweetsDeleted') {
     // Clear local data
     savedUrls = [];
     savedTweets = [];
@@ -1099,6 +1139,9 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     
     if (debugMode) console.log('Local data cleared after tweetsDeleted message');
   }
+  
+  sendResponse({ success: true });
+  return true;
 });
 
 // Add click outside handler to close menus

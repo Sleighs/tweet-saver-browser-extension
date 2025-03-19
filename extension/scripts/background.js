@@ -117,51 +117,9 @@ async function updateIcon() {
   }
 }
 
-// async function getTweetsFromStorage() {
-//   try {
-//     const resultUrls = await browser.storage.local.get('tweetUrls');
-//     if (resultUrls.urls) {
-//       console.log('Saved tweetUrls:', resultUrls);
-//       tweetUrls = resultUrls.urls;
-//       browser.storage.local.set({ urls });
-//     }
-
-//     const resultTweets = await browser.storage.local.get('tweets');
-//     if (resultTweets.tweets) {
-//       console.log('Saved tweets:', resultTweets);
-//       tweets = resultTweets.tweets;
-//       browser.storage.local.set({ tweets });
-//     }
-//   } catch (error) {
-//     console.error('Error getting tweets from storage', error);
-//   }
-// }
 
 
 
-
-
-
-
-
-
-// On extension installation or update
-// browser.runtime.onInstalled.addListener(() => {
-//   // Get options from storage
-//   browser.storage.sync.get("options").then((result) => {
-//     if (result && result.options) {
-//       options = { ...defaultOptions, ...result.options };
-//     } else {
-//       options = defaultOptions;
-//       browser.storage.sync.set({ options: defaultOptions });
-//     }
-//     console.log("Options initialized:", options);
-//   }).catch(error => console.error('Error initializing options:', error));
-
-//   // Get saved URLs and tweets from storage
-//   getTweetsFromStorage();
-//   updateIcon();
-// });
 
 // Handle messages from the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {

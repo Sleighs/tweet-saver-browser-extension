@@ -581,6 +581,15 @@
   }
 }
 
+/* Remove focus outline from tabs */
+.app-header-tab:focus {
+  outline: none;
+}
+
+.app-header-tab:focus-visible {
+  outline: none;
+}
+
 /* Update options panel width */
 .options-panel {
   width: 100%;
@@ -590,13 +599,60 @@
   box-sizing: border-box;
 }
 
-/* Remove focus outline from tabs */
-.app-header-tab:focus {
-  outline: none;
+.about-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.app-header-tab:focus-visible {
-  outline: none;
+.about-container h2 {
+  color: #1da1f2;
+  margin-bottom: 1.5rem;
+}
+
+.about-container p {
+  line-height: 1.6;
+  color: #4a4a4a;
+  margin-bottom: 2rem;
+}
+
+.about-links {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.about-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #2c2c2c;
+  transition: all 0.2s ease;
+}
+
+.about-link:hover {
+  background: #e9ecef;
+  transform: translateY(-1px);
+}
+
+.about-link span {
+  font-size: 1.2rem;
+}
+
+.donate-link {
+  background: #1da1f2;
+  color: white;
+}
+
+.donate-link:hover {
+  background: #1a91da;
 }
 
 

@@ -1,51 +1,110 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useSettings } from '../../contexts/SettingsContext';
 import './OptionsPanel.css';
 
-const AppearanceSettings = ({ settings, onSettingChange }) => {
-  const [isDarkMode, setIsDarkMode] = useState(settings.darkMode ?? false);
-  const [fontSize, setFontSize] = useState(settings.fontSize ?? 'medium');
-  const [compactMode, setCompactMode] = useState(settings.compactMode ?? false);
-  const [saveIconStyle, setSaveIconStyle] = useState(settings.saveIconStyle ?? 'star');
-  const [saveIconPosition, setSaveIconPosition] = useState(settings.saveIconPosition ?? 'bottom');
+const AppearanceSettings = () => {
+  const { settings, updateSetting } = useSettings();
+  const [isDarkMode, setIsDarkMode] = useState(settings?.darkMode ?? false);
+  const [fontSize, setFontSize] = useState(settings?.fontSize ?? 'medium');
+  const [compactMode, setCompactMode] = useState(settings?.compactMode ?? false);
+  const [saveIconStyle, setSaveIconStyle] = useState(settings?.saveIconStyle ?? 'star');
+  const [saveIconPosition, setSaveIconPosition] = useState(settings?.saveIconPosition ?? 'bottom');
+  const [showStorageIndicator, setShowStorageIndicator] = useState(settings?.showStorageIndicator ?? true);
 
   useEffect(() => {
-    setIsDarkMode(settings.darkMode ?? false);
-    setFontSize(settings.fontSize ?? 'medium');
-    setCompactMode(settings.compactMode ?? false);
-    setSaveIconStyle(settings.saveIconStyle ?? 'star');
-    setSaveIconPosition(settings.saveIconPosition ?? 'bottom');
+    if (settings) {
+      setIsDarkMode(settings.darkMode ?? false);
+      setFontSize(settings.fontSize ?? 'medium');
+      setCompactMode(settings.compactMode ?? false);
+      setSaveIconStyle(settings.saveIconStyle ?? 'star');
+      setSaveIconPosition(settings.saveIconPosition ?? 'bottom');
+      setShowStorageIndicator(settings.showStorageIndicator ?? true);
+    }
   }, [settings]);
+
+  const notifyContentScript = async (updatedSettings) => {
+    try {
+      // Get all tabs that match twitter.com or x.com
+      const tabs = await chrome.tabs.query({
+        url: ['*://*.twitter.com/*', '*://*.x.com/*']
+      });
+
+      // Send message to each tab
+      for (const tab of tabs) {
+        await chrome.tabs.sendMessage(tab.id, {
+          type: 'SETTINGS_UPDATED',
+          settings: updatedSettings
+        });
+      }
+    } catch (error) {
+      console.error('Error notifying content script:', error);
+    }
+  };
+
+  const handleSettingChange = async (key, value) => {
+    try {
+      await updateSetting(key, value);
+      
+      // Get current settings and update with new value
+      const updatedSettings = {
+        ...settings,
+        [key]: value
+      };
+      
+      // Notify content script of the change
+      await notifyContentScript(updatedSettings);
+      
+      if (window.showNotification) {
+        window.showNotification('Settings updated successfully', 'success');
+      }
+    } catch (error) {
+      console.error('Error updating setting:', error);
+      if (window.showNotification) {
+        window.showNotification('Error updating settings', 'error');
+      }
+    }
+  };
 
   const handleDarkModeChange = (e) => {
     const value = e.target.checked;
     setIsDarkMode(value);
-    onSettingChange('darkMode', value);
+    handleSettingChange('darkMode', value);
   };
 
   const handleFontSizeChange = (e) => {
     const value = e.target.value;
     setFontSize(value);
-    onSettingChange('fontSize', value);
+    handleSettingChange('fontSize', value);
   };
 
   const handleCompactModeChange = (e) => {
     const value = e.target.checked;
     setCompactMode(value);
-    onSettingChange('compactMode', value);
+    handleSettingChange('compactMode', value);
   };
 
   const handleSaveIconStyleChange = (e) => {
     const value = e.target.value;
     setSaveIconStyle(value);
-    onSettingChange('saveIconStyle', value);
+    handleSettingChange('saveIconStyle', value);
   };
 
   const handleSaveIconPositionChange = (e) => {
     const value = e.target.value;
     setSaveIconPosition(value);
-    onSettingChange('saveIconPosition', value);
+    handleSettingChange('saveIconPosition', value);
   };
+
+  const handleShowStorageIndicatorChange = (e) => {
+    const value = e.target.checked;
+    setShowStorageIndicator(value);
+    handleSettingChange('showStorageIndicator', value);
+  };
+
+  if (!settings) {
+    return <div className="loading">Loading settings...</div>;
+  }
 
   return (
     <div className="settings-section">
@@ -97,10 +156,10 @@ const AppearanceSettings = ({ settings, onSettingChange }) => {
         <label className="setting-label">
           <span>Save Icon Style</span>
           <select value={saveIconStyle} onChange={handleSaveIconStyleChange}>
-            {/* <option value="heart">Heart</option> */}
             <option value="star">Star</option>
             <option value="cloud">Cloud</option>
             <option value="plus">Plus Sign</option>
+            {/* <option value="heart">Heart</option> */}
           </select>
         </label>
         <p className="setting-description">
@@ -120,6 +179,20 @@ const AppearanceSettings = ({ settings, onSettingChange }) => {
           Choose where the save button appears on posts
         </p>
       </div>
+
+      <div className="setting-group">
+        <label className="setting-label">
+          <span>Show Storage Location</span>
+          <input
+            type="checkbox"
+            checked={showStorageIndicator}
+            onChange={handleShowStorageIndicatorChange}
+          />
+        </label>
+        <p className="setting-description">
+          Show or hide the storage location indicator on saved posts
+        </p>
+      </div>
     </div>
   );
 };
@@ -130,7 +203,8 @@ AppearanceSettings.propTypes = {
     fontSize: PropTypes.string,
     compactMode: PropTypes.bool,
     saveIconStyle: PropTypes.string,
-    saveIconPosition: PropTypes.string
+    saveIconPosition: PropTypes.string,
+    showStorageIndicator: PropTypes.bool
   }).isRequired,
   onSettingChange: PropTypes.func.isRequired
 };

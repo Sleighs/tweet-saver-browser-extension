@@ -1,133 +1,164 @@
 /* global chrome */
 import { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { useSettings } from '../../contexts/SettingsContext';
 import './OptionsPanel.css';
 
-const StorageSettings = ({ settings, onSettingChange }) => {
-  const [maxTweets, setMaxTweets] = useState(settings.maxTweets ?? 1000);
-  const [autoCleanup, setAutoCleanup] = useState(settings.autoCleanup ?? false);
-  const [cleanupThreshold, setCleanupThreshold] = useState(settings.cleanupThreshold ?? 900);
-  const [backupEnabled, setBackupEnabled] = useState(settings.backupEnabled ?? false);
-  const [backupFrequency, setBackupFrequency] = useState(settings.backupFrequency ?? 'weekly');
+const StorageSettings = () => {
+  const { settings, updateSetting } = useSettings();
+  const [maxTweets, setMaxTweets] = useState(settings?.maxTweets ?? 1000);
+  const [autoCleanup, setAutoCleanup] = useState(settings?.autoCleanup ?? false);
+  const [cleanupThreshold, setCleanupThreshold] = useState(settings?.cleanupThreshold ?? 900);
+  const [backupEnabled, setBackupEnabled] = useState(settings?.backupEnabled ?? false);
+  const [backupFrequency, setBackupFrequency] = useState(settings?.backupFrequency ?? 'weekly');
 
   useEffect(() => {
-    setMaxTweets(settings.maxTweets ?? 1000);
-    setAutoCleanup(settings.autoCleanup ?? false);
-    setCleanupThreshold(settings.cleanupThreshold ?? 900);
-    setBackupEnabled(settings.backupEnabled ?? false);
-    setBackupFrequency(settings.backupFrequency ?? 'weekly');
+    if (settings) {
+      setMaxTweets(settings.maxTweets ?? 1000);
+      setAutoCleanup(settings.autoCleanup ?? false);
+      setCleanupThreshold(settings.cleanupThreshold ?? 900);
+      setBackupEnabled(settings.backupEnabled ?? false);
+      setBackupFrequency(settings.backupFrequency ?? 'weekly');
+    }
   }, [settings]);
+
+  const handleSettingChange = async (key, value) => {
+    try {
+      await updateSetting(key, value);
+      if (window.showNotification) {
+        window.showNotification('Settings updated successfully', 'success');
+      }
+    } catch (error) {
+      console.error('Error updating setting:', error);
+      if (window.showNotification) {
+        window.showNotification('Error updating settings', 'error');
+      }
+    }
+  };
 
   const handleMaxTweetsChange = (e) => {
     const value = parseInt(e.target.value, 10);
     if (!isNaN(value) && value > 0) {
       setMaxTweets(value);
-      onSettingChange('maxTweets', value);
+      handleSettingChange('maxTweets', value);
     }
   };
 
   const handleAutoCleanupChange = (e) => {
     const value = e.target.checked;
     setAutoCleanup(value);
-    onSettingChange('autoCleanup', value);
+    handleSettingChange('autoCleanup', value);
   };
 
   const handleCleanupThresholdChange = (e) => {
     const value = parseInt(e.target.value, 10);
     if (!isNaN(value) && value > 0) {
       setCleanupThreshold(value);
-      onSettingChange('cleanupThreshold', value);
+      handleSettingChange('cleanupThreshold', value);
     }
   };
 
   const handleBackupEnabledChange = (e) => {
     const value = e.target.checked;
     setBackupEnabled(value);
-    onSettingChange('backupEnabled', value);
+    handleSettingChange('backupEnabled', value);
   };
 
   const handleBackupFrequencyChange = (e) => {
     const value = e.target.value;
     setBackupFrequency(value);
-    onSettingChange('backupFrequency', value);
+    handleSettingChange('backupFrequency', value);
   };
 
   const handleExportData = async () => {
     try {
-      // Get data from both storage types to not lose any tweets
-      const [localData, syncData] = await Promise.all([
+      // Get tweets from both storage types
+      const [localResult, syncResult] = await Promise.all([
         chrome.storage.local.get('tweets'),
         chrome.storage.sync.get('tweets')
       ]);
 
-      // Parse and combine the data
-      const localTweets = localData.tweets ? JSON.parse(localData.tweets) : [];
-      const syncTweets = syncData.tweets ? JSON.parse(syncData.tweets) : [];
-      const allTweets = [...localTweets, ...syncTweets];
+      // Parse tweets from both storages
+      const localTweets = localResult.tweets ? JSON.parse(localResult.tweets) : [];
+      const syncTweets = syncResult.tweets ? JSON.parse(syncResult.tweets) : [];
 
-      // Remove duplicates based on URL
+      // Combine and deduplicate tweets based on URL
+      const allTweets = [...localTweets, ...syncTweets];
       const uniqueTweets = Array.from(
         new Map(allTweets.map(tweet => [tweet.url, tweet])).values()
       );
 
-      const dataStr = JSON.stringify({ tweets: uniqueTweets });
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      
+      // Create a JSON file
+      const blob = new Blob([JSON.stringify(uniqueTweets, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `tweet-saver-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `tweet-saver-export-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+
+      if (window.showNotification) {
+        window.showNotification('Tweets exported successfully', 'success');
+      }
     } catch (error) {
-      console.error('Error exporting data:', error);
+      console.error('Error exporting tweets:', error);
+      if (window.showNotification) {
+        window.showNotification('Error exporting tweets', 'error');
+      }
     }
   };
 
   const handleCopyToClipboard = async () => {
     try {
-      // Get data from both storage types
-      const [localData, syncData] = await Promise.all([
+      // Get tweets from both storage types
+      const [localResult, syncResult] = await Promise.all([
         chrome.storage.local.get('tweets'),
         chrome.storage.sync.get('tweets')
       ]);
 
-      // Parse and combine the data
-      const localTweets = localData.tweets ? JSON.parse(localData.tweets) : [];
-      const syncTweets = syncData.tweets ? JSON.parse(syncData.tweets) : [];
-      const allTweets = [...localTweets, ...syncTweets];
+      // Parse tweets from both storages
+      const localTweets = localResult.tweets ? JSON.parse(localResult.tweets) : [];
+      const syncTweets = syncResult.tweets ? JSON.parse(syncResult.tweets) : [];
 
-      // Remove duplicates based on URL
+      // Combine and deduplicate tweets based on URL
+      const allTweets = [...localTweets, ...syncTweets];
       const uniqueTweets = Array.from(
         new Map(allTweets.map(tweet => [tweet.url, tweet])).values()
       );
 
       // Format tweets for clipboard
-      const formattedTweets = uniqueTweets.map(tweet => {
-        return `Tweet by ${tweet.username} (${tweet.handle})
-Text: ${tweet.text || 'No text'}
+      const formattedText = uniqueTweets.map(tweet => {
+        const tweetDate = new Date(tweet.timestamp).toLocaleString();
+        const saveDate = new Date(tweet.savedAt).toLocaleString();
+        
+        return `Tweet by @${tweet.username}
+${tweet.text}
 URL: ${tweet.url}
-Time: ${new Date(tweet.time).toLocaleString()}
-Saved: ${new Date(tweet.savedAt).toLocaleString()}
-Stats: ${tweet.likes} likes, ${tweet.retweets} retweets, ${tweet.replies} replies
-${tweet.mediaItems?.length ? `Media: ${tweet.mediaItems.length} items\n` : ''}
-----------------------------------------`;
-      }).join('\n');
+Posted: ${tweetDate}
+Saved: ${saveDate}
+Storage: ${tweet.storageType}
+Stats: ${tweet.stats ? `❤️ ${tweet.stats.likes} 🔁 ${tweet.stats.retweets} 💬 ${tweet.stats.replies}` : 'N/A'}
+Media: ${tweet.media ? tweet.media.length : 0} items
+${'-'.repeat(50)}`;
+      }).join('\n\n');
 
-      await navigator.clipboard.writeText(formattedTweets);
-      // Show success message using the existing notification system if available
+      await navigator.clipboard.writeText(formattedText);
+      
       if (window.showNotification) {
         window.showNotification('Tweets copied to clipboard', 'success');
       }
     } catch (error) {
-      console.error('Error copying to clipboard:', error);
+      console.error('Error copying tweets:', error);
       if (window.showNotification) {
         window.showNotification('Error copying tweets to clipboard', 'error');
       }
     }
   };
+
+  if (!settings) {
+    return <div className="loading">Loading settings...</div>;
+  }
 
   return (
     <div className="settings-section">
@@ -199,17 +230,6 @@ ${tweet.mediaItems?.length ? `Media: ${tweet.mediaItems.length} items\n` : ''}
       </div>
     </div>
   );
-};
-
-StorageSettings.propTypes = {
-  settings: PropTypes.shape({
-    maxTweets: PropTypes.number,
-    autoCleanup: PropTypes.bool,
-    cleanupThreshold: PropTypes.number,
-    backupEnabled: PropTypes.bool,
-    backupFrequency: PropTypes.string
-  }).isRequired,
-  onSettingChange: PropTypes.func.isRequired
 };
 
 export default StorageSettings; 

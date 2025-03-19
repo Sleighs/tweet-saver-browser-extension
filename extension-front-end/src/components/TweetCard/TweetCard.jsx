@@ -2,7 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import './TweetCard.css';
 
-const TweetCard = ({ tweet, onDelete, onRefresh }) => {
+const TweetCard = ({ tweet, onDelete, onRefresh, settings }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -166,14 +166,16 @@ const TweetCard = ({ tweet, onDelete, onRefresh }) => {
           </div>
         </div>
         <div className="tweet-actions">
-          {/* Add storage indicator */}
-          <div 
-            style={storageIndicatorStyle}
-            title={`Saved ${storageType === 'sync' ? 'across all browsers' : 'locally'}`}
-          >
-            {storageType === 'sync' ? <SyncStorageIcon /> : <LocalStorageIcon />}
-            {storageType === 'sync' ? 'Synced' : 'Local'}
-          </div>
+          {/* Only render the storage indicator if showStorageIndicator is true */}
+          {settings?.showStorageIndicator !== false && (
+            <div 
+              style={storageIndicatorStyle}
+              title={`Saved ${storageType === 'sync' ? 'across all browsers' : 'locally'}`}
+            >
+              {storageType === 'sync' ? <SyncStorageIcon /> : <LocalStorageIcon />}
+              {storageType === 'sync' ? 'Synced' : 'Local'}
+            </div>
+          )}
           <button 
             className="tweet-action-button primary"
             onClick={() => window.open(url, '_blank')}
@@ -278,7 +280,10 @@ TweetCard.propTypes = {
     storageType: PropTypes.oneOf(['local', 'sync']).isRequired
   }).isRequired,
   onDelete: PropTypes.func.isRequired,
-  onRefresh: PropTypes.func
+  onRefresh: PropTypes.func,
+  settings: PropTypes.shape({
+    showStorageIndicator: PropTypes.bool
+  })
 };
 
 export default TweetCard; 

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import TweetCard from '../TweetCard/TweetCard';
 import './TweetList.css';
 
-const TweetList = ({ tweets, onDeleteTweet, onRefresh }) => {
+const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings }) => {
   const [allTweets, setAllTweets] = useState([]);
   const [sortBy, setSortBy] = useState('savedAt');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -261,24 +261,16 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh }) => {
         Showing {filteredAndSortedTweets.length} of {allTweets.length} tweets
       </div>
 
-      <div className="tweet-list">
-        {filteredAndSortedTweets.length > 0 ? (
-          filteredAndSortedTweets.map((tweet) => (
-            <TweetCard
-              key={tweet.url}
-              tweet={tweet}
-              onDelete={onDeleteTweet}
-            />
-          ))
-        ) : (
-          <div className="no-tweets-message">
-            {allTweets.length === 0 ? (
-              "No tweets saved yet. Save some tweets to see them here!"
-            ) : (
-              "No tweets match your current filters."
-            )}
-          </div>
-        )}
+      <div className="tweets-container">
+        {filteredAndSortedTweets.map(tweet => (
+          <TweetCard
+            key={tweet.url}
+            tweet={tweet}
+            onDelete={onDeleteTweet}
+            onRefresh={onRefresh}
+            settings={settings}
+          />
+        ))}
       </div>
     </div>
   );
@@ -297,7 +289,8 @@ TweetList.propTypes = {
     storageType: PropTypes.oneOf(['local', 'sync']).isRequired
   })).isRequired,
   onDeleteTweet: PropTypes.func.isRequired,
-  onRefresh: PropTypes.func.isRequired
+  onRefresh: PropTypes.func.isRequired,
+  settings: PropTypes.object
 };
 
 export default TweetList; 

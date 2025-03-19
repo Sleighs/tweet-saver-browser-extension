@@ -4,7 +4,8 @@ import './App.css';
 import TweetList from './components/TweetList/TweetList';
 import OptionsPanel from './components/OptionsPanel/OptionsPanel';
 import Collections from './components/Collections/Collections';
-import SettingsService from './services/SettingsService';
+import About from './components/About/About';
+import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 
 const TABS = [
   {
@@ -24,17 +25,23 @@ const TABS = [
     label: 'Settings',
     icon: '⚙️',
     component: OptionsPanel
+  },
+  {
+    id: 'about',
+    label: 'About',
+    icon: 'ℹ️',
+    component: About
   }
 ];
 
-const App = () => {
+// Inner App component that uses the settings context
+const AppContent = () => {
+  const { settings, isLoading: isSettingsLoading, updateSetting } = useSettings();
   const [activeTab, setActiveTab] = useState('tweets');
   const [savedTweets, setSavedTweets] = useState([]);
-  const [settings, setSettings] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isPopup, setIsPopup] = useState(false);
-  const [isEnabled, setIsEnabled] = useState(true);
 
   const loadTweets = async () => {
     try {
@@ -68,12 +75,6 @@ const App = () => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        // Load settings
-        const currentSettings = await SettingsService.getSettings();
-        setSettings(currentSettings);
-        setIsEnabled(currentSettings.enableExtension);
-
-        // Load tweets
         await loadTweets();
       } catch (err) {
         console.error('Error loading data:', err);
@@ -150,17 +151,8 @@ const App = () => {
 
   const handleToggleExtension = async () => {
     try {
-      const newEnabledState = !isEnabled;
-      setIsEnabled(newEnabledState);
-      
-      // Update settings in storage
-      const updatedSettings = {
-        ...settings,
-        enableExtension: newEnabledState
-      };
-      
-      await SettingsService.updateSettings(updatedSettings);
-      setSettings(updatedSettings);
+      const newEnabledState = !settings.enableExtension;
+      await updateSetting('enableExtension', newEnabledState);
 
       // Notify content script
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -175,7 +167,7 @@ const App = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isSettingsLoading) {
     return <div className="loading">Loading...</div>;
   }
 
@@ -194,15 +186,15 @@ const App = () => {
             )}
             <div className="extension-toggle">
               <label className="toggle-label" htmlFor="extension-toggle">
-                {isEnabled ? 'On' : 'Off'}
+                {settings.enableExtension ? 'On' : 'Off'}
               </label>
               <button
                 id="extension-toggle"
-                className={`toggle-switch ${isEnabled ? 'enabled' : 'disabled'}`}
+                className={`toggle-switch ${settings.enableExtension ? 'enabled' : 'disabled'}`}
                 onClick={handleToggleExtension}
-                aria-label={`Extension is ${isEnabled ? 'enabled' : 'disabled'}`}
+                aria-label={`Extension is ${settings.enableExtension ? 'enabled' : 'disabled'}`}
                 role="switch"
-                aria-checked={isEnabled}
+                aria-checked={settings.enableExtension}
               >
                 <span className="toggle-track"></span>
                 <span className="toggle-thumb"></span>
@@ -232,23 +224,25 @@ const App = () => {
       )}
 
       <main className="app-main">
-        {console.log('Debug - activeTab:', activeTab, 'settings:', settings)}
         {ActiveComponent && (
           activeTab === 'tweets' ? (
             <ActiveComponent
               tweets={savedTweets}
               onDeleteTweet={handleDeleteTweet}
               onRefresh={handleRefresh}
+              settings={settings}
             />
           ) : activeTab === 'collections' ? (
             <ActiveComponent
               tweets={savedTweets}
               onUpdateTweet={handleRefresh}
             />
+          ) : activeTab === 'about' ? (
+            <ActiveComponent />
           ) : (
             <ActiveComponent
               settings={settings}
-              onSettingChange={(key, value) => setSettings({ ...settings, [key]: value })}
+              onSettingChange={updateSetting}
             />
           )
         )}
@@ -256,5 +250,12 @@ const App = () => {
     </div>
   );
 };
+
+// Wrap the app with the settings provider
+const App = () => (
+  <SettingsProvider>
+    <AppContent />
+  </SettingsProvider>
+);
 
 export default App;

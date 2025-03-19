@@ -25,7 +25,15 @@
         "images/save-icons/star-light.svg",
         "images/save-icons/star-dark.svg",
         "images/save-icons/cloud-light.svg",
-        "images/save-icons/cloud-dark.svg"
+        "images/save-icons/cloud-dark.svg",
+        "images/save-icons/plus-light-filled.svg",
+        "images/save-icons/plus-dark-filled.svg",
+        "images/save-icons/heart-light-filled.svg",
+        "images/save-icons/heart-dark-filled.svg",
+        "images/save-icons/star-light-filled.svg",
+        "images/save-icons/star-dark-filled.svg",
+        "images/save-icons/cloud-light-filled.svg",
+        "images/save-icons/cloud-dark-filled.svg"
       ],
       "matches": ["<all_urls>"]
     }
@@ -51,7 +59,14 @@
     }
   ],
   "permissions": [
-    "storage", "activeTab", "scripting", "tabs"
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://*.twitter.com/*",
+    "https://*.x.com/*"
   ],
   "options_page": "dist/index.html"
 }

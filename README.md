@@ -1,7 +1,7 @@
 
-# Tweet Saver
+# X Post Saver
 
-Tweet Saver is a browser extension that allows you to easily save and organize tweets for later reference. It seamlessly integrates with Twitter's interface to provide a smooth user experience for saving and managing tweets.
+X Post Saver is a browser extension that allows you to easily save and organize tweets for later reference. It seamlessly integrates with Twitter's interface to provide a smooth user experience for saving and managing tweets.
 
 ## Features
 

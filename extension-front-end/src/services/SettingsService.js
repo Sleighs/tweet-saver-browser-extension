@@ -18,7 +18,8 @@ const defaultSettings = {
   darkMode: false,
   fontSize: 'medium',
   compactMode: false,
-  storageType: 'local'
+  storageType: 'local',
+  showStorageIndicator: false
 };
 
 // Mock storage for development
@@ -66,13 +67,13 @@ class SettingsService {
         ...newSettings
       };
 
-      // Save each setting individually at the top level
+      // Save the entire settings object
+      await chrome.storage.local.set({ settings: mergedSettings });
+
+      // Also keep individual settings at top level for backwards compatibility
       for (const key in newSettings) {
         await chrome.storage.local.set({ [key]: newSettings[key] });
       }
-
-      // Also keep the options object for backwards compatibility
-      await chrome.storage.local.set({ options: mergedSettings });
 
       // Notify the extension that settings have changed
       if (chrome?.runtime?.sendMessage) {
@@ -91,16 +92,18 @@ class SettingsService {
 
   static async updateSetting(key, value) {
     try {
-      // Save the individual setting at the top level
-      await chrome.storage.local.set({ [key]: value });
-      
-      // Update options object for backwards compatibility
+      // Update the settings object
       const currentSettings = await this.getSettings();
       const newSettings = {
         ...currentSettings,
         [key]: value
       };
-      await chrome.storage.local.set({ options: newSettings });
+
+      // Save the entire settings object
+      await chrome.storage.local.set({ settings: newSettings });
+
+      // Also save individual setting for backwards compatibility
+      await chrome.storage.local.set({ [key]: value });
 
       // Notify the extension that settings have changed
       if (chrome?.runtime?.sendMessage) {
