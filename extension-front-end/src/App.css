@@ -491,7 +491,7 @@
   .app-header-tab {
     min-width: unset;
     padding: 6px 12px;
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .app-header-tab.active::after {

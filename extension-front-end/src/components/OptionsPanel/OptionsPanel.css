@@ -109,7 +109,7 @@
   display: flex;
   flex-direction: row;
   /* gap: 8px; */
-  width: 90%;
+  width: 95%;
   margin: auto;
   border-bottom: 1px solid var(--border-color, #cfd9de);
   box-sizing: border-box;
@@ -119,14 +119,14 @@
 
 .options-tab-button {
   background: none;
-  padding: 8px 12px 8px 8px;
+  padding: 6px 4px 6px 4px;
   color: var(--text-color, #0f1419);
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 3px;
   transition: all 0.2s ease;
   /* border-radius: 9999px; */
   min-width: fit-content;
@@ -151,7 +151,7 @@
   bottom: -4px;
   left: 50%;
   transform: translateX(-50%);
-  width: 90%;
+  width: 100%;
   height: 3px;
   background-color: var(--primary-color, #1d9bf0);
   /* border-radius: 2px; */
@@ -477,8 +477,9 @@
 
 @media screen and (min-width: 550px) {
   .options-tabs {
-    width: 95%;
+    width: 100%;
     justify-content: flex-start;
-    gap: 16px;
+    gap: 5px;
+    /* padding: 2px 2px; */
   }
 }

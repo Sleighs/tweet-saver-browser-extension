@@ -8,7 +8,7 @@ const AppearanceSettings = () => {
   const [isDarkMode, setIsDarkMode] = useState(settings?.darkMode ?? false);
   const [fontSize, setFontSize] = useState(settings?.fontSize ?? 'medium');
   const [compactMode, setCompactMode] = useState(settings?.compactMode ?? false);
-  const [saveIconStyle, setSaveIconStyle] = useState(settings?.saveIconStyle ?? 'star');
+  const [saveIconStyle, setSaveIconStyle] = useState(settings?.saveIconStyle ?? 'cloud');
   const [saveIconPosition, setSaveIconPosition] = useState(settings?.saveIconPosition ?? 'bottom');
   const [showStorageIndicator, setShowStorageIndicator] = useState(settings?.showStorageIndicator ?? true);
 
@@ -17,7 +17,7 @@ const AppearanceSettings = () => {
       setIsDarkMode(settings.darkMode ?? false);
       setFontSize(settings.fontSize ?? 'medium');
       setCompactMode(settings.compactMode ?? false);
-      setSaveIconStyle(settings.saveIconStyle ?? 'star');
+      setSaveIconStyle(settings.saveIconStyle ?? 'cloud');
       setSaveIconPosition(settings.saveIconPosition ?? 'bottom');
       setShowStorageIndicator(settings.showStorageIndicator ?? true);
     }
@@ -127,8 +127,8 @@ const AppearanceSettings = () => {
         <label className="setting-label">
           <span>Save Icon Style</span>
           <select value={saveIconStyle} onChange={handleSaveIconStyleChange}>
-            <option value="star">Star</option>
             <option value="cloud">Cloud</option>
+            <option value="star">Star</option>
             <option value="plus">Plus Sign</option>
             {/* <option value="heart">Heart</option> */}
           </select>
