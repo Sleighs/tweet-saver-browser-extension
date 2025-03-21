@@ -58,44 +58,73 @@ let tweets = [];
 
 // Initial setup
 browser.runtime.onInstalled.addListener(() => {
-  browser.storage.sync.get("options").then((result) => {
-    let optionsList = [
-      "enableExtension",
-      "saveLastTweetEnabled",
-      "browserStorageType",
-      "debugMode",
-      "enablePhotoUrlSave",
-    ];
+  // Get settings from both storages
+  Promise.all([
+    browser.storage.local.get('settings'),
+    browser.storage.sync.get('settings')
+  ]).then(([localSettings, syncSettings]) => {
+    // Get the settings with the most recent lastSaved timestamp
+    const local = localSettings.settings || { lastSaved: 0 };
+    const sync = syncSettings.settings || { lastSaved: 0 };
 
-    function extractProperties(names, obj) {
-      let extracted = {};
-      names.forEach(name => {
-        extracted[name] = obj[name] ?? defaultOptions[name];
-      });
-      return extracted;
-    }
+    // Use the most recently saved settings
+    const mostRecent = (local.lastSaved || 0) > (sync.lastSaved || 0) ? local : sync;
 
-    if (result && result.options) {
-      let newOptionObj = extractProperties(optionsList, result.options);
-      initializeDebugMode(newOptionObj.debugMode);
-
-      browser.storage.sync.set({ options: newOptionObj })
-        .then(() => {
-          debugLog("Installed - set options", newOptionObj);
-        });
+    // Initialize with the most recent settings
+    if (mostRecent) {
+      options = {
+        ...defaultOptions,
+        ...mostRecent
+      };
+      initializeDebugMode(options.debugMode);
     } else {
+      options = defaultOptions;
       initializeDebugMode(defaultOptions.debugMode);
-      browser.storage.sync.set({ options: defaultOptions })
-        .then(() => {
-          debugLog("Installed - default options", defaultOptions);
-        });
     }
+
+    // Save initial settings to both storages
+    const settingsWithTimestamp = {
+      ...options,
+      lastSaved: Date.now()
+    };
+
+    Promise.all([
+      browser.storage.local.set({ settings: settingsWithTimestamp }),
+      browser.storage.sync.set({ settings: settingsWithTimestamp })
+    ]).then(() => {
+      debugLog("Installed - set initial settings", settingsWithTimestamp);
+    });
   });
 
   updateIcon();
   getTweetsFromStorage();
 });
 
+// Listen for storage changes
+browser.storage.onChanged.addListener((changes, areaName) => {
+  if (changes.settings) {
+    const newSettings = changes.settings.newValue;
+    const oldSettings = changes.settings.oldValue;
+    
+    // Only update if the new settings are more recent
+    if (!oldSettings || (newSettings.lastSaved > oldSettings.lastSaved)) {
+      options = {
+        ...options,
+        ...newSettings
+      };
+      initializeDebugMode(options.debugMode);
+      debugLog("Settings updated from storage", options);
+    }
+  }
+});
+
+// Listen for messages from content script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.method === 'getStorageData') {
+    getDataFromStorage().then(data => sendResponse(data));
+    return true;  // Keep the message channel open for async response
+  }
+});
 
 async function updateIcon() {
   try {
@@ -116,10 +145,6 @@ async function updateIcon() {
     console.log('Error updating Icon', err);
   }
 }
-
-
-
-
 
 // Handle messages from the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -173,8 +198,6 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Required to return true to use sendResponse asynchronously
   return true;
 });
-
-
 
 // Fetch tweets and URLs from local storage
 async function getTweetsFromStorage() {
@@ -237,19 +260,3 @@ async function getDataFromStorage() {
     return { tweetUrls: [], tweets: [] };
   }
 }
-
-// Listener for messages from the content script
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.method === 'getStorageData') {
-    getDataFromStorage().then(data => sendResponse(data));
-    return true;  // Keep the message channel open for async response
-  }
-});
-
-// Add listener for storage type changes
-browser.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === 'sync' && changes.options?.newValue?.storageType !== changes.options?.oldValue?.storageType) {
-    // Storage type has changed, refresh data from new storage
-    getTweetsFromStorage();
-  }
-});

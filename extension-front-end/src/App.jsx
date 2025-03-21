@@ -5,7 +5,7 @@ import TweetList from './components/TweetList/TweetList';
 import OptionsPanel from './components/OptionsPanel/OptionsPanel';
 import Collections from './components/Collections/Collections';
 import About from './components/About/About';
-import { SettingsProvider, useSettings } from './contexts/SettingsContext';
+import { useSettings } from './contexts/SettingsContext';
 
 const TABS = [
   {
@@ -45,10 +45,17 @@ const AppContent = () => {
 
   const loadTweets = async () => {
     try {
+      // Check if we're offline
+      if (!navigator.onLine) {
+        setError('You are offline. Please check your internet connection and try again.');
+        setSavedTweets([]); // Set empty array to prevent undefined errors
+        return;
+      } 
+
       // Get tweets from both storage types
       const [localResult, syncResult] = await Promise.all([
-        chrome.storage.local.get('tweets'),
-        chrome.storage.sync.get('tweets')
+        chrome.storage?.local.get('tweets'),
+        chrome.storage?.sync.get('tweets')
       ]);
 
       // Parse tweets from both storages
@@ -62,9 +69,17 @@ const AppContent = () => {
       );
 
       setSavedTweets(uniqueTweets);
+      setError(null); // Clear any previous errors
     } catch (err) {
       console.error('Error loading tweets:', err);
-      setError('Failed to load tweets. Please try again.');
+      // Check if we're offline
+      if (!navigator.onLine) {
+        setError('You are offline. Please check your internet connection and try again.');
+      } else {
+        setError('Failed to load tweets. Please try again.');
+      }
+      // Set empty array to prevent undefined errors
+      setSavedTweets([]);
     }
   };
 
@@ -79,12 +94,31 @@ const AppContent = () => {
       } catch (err) {
         console.error('Error loading data:', err);
         setError('Failed to load data. Please try again.');
+        setSavedTweets([]); // Set empty array to prevent undefined errors
       } finally {
         setIsLoading(false);
       }
     };
 
     loadData();
+
+    // Add offline/online event listeners
+    const handleOnline = () => {
+      setError(null);
+      loadData();
+    };
+
+    const handleOffline = () => {
+      setError('You are offline. Please check your internet connection and try again.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   const handleDeleteTweet = async (tweet) => {
@@ -127,13 +161,22 @@ const AppContent = () => {
         new Map(allTweets.map(t => [t.url, t])).values()
       );
       setSavedTweets(uniqueTweets);
+      setError(null); // Clear any previous errors
     } catch (err) {
       console.error('Error deleting tweet:', err);
-      setError('Failed to delete tweet. Please try again.');
+      if (!navigator.onLine) {
+        setError('You are offline. Please check your internet connection and try again.');
+      } else {
+        setError('Failed to delete tweet. Please try again.');
+      }
     }
   };
 
   const handleRefresh = async () => {
+    if (!navigator.onLine) {
+      setError('You are offline. Please check your internet connection and try again.');
+      return;
+    }
     await loadTweets();
   };
 
@@ -161,9 +204,14 @@ const AppContent = () => {
           type: 'SETTINGS_UPDATED'
         });
       }
+      setError(null); // Clear any previous errors
     } catch (err) {
       console.error('Error toggling extension:', err);
-      setError('Failed to update extension state. Please try again.');
+      if (!navigator.onLine) {
+        setError('You are offline. Please check your internet connection and try again.');
+      } else {
+        setError('Failed to update extension state. Please try again.');
+      }
     }
   };
 
@@ -200,7 +248,6 @@ const AppContent = () => {
                 <span className="toggle-thumb"></span>
               </button>
             </div>
-           
           </div>
         </div>
         <nav className="app-tabs">
@@ -251,11 +298,4 @@ const AppContent = () => {
   );
 };
 
-// Wrap the app with the settings provider
-const App = () => (
-  <SettingsProvider>
-    <AppContent />
-  </SettingsProvider>
-);
-
-export default App;
+export default AppContent;

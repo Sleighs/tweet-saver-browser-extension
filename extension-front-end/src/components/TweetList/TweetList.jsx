@@ -14,6 +14,18 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings }) => {
 
   // Function to get tweets from both storage types
   const getAllTweets = async () => {
+    if (!navigator.onLine) {
+      console.error('You are offline. Please check your internet connection and try again.');
+      setAllTweets([]); // Set empty array to prevent undefined errors
+      return;
+    }
+
+    if (!chrome.storage) {
+      console.error('Chrome storage is not available.');
+      setAllTweets([]); // Set empty array to prevent undefined errors
+      return;
+    }
+
     try {
       // Get tweets from sync storage
       const syncData = await new Promise((resolve) => {
@@ -38,6 +50,7 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings }) => {
       setAllTweets(uniqueTweets);
     } catch (error) {
       console.error('Error fetching tweets:', error);
+      setAllTweets([]); // Set empty array to prevent undefined errors
     }
   };
 
@@ -293,4 +306,4 @@ TweetList.propTypes = {
   settings: PropTypes.object
 };
 
-export default TweetList; 
+export default TweetList;

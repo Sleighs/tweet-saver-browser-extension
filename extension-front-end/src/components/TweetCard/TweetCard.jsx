@@ -16,6 +16,24 @@ const TweetCard = ({ tweet, onDelete, onRefresh, settings }) => {
     }
   };
 
+  const handleDelete = async (tweet) => {
+    try {
+      // Send message to content script to update button state
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]?.url?.includes('x.com')) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'TWEET_DELETED',
+          url: tweet.url
+        }).catch(() => {
+          // Ignore errors for inactive tabs
+        });
+      }
+      await onDelete(tweet);
+    } catch (error) {
+      console.error('Error deleting tweet:', error);
+    }
+  };
+
   const {
     username,
     handle,
@@ -194,7 +212,7 @@ const TweetCard = ({ tweet, onDelete, onRefresh, settings }) => {
             {isRefreshing ? 'Updating' : 'Update'}
           </button> */}
           <button 
-            onClick={() => onDelete(tweet)} 
+            onClick={() => handleDelete(tweet)} 
             className="delete-button"
             title="Delete tweet"
           >

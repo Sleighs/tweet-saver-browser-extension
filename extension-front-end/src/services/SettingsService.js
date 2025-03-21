@@ -19,7 +19,8 @@ const defaultSettings = {
   fontSize: 'medium',
   compactMode: false,
   storageType: 'local',
-  showStorageIndicator: false
+  showStorageIndicator: false,
+  lastSaved: 0
 };
 
 // Mock storage for development
@@ -33,98 +34,103 @@ class SettingsService {
   }
 
   static async getSettings() {
-    console.log('SettingsService.getSettings called');
     try {
       if (this.isDevelopment()) {
-        console.log('Using mock storage:', mockStorage.settings);
         return mockStorage.settings;
       }
 
-      const result = await chrome.storage.local.get('settings');
-      console.log('Settings from chrome storage:', result);
-      return result.settings || defaultSettings;
+      // Get settings from both storages
+      const [localSettings, syncSettings] = await Promise.all([
+        chrome.storage.local.get('settings'),
+        chrome.storage.sync.get('settings')
+      ]);
+
+      // Get the settings with the most recent lastSaved timestamp
+      const local = localSettings.settings || { lastSaved: 0 };
+      const sync = syncSettings.settings || { lastSaved: 0 };
+
+      // Use the most recently saved settings
+      const mostRecent = (local.lastSaved || 0) > (sync.lastSaved || 0) ? local : sync;
+
+      // Merge with defaults
+      const mergedSettings = {
+        ...defaultSettings,
+        ...mostRecent
+      };
+
+      return mergedSettings;
     } catch (error) {
       console.error('Error getting settings:', error);
+      // Return default settings if there's an error
       return defaultSettings;
     }
   }
 
   static async updateSettings(newSettings) {
     try {
-      // Use mock storage in development
       if (this.isDevelopment()) {
         mockStorage.settings = {
           ...mockStorage.settings,
-          ...newSettings
+          ...newSettings,
+          lastSaved: Date.now()
         };
         return mockStorage.settings;
       }
 
-      // Merge with existing settings to ensure we don't lose any values
-      const currentSettings = await this.getSettings();
-      const mergedSettings = {
-        ...currentSettings,
-        ...newSettings
+      // Add lastSaved timestamp
+      const settingsWithTimestamp = {
+        ...newSettings,
+        lastSaved: Date.now()
       };
 
-      // Save the entire settings object
-      await chrome.storage.local.set({ settings: mergedSettings });
+      // Save to both storages
+      await Promise.all([
+        chrome.storage.local.set({ settings: settingsWithTimestamp }),
+        chrome.storage.sync.set({ settings: settingsWithTimestamp })
+      ]);
 
-      // Also keep individual settings at top level for backwards compatibility
-      for (const key in newSettings) {
-        await chrome.storage.local.set({ [key]: newSettings[key] });
+      // Notify content script of settings change
+      if (chrome?.tabs && chrome.runtime?.id) {
+        const tabs = await chrome.tabs.query({ url: ['*://*.twitter.com/*', '*://*.x.com/*'] });
+        for (const tab of tabs) {
+          try {
+            await chrome.tabs.sendMessage(tab.id, {
+              type: 'SETTINGS_UPDATED',
+              payload: settingsWithTimestamp
+            });
+          } catch (error) {
+            console.warn('Could not update content script in tab:', tab.id, error);
+          }
+        }
       }
 
-      // Notify the extension that settings have changed
-      if (chrome?.runtime?.sendMessage) {
-        await chrome.runtime.sendMessage({
-          type: 'SETTINGS_UPDATED',
-          payload: mergedSettings
-        });
-      }
-
-      return mergedSettings;
+      return settingsWithTimestamp;
     } catch (error) {
       console.error('Error updating settings:', error);
-      throw error;
+      // If we can't save to sync storage, try local storage as fallback
+      try {
+        await chrome.storage.local.set({ settings: settingsWithTimestamp });
+        return settingsWithTimestamp;
+      } catch (localError) {
+        console.error('Error saving to local storage:', localError);
+        throw error;
+      }
     }
   }
 
   static async updateSetting(key, value) {
-    try {
-      // Update the settings object
-      const currentSettings = await this.getSettings();
-      const newSettings = {
-        ...currentSettings,
-        [key]: value
-      };
-
-      // Save the entire settings object
-      await chrome.storage.local.set({ settings: newSettings });
-
-      // Also save individual setting for backwards compatibility
-      await chrome.storage.local.set({ [key]: value });
-
-      // Notify the extension that settings have changed
-      if (chrome?.runtime?.sendMessage) {
-        await chrome.runtime.sendMessage({
-          type: 'SETTINGS_UPDATED',
-          payload: newSettings
-        });
-      }
-
-      return newSettings;
-    } catch (error) {
-      console.error('Error updating setting:', error);
-      throw error;
-    }
+    const currentSettings = await this.getSettings();
+    return this.updateSettings({
+      ...currentSettings,
+      [key]: value
+    });
   }
 
   static onSettingsChanged(callback) {
     if (!this.isDevelopment() && chrome?.storage?.onChanged) {
       chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName === 'local') {
-          callback(changes);
+        if (changes.settings) {
+          callback(changes.settings.newValue);
         }
       });
     }

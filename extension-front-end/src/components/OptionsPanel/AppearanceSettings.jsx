@@ -23,38 +23,9 @@ const AppearanceSettings = () => {
     }
   }, [settings]);
 
-  const notifyContentScript = async (updatedSettings) => {
-    try {
-      // Get all tabs that match twitter.com or x.com
-      const tabs = await chrome.tabs.query({
-        url: ['*://*.twitter.com/*', '*://*.x.com/*']
-      });
-
-      // Send message to each tab
-      for (const tab of tabs) {
-        await chrome.tabs.sendMessage(tab.id, {
-          type: 'SETTINGS_UPDATED',
-          settings: updatedSettings
-        });
-      }
-    } catch (error) {
-      console.error('Error notifying content script:', error);
-    }
-  };
-
   const handleSettingChange = async (key, value) => {
     try {
       await updateSetting(key, value);
-      
-      // Get current settings and update with new value
-      const updatedSettings = {
-        ...settings,
-        [key]: value
-      };
-      
-      // Notify content script of the change
-      await notifyContentScript(updatedSettings);
-      
       if (window.showNotification) {
         window.showNotification('Settings updated successfully', 'success');
       }

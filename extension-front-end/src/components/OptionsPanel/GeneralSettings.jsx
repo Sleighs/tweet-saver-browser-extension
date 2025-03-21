@@ -76,38 +76,6 @@ const GeneralSettings = () => {
 
       <div className="setting-group">
         <label className="setting-label">
-          <span>Auto-Save Tweets</span>
-          <input
-            type="checkbox"
-            checked={autoSave}
-            onChange={handleAutoSaveChange}
-          />
-        </label>
-        <p className="setting-description">
-          Automatically save tweets when you click on them to view (separate from the save button)
-        </p>
-      </div>
-
-      {autoSave && (
-        <div className="setting-group">
-          <label className="setting-label">
-            <span>Save Delay (ms)</span>
-            <input
-              type="number"
-              min="0"
-              max="5000"
-              value={saveDelay}
-              onChange={handleSaveDelayChange}
-            />
-          </label>
-          <p className="setting-description">
-            Delay before auto-saving (0-5000 milliseconds)
-          </p>
-        </div>
-      )}
-
-      <div className="setting-group">
-        <label className="setting-label">
           <span>Show Notifications</span>
           <input
             type="checkbox"
@@ -117,6 +85,22 @@ const GeneralSettings = () => {
         </label>
         <p className="setting-description">
           Display notifications when tweets are saved
+        </p>
+      </div>
+
+     
+
+      <div className="setting-group">
+        <label className="setting-label">
+          <span>Save Tweet Metadata</span>
+          <input
+            type="checkbox"
+            checked={saveTweetMetadata}
+            onChange={handleSaveMetadataChange}
+          />
+        </label>
+        <p className="setting-description">
+          Include likes, retweets, and other metadata when saving tweets
         </p>
       </div>
 
@@ -136,17 +120,36 @@ const GeneralSettings = () => {
 
       <div className="setting-group">
         <label className="setting-label">
-          <span>Save Tweet Metadata</span>
+          <span>Autosave Clicked Tweets</span>
           <input
             type="checkbox"
-            checked={saveTweetMetadata}
-            onChange={handleSaveMetadataChange}
+            checked={autoSave}
+            onChange={handleAutoSaveChange}
           />
         </label>
         <p className="setting-description">
-          Include likes, retweets, and other metadata when saving tweets
+          Automatically save tweets when you click to view them in detail (separate from the manual save button)
         </p>
       </div>
+
+      {autoSave && (
+        <div className="setting-group">
+          <label className="setting-label">
+            <span>Save Delay (ms)</span>
+            <input
+              type="number"
+              min="0"
+              max="5000"
+              value={saveDelay}
+              onChange={handleSaveDelayChange}
+            />
+          </label>
+          <p className="setting-description">
+            How long to wait before auto-saving after clicking a tweet (0-5000 milliseconds)
+          </p>
+        </div>
+      )}
+
     </div>
   );
 };

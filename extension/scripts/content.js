@@ -789,32 +789,6 @@ const isTweetUrl = (urlToCheck, ignorePhotoUrl) => {
 
 /////// Event listeners ///////
 
-// Add click event listener for saving tweets
-// document.addEventListener('click', async function(event) {
-//   let tweet = event.target.closest('article');
-//   // let tweetEle = event.target.closest('article[data-testid="tweet"]');
-  
-//   // console.log('page clicked', location.href, tweet, tweetEle);
-
-//   if (tweet) {
-//     let tweetUrl = tweet.querySelector('a[href*="status"]')?.href || location.href;
-//     console.log(
-//       'Tweet clicked', 
-//       tweetUrl
-//     );
-
-//     if (isTweetUrl(tweetUrl)) {
-//       // Save the tweet URL
-//       await saveUrl(tweetUrl);
-//     }
-    
-//     // Save the tweet content
-//     await saveNewTweet(tweet, tweetUrl);
-//   }
-// });
-
-
-
 // Modify the detectUrlChange function to be more focused
 const detectUrlChangeNewVersion = () => {
   if (!enableExtension) {
@@ -885,66 +859,43 @@ const detectUrlChange = async () => {
 // Retrieve and set options
 const initializeOptions = async () => {
   try {
-    // Get options
-    const optionsResult = await new Promise((resolve) => {
-      chrome.storage.sync.get("options", resolve);
-    });
+    // Get settings from both storages
+    const [localSettings, syncSettings] = await Promise.all([
+      chrome.storage.local.get('settings'),
+      chrome.storage.sync.get('settings')
+    ]);
 
-    if (optionsResult && optionsResult.options) {
-      let newOptionObj = extractProperties(optionsList, optionsResult.options);
-      
-      enableExtension = newOptionObj.enableExtension;
-      saveLastTweetEnabled = newOptionObj.saveLastTweetEnabled;
-      browserStorageType = newOptionObj.browserStorageType;
-      debugMode = newOptionObj.debugMode ?? false;
-      
-      Object.assign(optionsState, newOptionObj);
-    } else {
-      enableExtension = defaultOptions.enableExtension;
-      saveLastTweetEnabled = defaultOptions.saveLastTweetEnabled;
-      browserStorageType = defaultOptions.browserStorageType;
-      debugMode = defaultOptions.debugMode ?? false;
+    // Get the settings with the most recent lastSaved timestamp
+    const local = localSettings.settings || { lastSaved: 0 };
+    const sync = syncSettings.settings || { lastSaved: 0 };
 
-      Object.assign(optionsState, defaultOptions);
-    }
-
-    // Get all settings from chrome.storage
-    const allSettings = await new Promise((resolve) => {
-      chrome.storage.sync.get(null, resolve);
-    });
+    // Use the most recently saved settings
+    const mostRecent = (local.lastSaved || 0) > (sync.lastSaved || 0) ? local : sync;
 
     // Update the settings object with values from storage
-    if (allSettings) {
+    if (mostRecent) {
       // Update individual settings
-      for (const key in allSettings) {
-        if (key !== 'options' && key !== 'tweetUrls' && key !== 'tweets') {
-          settings[key] = allSettings[key];
+      for (const key in mostRecent) {
+        if (key !== 'lastSaved') {
+          settings[key] = mostRecent[key];
         }
       }
 
-      // If specific settings exist in storage, update them
-      if (allSettings.notificationsEnabled !== undefined) {
-        settings.notificationsEnabled = allSettings.notificationsEnabled;
-      }
-      if (allSettings.autoSave !== undefined) {
-        settings.autoSave = allSettings.autoSave;
-      }
-      if (allSettings.saveDelay !== undefined) {
-        settings.saveDelay = allSettings.saveDelay;
-      }
-      if (allSettings.saveOnlyMedia !== undefined) {
-        settings.saveOnlyMedia = allSettings.saveOnlyMedia;
-      }
-      if (allSettings.saveTweetMetadata !== undefined) {
-        settings.saveTweetMetadata = allSettings.saveTweetMetadata;
-      }
+      // Update debug mode
+      debugMode = mostRecent.debugMode ?? false;
+      initializeDebugMode(debugMode);
     }
 
     if (debugMode) console.log('Settings loaded:', settings);
   } catch (error) {
     if (debugMode) console.error('initializeOptions - Error retrieving options:', error);
+    // Use default settings if there's an error
+    settings = {
+      ...defaultOptions,
+      ...settings
+    };
   }
-}
+};
 
 /////// Initialization ///////
 
@@ -1071,41 +1022,75 @@ const showNotification = (message, type = 'info', duration = 3000) => {
   }
 };
 
-// Listen for messages from options panel
+// Listen for messages from options panel and frontend
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'SETTINGS_UPDATED') {
-    // Get all settings from sync storage
-    chrome.storage.sync.get(null, async (result) => {
-      const oldStorageType = settings.storageType;
+    // Update settings with the new values
+    if (message.payload) {
+      const newSettings = message.payload;
+      const oldSettings = settings;
       
-      // Update settings object with values from storage
-      for (const key in result) {
-        if (key !== 'options' && key !== 'tweetUrls' && key !== 'tweets') {
-          settings[key] = result[key];
+      // Only update if the new settings are more recent
+      if (!oldSettings || (newSettings.lastSaved > oldSettings.lastSaved)) {
+        // Update individual settings
+        for (const key in newSettings) {
+          if (key !== 'lastSaved') {
+            settings[key] = newSettings[key];
+          }
+        }
+        
+        // Update debug mode
+        debugMode = newSettings.debugMode ?? false;
+        initializeDebugMode(debugMode);
+
+        // If icon style changed, update all buttons
+        if (oldSettings?.saveIconStyle !== newSettings.saveIconStyle) {
+          const theme = detectTheme();
+          document.querySelectorAll('.tweet-saver--save-tweet-button').forEach(button => {
+            const isSaved = button.classList.contains('saved');
+            updateIconSource(button, newSettings.saveIconStyle, theme, isSaved);
+          });
         }
       }
-      
-      // If storage type changed, transfer data
-      if (oldStorageType !== settings.storageType) {
-        await transferStorageData(oldStorageType, settings.storageType);
+    }
+    
+    // Remove existing save buttons and re-add them with new settings
+    document.querySelectorAll('.tweet-saver--processed').forEach(tweet => {
+      tweet.classList.remove('tweet-saver--processed');
+      const buttonContainer = tweet.querySelector('.tweet-saver--button-container');
+      if (buttonContainer) {
+        buttonContainer.remove();
       }
-      
-      // Update debug mode
-      debugMode = result.debugMode ?? false;
-      initializeDebugMode(debugMode);
-      
-      // Remove existing save buttons and re-add them with new settings
-      document.querySelectorAll('.tweet-saver--processed').forEach(tweet => {
-        tweet.classList.remove('tweet-saver--processed');
-        const buttonContainer = tweet.querySelector('.tweet-saver--button-container');
-        if (buttonContainer) {
-          buttonContainer.remove();
-        }
-      });
-      
-      // Re-add save buttons with new settings
-      addSaveButtonsToTweets();
     });
+    
+    // Re-add save buttons with new settings
+    addSaveButtonsToTweets();
+  } else if (message.type === 'TWEET_DELETED') {
+    // Update save button state for the deleted tweet
+    const tweetUrl = message.url;
+    const buttonContainer = document.querySelector(`.tweet-saver--button-container[data-tweet-url="${tweetUrl}"]`);
+    if (buttonContainer) {
+      const buttonElement = buttonContainer.querySelector('.tweet-saver--save-tweet-button');
+      if (buttonElement) {
+        buttonElement.classList.remove('saved');
+        const theme = detectTheme();
+        updateIconSource(buttonElement, settings.saveIconStyle, theme, false);
+      }
+    }
+
+    // Update local arrays
+    const urlIndex = savedUrls.indexOf(tweetUrl);
+    if (urlIndex > -1) {
+      savedUrls.splice(urlIndex, 1);
+    }
+
+    const tweetIndex = savedTweets.findIndex(tweet => tweet.url === tweetUrl);
+    if (tweetIndex > -1) {
+      savedTweets.splice(tweetIndex, 1);
+    }
+
+    // Save updated arrays to storage
+    saveDataToStorage(savedUrls, savedTweets);
   }
   
   sendResponse({ success: true });
@@ -1114,23 +1099,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Listen for messages from the background script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'SETTINGS_UPDATED') {
-    // Update settings object with new values
-    Object.assign(settings, message.settings);
-    
-    // Update all existing buttons with new icon style
-    const buttons = document.querySelectorAll('.tweet-saver--save-tweet-button');
-    const theme = detectTheme();
-    
-    buttons.forEach(button => {
-      const container = button.closest('.tweet-saver--button-container');
-      const tweetUrl = container?.getAttribute('data-tweet-url');
-      const isSaved = savedUrls.includes(tweetUrl);
-      updateIconSource(button, settings.saveIconStyle, theme, isSaved);
-    });
-    
-    if (debugMode) console.log('Settings updated:', settings);
-  } else if (message.method === 'tweetsDeleted') {
+  if (message.method === 'tweetsDeleted') {
     // Clear local data
     savedUrls = [];
     savedTweets = [];
@@ -1139,9 +1108,6 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     
     if (debugMode) console.log('Local data cleared after tweetsDeleted message');
   }
-  
-  sendResponse({ success: true });
-  return true;
 });
 
 // Add click outside handler to close menus
