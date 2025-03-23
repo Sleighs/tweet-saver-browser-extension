@@ -302,7 +302,7 @@ const saveDataToStorage = async (tweetUrls, tweets) => {
     // Check if extension context is still valid
     if (!chrome.runtime?.id) {
       if (debugMode) console.log('Extension context invalid, reloading page...');
-      window.location.reload();
+      //window.location.reload();
       return;
     }
 
@@ -323,7 +323,7 @@ const saveDataToStorage = async (tweetUrls, tweets) => {
         // Check if extension context is still valid
         if (!chrome.runtime?.id) {
           if (debugMode) console.log('Extension context invalid during retry, reloading page...');
-          window.location.reload();
+          //window.location.reload();
           return;
         }
 
@@ -904,6 +904,9 @@ const initializeOptions = async () => {
   }
 };
 
+
+
+
 /////// Initialization ///////
 
 (async function () {
@@ -1081,6 +1084,76 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     
     // Re-add save buttons with new settings
     addSaveButtonsToTweets();
+  } else if (message.type === 'SETTING_UPDATED') {
+    const { key, value, notify } = message.payload;
+    
+    // Update the specific setting
+    settings[key] = value;
+
+    // Handle all setting changes
+    switch (key) {
+      case 'notificationsEnabled':
+        if (notify) {
+          showNotification('Notification settings updated', 'info');
+        }
+        break;
+        
+      case 'autoSave':
+        if (notify) {
+          showNotification(`Auto-save ${value ? 'enabled' : 'disabled'}`, 'info');
+        }
+        break;
+        
+      case 'saveOnlyMedia':
+        // Re-scan current tweets with new media filter
+        document.querySelectorAll('.tweet-saver--button-container').forEach(container => {
+          container.remove();
+        });
+        addSaveButtonsToTweets();
+        if (notify) {
+          showNotification(`Media-only mode ${value ? 'enabled' : 'disabled'}`, 'info');
+        }
+        break;
+
+      case 'saveIconStyle':
+        // Update all existing save button icons
+        const theme = detectTheme();
+        document.querySelectorAll('.tweet-saver--save-tweet-button').forEach(button => {
+          const isSaved = button.classList.contains('saved');
+          updateIconSource(button, value, theme, isSaved);
+        });
+        if (notify) {
+          showNotification('Save icon style updated', 'info');
+        }
+        break;
+
+      case 'saveIconPosition':
+        // Remove and re-add all save buttons to update position
+        document.querySelectorAll('.tweet-saver--button-container').forEach(container => {
+          container.remove();
+        });
+        addSaveButtonsToTweets();
+        if (notify) {
+          showNotification('Save icon position updated', 'info');
+        }
+        break;
+
+      case 'showStorageIndicator':
+        if (notify) {
+          showNotification(`Storage indicator ${value ? 'shown' : 'hidden'}`, 'info');
+        }
+        break;
+        
+      // ... other cases ...
+    }
+
+    // Save updated settings
+    chrome.storage.local.set({ 
+      settings: {
+        ...settings,
+        lastSaved: Date.now()
+      }
+    });
   } else if (message.type === 'TWEET_DELETED') {
     // Update save button state for the deleted tweet
     const tweetUrl = message.url;

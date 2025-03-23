@@ -25,14 +25,33 @@ const AppearanceSettings = () => {
 
   const handleSettingChange = async (key, value) => {
     try {
+      // Update setting in context/storage
       await updateSetting(key, value);
+
+      // Send message to content script to update setting
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const activeTab = tabs[0];
+      
+      if (activeTab?.url?.includes('x.com')) {
+        chrome.tabs.sendMessage(activeTab.id, {
+          type: 'APPEARANCE_UPDATED',
+          payload: {
+            key,
+            value,
+            notify: settings?.notificationsEnabled ?? true
+          }
+        }).catch(() => {
+          // Ignore errors for inactive tabs
+        });
+      }
+
       if (window.showNotification) {
-        window.showNotification('Settings updated successfully', 'success');
+        window.showNotification('Appearance updated successfully', 'success');
       }
     } catch (error) {
-      console.error('Error updating setting:', error);
+      console.error('Error updating appearance:', error);
       if (window.showNotification) {
-        window.showNotification('Error updating settings', 'error');
+        window.showNotification('Error updating appearance', 'error');
       }
     }
   };
@@ -180,4 +199,4 @@ AppearanceSettings.propTypes = {
   onSettingChange: PropTypes.func.isRequired
 };
 
-export default AppearanceSettings; 
+export default AppearanceSettings;

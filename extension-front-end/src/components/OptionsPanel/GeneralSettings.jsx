@@ -4,25 +4,54 @@ import './OptionsPanel.css';
 
 const GeneralSettings = () => {
   const { settings, updateSetting } = useSettings();
+  // Existing state
   const [autoSave, setAutoSave] = useState(settings?.autoSave ?? true);
   const [saveDelay, setSaveDelay] = useState(settings?.saveDelay ?? 500);
   const [notificationsEnabled, setNotificationsEnabled] = useState(settings?.notificationsEnabled ?? true);
   const [saveOnlyMedia, setSaveOnlyMedia] = useState(settings?.saveOnlyMedia ?? false);
   const [saveTweetMetadata, setSaveTweetMetadata] = useState(settings?.saveTweetMetadata ?? true);
+  
+  // Add appearance state
+  const [saveIconStyle, setSaveIconStyle] = useState(settings?.saveIconStyle ?? 'cloud');
+  const [saveIconPosition, setSaveIconPosition] = useState(settings?.saveIconPosition ?? 'bottom');
+  const [showStorageIndicator, setShowStorageIndicator] = useState(settings?.showStorageIndicator ?? true);
 
   useEffect(() => {
     if (settings) {
+      // Existing settings
       setAutoSave(settings.autoSave ?? true);
       setSaveDelay(settings.saveDelay ?? 500);
       setNotificationsEnabled(settings.notificationsEnabled ?? true);
       setSaveOnlyMedia(settings.saveOnlyMedia ?? false);
       setSaveTweetMetadata(settings.saveTweetMetadata ?? true);
+      
+      // Appearance settings
+      setSaveIconStyle(settings.saveIconStyle ?? 'cloud');
+      setSaveIconPosition(settings.saveIconPosition ?? 'bottom');
+      setShowStorageIndicator(settings.showStorageIndicator ?? true);
     }
   }, [settings]);
 
   const handleSettingChange = async (key, value) => {
     try {
       await updateSetting(key, value);
+      
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const activeTab = tabs[0];
+      
+      if (activeTab?.url?.includes('x.com')) {
+        chrome.tabs.sendMessage(activeTab.id, {
+          type: 'SETTING_UPDATED',
+          payload: {
+            key,
+            value,
+            notify: settings?.notificationsEnabled ?? true
+          }
+        }).catch(() => {
+          // Ignore errors for inactive tabs
+        });
+      }
+
       if (window.showNotification) {
         window.showNotification('Settings updated successfully', 'success');
       }
@@ -66,6 +95,25 @@ const GeneralSettings = () => {
     handleSettingChange('saveTweetMetadata', value);
   };
 
+  // Add appearance handlers
+  const handleSaveIconStyleChange = (e) => {
+    const value = e.target.value;
+    setSaveIconStyle(value);
+    handleSettingChange('saveIconStyle', value);
+  };
+
+  const handleSaveIconPositionChange = (e) => {
+    const value = e.target.value;
+    setSaveIconPosition(value);
+    handleSettingChange('saveIconPosition', value);
+  };
+
+  const handleShowStorageIndicatorChange = (e) => {
+    const value = e.target.checked;
+    setShowStorageIndicator(value);
+    handleSettingChange('showStorageIndicator', value);
+  };
+
   if (!settings) {
     return <div className="loading">Loading settings...</div>;
   }
@@ -74,6 +122,8 @@ const GeneralSettings = () => {
     <div className="settings-section">
       <h2>General Settings</h2>
 
+      {/* <h3>General</h3> */}
+      {/* Existing general settings */}
       <div className="setting-group">
         <label className="setting-label">
           <span>Show Notifications</span>
@@ -85,22 +135,6 @@ const GeneralSettings = () => {
         </label>
         <p className="setting-description">
           Display notifications when tweets are saved
-        </p>
-      </div>
-
-     
-
-      <div className="setting-group">
-        <label className="setting-label">
-          <span>Save Tweet Metadata</span>
-          <input
-            type="checkbox"
-            checked={saveTweetMetadata}
-            onChange={handleSaveMetadataChange}
-          />
-        </label>
-        <p className="setting-description">
-          Include likes, retweets, and other metadata when saving tweets
         </p>
       </div>
 
@@ -128,7 +162,7 @@ const GeneralSettings = () => {
           />
         </label>
         <p className="setting-description">
-          Automatically save tweets when you click to view them in detail (separate from the manual save button)
+          Automatically save tweets when you click to view them
         </p>
       </div>
 
@@ -145,11 +179,53 @@ const GeneralSettings = () => {
             />
           </label>
           <p className="setting-description">
-            How long to wait before auto-saving after clicking a tweet (0-5000 milliseconds)
+            Delay before auto-saving (0-5000 milliseconds)
           </p>
         </div>
       )}
 
+      <h2>Appearance</h2>
+      {/* Add appearance settings */}
+      <div className="setting-group">
+        <label className="setting-label">
+          <span>Save Icon Style</span>
+          <select value={saveIconStyle} onChange={handleSaveIconStyleChange}>
+            <option value="cloud">Cloud</option>
+            <option value="star">Star</option>
+            <option value="plus">Plus Sign</option>
+          </select>
+        </label>
+        <p className="setting-description">
+          Choose the style of the save button icon
+        </p>
+      </div>
+
+      <div className="setting-group">
+        <label className="setting-label">
+          <span>Save Icon Position</span>
+          <select value={saveIconPosition} onChange={handleSaveIconPositionChange}>
+            <option value="bottom">Bottom (Next to Bookmark)</option>
+            <option value="top" disabled={true}>Top (Near Post Options)</option>
+          </select>
+        </label>
+        <p className="setting-description">
+          Choose where the save button appears on posts
+        </p>
+      </div>
+
+      <div className="setting-group">
+        <label className="setting-label">
+          <span>Show Storage Location</span>
+          <input
+            type="checkbox"
+            checked={showStorageIndicator}
+            onChange={handleShowStorageIndicatorChange}
+          />
+        </label>
+        <p className="setting-description">
+          Show storage location indicator on saved posts
+        </p>
+      </div>
     </div>
   );
 };

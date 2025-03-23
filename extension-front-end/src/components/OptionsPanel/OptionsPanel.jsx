@@ -3,7 +3,6 @@ import { useState } from 'react';
 import './OptionsPanel.css';
 import GeneralSettings from './GeneralSettings';
 import AdvancedSettings from './AdvancedSettings';
-import AppearanceSettings from './AppearanceSettings';
 import StorageSettings from './StorageSettings';
 
 const OptionsPanel = () => {
@@ -27,13 +26,6 @@ const OptionsPanel = () => {
           Storage
         </button>
         <button
-          className={`options-tab-button ${activeTab === 'appearance' ? 'active' : ''}`}
-          onClick={() => setActiveTab('appearance')}
-        >
-          <span className="tab-icon">🎨</span>
-          Appearance
-        </button>
-        <button
           className={`options-tab-button ${activeTab === 'advanced' ? 'active' : ''}`}
           onClick={() => setActiveTab('advanced')}
         >
@@ -45,7 +37,6 @@ const OptionsPanel = () => {
       <main className="options-content">
         {activeTab === 'general' && <GeneralSettings />}
         {activeTab === 'storage' && <StorageSettings />}
-        {activeTab === 'appearance' && <AppearanceSettings />}
         {activeTab === 'advanced' && <AdvancedSettings />}
       </main>
     </div>
