@@ -4,8 +4,11 @@ import './App.css';
 import TweetList from './components/TweetList/TweetList';
 import OptionsPanel from './components/OptionsPanel/OptionsPanel';
 import Collections from './components/Collections/Collections';
+import FeedArchive from './components/FeedArchive/FeedArchive';
+
 import About from './components/About/About';
 import { useSettings } from './contexts/SettingsContext';
+import FeedArchive from './components/FeedArchive/FeedArchive';
 
 const TABS = [
   {
@@ -14,12 +17,18 @@ const TABS = [
     icon: '🐦',
     component: TweetList
   },
+  {
+    id: 'feedArchive',
+    label: 'Feed Archive',
+    icon: '📜',
+    component: FeedArchive
+  },
   // {
-  //   id: 'collections',
-  //   label: 'Collections',
-  //   icon: '📑',
-  //   component: Collections
-  // },
+  //       id: 'collections',
+//       label: 'Collections',
+//       icon: '📑',
+//       component: Collections
+  //   },
   {
     id: 'settings',
     label: 'Settings',
