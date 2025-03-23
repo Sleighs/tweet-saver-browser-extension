@@ -1034,58 +1034,6 @@ const showNotification = (message, type = 'info', duration = 3000) => {
 
 // Listen for messages from options panel and frontend
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // if (message.type === 'SETTINGS_UPDATED') {
-  //   // Update settings with the new values
-  //   if (message.payload) {
-  //     const newSettings = message.payload;
-  //     const oldSettings = settings;
-      
-  //     // Only update if the new settings are more recent
-  //     if (!oldSettings || (newSettings.lastSaved > oldSettings.lastSaved)) {
-  //       // Update individual settings
-  //       for (const key in newSettings) {
-  //         if (key !== 'lastSaved') {
-  //           settings[key] = newSettings[key];
-  //         }
-  //       }
-        
-  //       // Update debug mode
-  //       debugMode = newSettings.debugMode ?? false;
-  //       initializeDebugMode(debugMode);
-
-  //       // If icon style changed, update all buttons immediately
-  //       if (oldSettings?.saveIconStyle !== newSettings.saveIconStyle) {
-  //         const theme = detectTheme();
-  //         document.querySelectorAll('.tweet-saver--save-tweet-button').forEach(button => {
-  //           const isSaved = button.classList.contains('saved');
-  //           updateIconSource(button, newSettings.saveIconStyle, theme, isSaved);
-  //         });
-  //       }
-
-  //       // If notifications setting changed, update immediately
-  //       if (oldSettings?.notificationsEnabled !== newSettings.notificationsEnabled) {
-  //         // The showNotification function already checks this setting
-  //         if (debugMode) {
-  //           console.log('Notifications setting updated:', newSettings.notificationsEnabled);
-  //         }
-  //       }
-
-  //       // Show a notification that settings were updated
-  //       if (newSettings.notificationsEnabled) {
-  //         showNotification('Settings updated successfully', 'success', 2000);
-  //       }
-  //     }
-  //   }
-    
-  //   // Remove existing save buttons and re-add them with new settings
-  //   document.querySelectorAll('.tweet-saver--button-container').forEach(container => {
-  //     container.remove();
-  //   });
-    
-  //   // Re-add save buttons with new settings
-  //   addSaveButtonsToTweets();
-  // } else 
-  
   if (message.type === 'SETTING_UPDATED') {
     const { key, value, notify } = message.payload;
     
