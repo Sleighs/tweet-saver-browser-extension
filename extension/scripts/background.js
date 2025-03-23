@@ -1,42 +1,26 @@
-// Fallback debug logging system
-const fallbackDebug = {
+// Debug logging system
+const debug = {
   enabled: false,
   log: (message, ...args) => {
-    if (fallbackDebug.enabled) {
+    if (debug.enabled) {
       console.log(`[Tweet Saver] ${message}`, ...args);
     }
   },
   error: (message, error, ...args) => {
-    if (fallbackDebug.enabled) {
+    if (debug.enabled) {
       console.error(`[Tweet Saver] ${message}:`, error, ...args);
     }
   },
   warn: (message, ...args) => {
-    if (fallbackDebug.enabled) {
+    if (debug.enabled) {
       console.warn(`[Tweet Saver] ${message}`, ...args);
     }
   }
 };
 
-// Initialize debug logging system
-let debugLog, debugError, debugWarn, initializeDebugMode;
-(async () => {
-  try {
-    const debugModule = await import('../utils/debug.js');
-    debugLog = debugModule.debugLog;
-    debugError = debugModule.debugError;
-    debugWarn = debugModule.debugWarn;
-    initializeDebugMode = debugModule.initializeDebugMode;
-  } catch (error) {
-    console.warn('Failed to import debug module, using fallback:', error);
-    debugLog = fallbackDebug.log;
-    debugError = fallbackDebug.error;
-    debugWarn = fallbackDebug.warn;
-    initializeDebugMode = (enabled) => {
-      fallbackDebug.enabled = enabled;
-    };
-  }
-})();
+const initializeDebugMode = (enabled) => {
+  debug.enabled = enabled;
+};
 
 const browser = chrome || browser;
 
@@ -46,7 +30,8 @@ const defaultOptions = {
   browserStorageType: 'sync', // local or sync
   debugMode: false,
   enablePhotoUrlSave: true,
-  storageType: 'sync' // Add new storage type option
+  storageType: 'sync', // Add new storage type option
+  saveIconStyle: 'cloud'
 };
 
 // Options stored in chrome.storage.sync
@@ -92,7 +77,7 @@ browser.runtime.onInstalled.addListener(() => {
       browser.storage.local.set({ settings: settingsWithTimestamp }),
       browser.storage.sync.set({ settings: settingsWithTimestamp })
     ]).then(() => {
-      debugLog("Installed - set initial settings", settingsWithTimestamp);
+      debug.log("Installed - set initial settings", settingsWithTimestamp);
     });
   });
 
@@ -113,7 +98,7 @@ browser.storage.onChanged.addListener((changes, areaName) => {
         ...newSettings
       };
       initializeDebugMode(options.debugMode);
-      debugLog("Settings updated from storage", options);
+      debug.log("Settings updated from storage", options);
     }
   }
 });
@@ -128,21 +113,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function updateIcon() {
   try {
-    const data = await browser.storage.sync.get('options');
-    const iconPath = data.options.enableExtension
+    // Get settings from both storages
+    const [localSettings, syncSettings] = await Promise.all([
+      browser.storage.local.get('settings'),
+      browser.storage.sync.get('settings')
+    ]);
+
+    // Get the settings with the most recent lastSaved timestamp
+    const local = localSettings.settings || { lastSaved: 0 };
+    const sync = syncSettings.settings || { lastSaved: 0 };
+
+    // Use the most recently saved settings
+    const mostRecent = (local.lastSaved || 0) > (sync.lastSaved || 0) ? local : sync;
+    const settings = mostRecent || defaultOptions;
+
+    const iconPath = settings.enableExtension
       ? {
           "16": "../images/icon-16.png",
-          "32": "../images/icon-32.png",
-          "128": "../images/icon-128.png"
+          "32": "../images/icon-32.png"
         }
       : {
-          "16": "../images/icon-gray-32.png",
-          "32": "../images/icon-gray-32.png",
-          "128": "../images/icon-gray-128.png"
+          "16": "../images/icon-16-gray.png",
+          "32": "../images/icon-32-gray.png"
         };
     await browser.action.setIcon({ path: iconPath });
   } catch (err) {
-    console.log('Error updating Icon', err);
+    debug.error('Error updating Icon', err);
   }
 }
 
@@ -154,25 +150,25 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
 
     case 'saveTweetUrl':
-      console.log('saveTweetUrl:', message.url);
+      debug.log('saveTweetUrl:', message.url);
       tweetUrls.push(message.url);
       saveToStorage();
       break;
 
     case 'deleteAllTweetUrls':
-      console.log('deleteAllTweetUrls');
+      debug.log('deleteAllTweetUrls');
       tweetUrls = [];
       saveToStorage();
       break;
 
     case 'saveTweet':
-      console.log('saveTweet:', message.tweet);
+      debug.log('saveTweet:', message.tweet);
       tweets.push(message.tweet);
       saveToStorage();
       break;
     
     case 'deleteAllTweets':
-      console.log('deleteAllTweets');
+      debug.log('deleteAllTweets');
       tweets = [];
       tweetUrls = [];
       saveToStorage();
@@ -187,12 +183,12 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
 
     case 'getTweetUrls':
-      console.log('getTweetUrls:', tweetUrls);
+      debug.log('getTweetUrls:', tweetUrls);
       sendResponse({ tweetUrls });
       break;
 
     default:
-      console.warn('Unknown message method:', message.method);
+      debug.warn('Unknown message method:', message.method);
   }
 
   // Required to return true to use sendResponse asynchronously
@@ -209,9 +205,9 @@ async function getTweetsFromStorage() {
     const result = await storageArea.get(['tweetUrls', 'tweets']);
     tweetUrls = result.tweetUrls || [];
     tweets = result.tweets || [];
-    debugLog('Retrieved from ' + (options?.storageType || 'local') + ' storage:', { tweetUrls, tweets });
+    debug.log('Retrieved from ' + (options?.storageType || 'local') + ' storage:', { tweetUrls, tweets });
   } catch (error) {
-    debugError('Error getting tweets from storage:', error);
+    debug.error('Error getting tweets from storage:', error);
   }
 }
 
@@ -223,9 +219,9 @@ async function saveToStorage() {
     const storageArea = options?.storageType === 'sync' ? browser.storage.sync : browser.storage.local;
     
     await storageArea.set({ tweetUrls, tweets });
-    debugLog('Saved to ' + (options?.storageType || 'local') + ' storage:', { tweetUrls, tweets });
+    debug.log('Saved to ' + (options?.storageType || 'local') + ' storage:', { tweetUrls, tweets });
   } catch (error) {
-    debugError('Error saving to storage:', error);
+    debug.error('Error saving to storage:', error);
   }
 }
 
@@ -256,7 +252,7 @@ async function getDataFromStorage() {
       tweets: uniqueTweets
     };
   } catch (error) {
-    debugError('Error getting data from storage:', error);
+    debug.error('Error getting data from storage:', error);
     return { tweetUrls: [], tweets: [] };
   }
 }

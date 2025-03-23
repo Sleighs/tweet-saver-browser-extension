@@ -16,6 +16,8 @@ export const useSettings = () => {
 export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const showNotification = (message) => {
     setNotification(message);
@@ -36,31 +38,33 @@ export const SettingsProvider = ({ children }) => {
 
   const updateSettings = async (newSettings) => {
     try {
+      // First update local state for immediate UI feedback
+      setSettings({ ...settings, ...newSettings });
+
+      // Then persist to storage using service
       const updatedSettings = await SettingsService.updateSettings(newSettings);
-      setSettings(updatedSettings);
-      
-      // Show notification for successful update
-      const changedSettings = Object.keys(newSettings).filter(key => 
-        settings[key] !== newSettings[key]
-      );
-      
-      if (changedSettings.length > 0) {
-        const settingNames = {
-          saveIconStyle: 'Icon style',
-          showStorageIndicator: 'Storage indicator',
-          debugMode: 'Debug mode',
-          browserStorageType: 'Storage type'
-        };
-        
-        const message = changedSettings
-          .map(key => settingNames[key] || key)
-          .join(', ');
-          
-        showNotification(`${message} updated successfully`);
-      }
+      return updatedSettings;
     } catch (error) {
-      console.error('Error updating settings:', error);
-      showNotification('Failed to update settings');
+      // Revert local state if storage update failed
+      setSettings(settings);
+      console.error('Failed to update settings:', error);
+      throw error;
+    }
+  };
+
+  const updateSetting = async (key, value) => {
+    try {
+      // First update local state for immediate UI feedback
+      setSettings({ ...settings, [key]: value });
+
+      // Then persist to storage using service
+      const updatedSettings = await SettingsService.updateSetting(key, value);
+      return updatedSettings;
+    } catch (error) {
+      // Revert local state if storage update failed
+      setSettings(settings);
+      console.error('Failed to update setting:', error);
+      throw error;
     }
   };
 
@@ -81,6 +85,7 @@ export const SettingsProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Error handling storage change:', error);
+        setError('Failed to handle storage change');
       }
     };
 
@@ -100,7 +105,11 @@ export const SettingsProvider = ({ children }) => {
   const value = {
     settings,
     updateSettings,
-    showNotification
+    updateSetting,
+    isLoading,
+    error,
+    showNotification,
+    hideNotification
   };
 
   return (

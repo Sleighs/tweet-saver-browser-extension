@@ -115,7 +115,7 @@ let settings = {
   saveDelay: 500,
   saveOnlyMedia: false,
   saveTweetMetadata: true,
-  saveIconStyle: 'plus',
+  saveIconStyle: 'cloud',
   saveIconPosition: 'bottom',
   storageType: 'sync'
 };
@@ -637,7 +637,14 @@ const updateIconSource = (buttonElement, iconStyle, theme, isSaved) => {
 
 // Simplify the button addition function
 const addSaveButtonsToTweets = () => {
-  if (!enableExtension) return;
+  // Check if extension is enabled
+  if (!settings.enableExtension) {
+    // Remove all existing buttons if extension is disabled
+    document.querySelectorAll('.tweet-saver--button-container').forEach(container => {
+      container.remove();
+    });
+    return;
+  }
 
   try {
     // Find all tweets
@@ -1043,7 +1050,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         debugMode = newSettings.debugMode ?? false;
         initializeDebugMode(debugMode);
 
-        // If icon style changed, update all buttons
+        // If icon style changed, update all buttons immediately
         if (oldSettings?.saveIconStyle !== newSettings.saveIconStyle) {
           const theme = detectTheme();
           document.querySelectorAll('.tweet-saver--save-tweet-button').forEach(button => {
@@ -1051,16 +1058,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             updateIconSource(button, newSettings.saveIconStyle, theme, isSaved);
           });
         }
+
+        // If notifications setting changed, update immediately
+        if (oldSettings?.notificationsEnabled !== newSettings.notificationsEnabled) {
+          // The showNotification function already checks this setting
+          if (debugMode) {
+            console.log('Notifications setting updated:', newSettings.notificationsEnabled);
+          }
+        }
+
+        // Show a notification that settings were updated
+        if (newSettings.notificationsEnabled) {
+          showNotification('Settings updated successfully', 'success', 2000);
+        }
       }
     }
     
     // Remove existing save buttons and re-add them with new settings
-    document.querySelectorAll('.tweet-saver--processed').forEach(tweet => {
-      tweet.classList.remove('tweet-saver--processed');
-      const buttonContainer = tweet.querySelector('.tweet-saver--button-container');
-      if (buttonContainer) {
-        buttonContainer.remove();
-      }
+    document.querySelectorAll('.tweet-saver--button-container').forEach(container => {
+      container.remove();
     });
     
     // Re-add save buttons with new settings
@@ -1149,4 +1165,32 @@ const transferStorageData = async (fromType, toType) => {
 // Add a helper function to check extension context
 const isExtensionContextValid = () => {
   return !!chrome.runtime?.id;
+};
+
+const saveToLocalStorageWithExpiration = (key, data, expirationInMinutes) => {
+  const now = new Date();
+  const expirationTime = now.getTime() + expirationInMinutes * 60 * 1000;
+  const item = {
+    data: data,
+    expiration: expirationTime
+  };
+  localStorage.setItem(key, JSON.stringify(item));
+};
+
+const getFromLocalStorageWithExpiration = (key) => {
+  const itemStr = localStorage.getItem(key);
+  if (!itemStr) {
+    return null;
+  }
+
+  const item = JSON.parse(itemStr);
+  const now = new Date();
+
+  if (now.getTime() > item.expiration) {
+    // Data has expired
+    localStorage.removeItem(key);
+    return null;
+  }
+
+  return item.data;
 };

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import TweetCard from '../TweetCard/TweetCard';
 import './TweetList.css';
 
-const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings }) => {
+const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings = {} }) => {
   const [allTweets, setAllTweets] = useState([]);
   const [sortBy, setSortBy] = useState('savedAt');
   const [sortOrder, setSortOrder] = useState('desc');

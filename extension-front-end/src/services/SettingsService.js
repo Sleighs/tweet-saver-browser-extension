@@ -13,7 +13,7 @@ const defaultSettings = {
   saveDelay: 500,
   saveOnlyMedia: false,
   saveTweetMetadata: true,
-  saveIconStyle: 'plus',
+  saveIconStyle: 'cloud',
   saveIconPosition: 'bottom',
   darkMode: false,
   fontSize: 'medium',
@@ -53,35 +53,27 @@ class SettingsService {
       const mostRecent = (local.lastSaved || 0) > (sync.lastSaved || 0) ? local : sync;
 
       // Merge with defaults
-      const mergedSettings = {
+      return {
         ...defaultSettings,
         ...mostRecent
       };
-
-      return mergedSettings;
     } catch (error) {
       console.error('Error getting settings:', error);
-      // Return default settings if there's an error
       return defaultSettings;
     }
   }
 
   static async updateSettings(newSettings) {
     try {
-      if (this.isDevelopment()) {
-        mockStorage.settings = {
-          ...mockStorage.settings,
-          ...newSettings,
-          lastSaved: Date.now()
-        };
-        return mockStorage.settings;
-      }
-
-      // Add lastSaved timestamp
       const settingsWithTimestamp = {
         ...newSettings,
         lastSaved: Date.now()
       };
+
+      if (this.isDevelopment()) {
+        mockStorage.settings = settingsWithTimestamp;
+        return mockStorage.settings;
+      }
 
       // Save to both storages
       await Promise.all([

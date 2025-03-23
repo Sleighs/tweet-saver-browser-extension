@@ -36,7 +36,7 @@ const TABS = [
 
 // Inner App component that uses the settings context
 const AppContent = () => {
-  const { settings, isLoading: isSettingsLoading, updateSetting } = useSettings();
+  const { settings, isLoading: isSettingsLoading, updateSettings, showNotification } = useSettings();
   const [activeTab, setActiveTab] = useState('tweets');
   const [savedTweets, setSavedTweets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,6 +48,7 @@ const AppContent = () => {
       // Check if we're offline
       if (!navigator.onLine) {
         setError('You are offline. Please check your internet connection and try again.');
+        // Update to get saved tweets from localstorage cookie
         setSavedTweets([]); // Set empty array to prevent undefined errors
         return;
       } 
@@ -194,23 +195,36 @@ const AppContent = () => {
 
   const handleToggleExtension = async () => {
     try {
-      const newEnabledState = !settings.enableExtension;
-      await updateSetting('enableExtension', newEnabledState);
-
-      // Notify content script
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.id) {
-        chrome.tabs.sendMessage(tab.id, {
-          type: 'SETTINGS_UPDATED'
-        });
+      // Check if settings are loaded
+      if (!settings) {
+        console.error('Settings not loaded yet');
+        return;
       }
-      setError(null); // Clear any previous errors
-    } catch (err) {
-      console.error('Error toggling extension:', err);
-      if (!navigator.onLine) {
-        setError('You are offline. Please check your internet connection and try again.');
-      } else {
-        setError('Failed to update extension state. Please try again.');
+
+      // Toggle the extension state
+      const newSettings = {
+        ...settings,
+        enableExtension: !settings.enableExtension,
+        lastSaved: Date.now()
+      };
+
+      // Update settings
+      await updateSettings(newSettings);
+
+      // Notify background script
+      await chrome.runtime.sendMessage({ method: 'enableExtension' });
+
+      // Show notification if enabled
+      if (newSettings.notificationsEnabled) {
+        showNotification(
+          `Extension ${newSettings.enableExtension ? 'enabled' : 'disabled'}`,
+          'success'
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling extension:', error);
+      if (settings?.notificationsEnabled) {
+        showNotification('Error toggling extension', 'error');
       }
     }
   };
@@ -278,6 +292,7 @@ const AppContent = () => {
               onDeleteTweet={handleDeleteTweet}
               onRefresh={handleRefresh}
               settings={settings}
+              error={error}
             />
           ) : activeTab === 'collections' ? (
             <ActiveComponent
@@ -289,7 +304,7 @@ const AppContent = () => {
           ) : (
             <ActiveComponent
               settings={settings}
-              onSettingChange={updateSetting}
+              onSettingChange={updateSettings}
             />
           )
         )}

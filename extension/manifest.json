@@ -33,7 +33,9 @@
         "images/save-icons/star-light-filled.svg",
         "images/save-icons/star-dark-filled.svg",
         "images/save-icons/cloud-light-filled.svg",
-        "images/save-icons/cloud-dark-filled.svg"
+        "images/save-icons/cloud-dark-filled.svg",
+        "images/icon-16-gray.png",
+        "images/icon-32-gray.png"
       ],
       "matches": ["<all_urls>"]
     }
