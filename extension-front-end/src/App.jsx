@@ -5,10 +5,8 @@ import TweetList from './components/TweetList/TweetList';
 import OptionsPanel from './components/OptionsPanel/OptionsPanel';
 import Collections from './components/Collections/Collections';
 import FeedArchive from './components/FeedArchive/FeedArchive';
-
 import About from './components/About/About';
 import { useSettings } from './contexts/SettingsContext';
-import FeedArchive from './components/FeedArchive/FeedArchive';
 
 const TABS = [
   {
@@ -17,18 +15,18 @@ const TABS = [
     icon: '🐦',
     component: TweetList
   },
-  {
-    id: 'feedArchive',
-    label: 'Feed Archive',
-    icon: '📜',
-    component: FeedArchive
-  },
   // {
-  //       id: 'collections',
-//       label: 'Collections',
-//       icon: '📑',
-//       component: Collections
-  //   },
+  //   id: 'feedArchive',
+  //   label: 'Feed Archive',
+  //   icon: '📜',
+  //   component: FeedArchive
+  // },
+  // {
+  //   id: 'collections',
+  //   label: 'Collections',
+  //   icon: '📑',
+  //   component: Collections
+  // },
   {
     id: 'settings',
     label: 'Settings',
@@ -204,29 +202,40 @@ const AppContent = () => {
 
   const handleToggleExtension = async () => {
     try {
-      // Check if settings are loaded
       if (!settings) {
         console.error('Settings not loaded yet');
         return;
       }
-
-      // Toggle the extension state
-      const newSettings = {
+  
+      const newValue = !settings.enableExtension;
+      
+      // Update settings through context
+      await updateSettings({
         ...settings,
-        enableExtension: !settings.enableExtension,
+        enableExtension: newValue,
         lastSaved: Date.now()
-      };
-
-      // Update settings
-      await updateSettings(newSettings);
-
-      // Notify background script
-      await chrome.runtime.sendMessage({ method: 'enableExtension' });
-
-      // Show notification if enabled
-      if (newSettings.notificationsEnabled) {
+      });
+  
+      // Send message to content script using same pattern as other settings
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const activeTab = tabs[0];
+      
+      if (activeTab?.url?.includes('x.com')) {
+        chrome.tabs.sendMessage(activeTab.id, {
+          type: 'SETTING_UPDATED',
+          payload: {
+            key: 'enableExtension',
+            value: newValue,
+            notify: settings?.notificationsEnabled ?? true
+          }
+        }).catch(() => {
+          // Ignore errors for inactive tabs
+        });
+      }
+  
+      if (settings?.notificationsEnabled) {
         showNotification(
-          `Extension ${newSettings.enableExtension ? 'enabled' : 'disabled'}`,
+          `Extension ${newValue ? 'enabled' : 'disabled'}`,
           'success'
         );
       }
@@ -287,7 +296,7 @@ const AppContent = () => {
         </nav>
       </header>
 
-      {error && (
+      {(error && (activeTab !== 'about')) && (
         <div className="error-message">
           {error}
         </div>
@@ -302,6 +311,10 @@ const AppContent = () => {
               onRefresh={handleRefresh}
               settings={settings}
               error={error}
+            />
+          ) : activeTab === 'feedArchive' ? (
+            <ActiveComponent 
+              settings={settings}
             />
           ) : activeTab === 'collections' ? (
             <ActiveComponent

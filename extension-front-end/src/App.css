@@ -543,17 +543,6 @@
     --hover-background: rgba(255, 255, 255, 0.1);
   }
 
-  /* .open-in-tab-button {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: var(--text-color, #e7e9ea);
-  }
-
-  .open-in-tab-button:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
-  } */
-
   .app-tabs {
     background: var(--background-color, #15202b);
   }
@@ -569,7 +558,6 @@
 
   .app-header-tab.active {
     color: #ffffff;
-    /* background: rgba(255, 255, 255, 0.15); */
   }
 
   .app-header-tab.active::after {
@@ -599,25 +587,6 @@
   box-sizing: border-box;
 }
 
-.about-container {
-  max-width: 600px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.about-container h2 {
-  color: #1da1f2;
-  margin-bottom: 1.5rem;
-}
-
-.about-container p {
-  line-height: 1.6;
-  color: #4a4a4a;
-  margin-bottom: 2rem;
-}
 
 .about-links {
   display: flex;

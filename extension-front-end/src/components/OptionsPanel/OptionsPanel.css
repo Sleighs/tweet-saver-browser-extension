@@ -12,6 +12,10 @@
   --shadow-color: rgba(0, 0, 0, 0.08);
   --error-color: #e0245e;
   --error-background: rgba(224, 36, 94, 0.1);
+  --export-button-border: #cfd9de;
+  --export-button-color: #3a4857;
+  --export-button-primary-border: #3a4857;
+  --export-button-hover-border: #ffffff;
 }
 
 .save-button.saving {
@@ -43,6 +47,9 @@
   :root {
     --error-color: #f4245e;
     --error-background: rgba(244, 36, 94, 0.1);
+    --export-button-border: #38444d;
+    --export-button-primary-border: #1d9bf0;
+    --export-button-hover-border: #1a8cd8;
   }
 }
 
@@ -165,6 +172,7 @@
   flex: 1;
   padding: .5rem 2rem;
   overflow-y: auto;
+  background-color: #15202b;;
 }
 
 .settings-section {
@@ -267,7 +275,7 @@
   }
 
   .setting-description {
-    color: #8b98a5;
+    color: #a4afbb;
   }
 
   .delete-button {
@@ -367,7 +375,7 @@
 }
 
 .action-button:hover {
-  background-color: var(--primary-hover-color);
+  background-color: var(--border-color);
   transform: translateY(-1px);
 }
 
@@ -460,11 +468,16 @@
 
 .action-button.danger {
   background-color: var(--error-color);
+  border: solid 0px var(--error-color);
+  opacity: .8;
+
 }
 
 .action-button.danger:hover {
   background-color: var(--error-color);
-  opacity: 0.9;
+  border: solid 0px #ffffff;
+  opacity: 1;
+  box-shadow: 0px 0px 1px var(--error-color);
 }
 
 /* Dark theme adjustments */
@@ -482,4 +495,34 @@
     gap: 5px;
     /* padding: 2px 2px; */
   }
+}
+
+.export-buttons {
+  display: flex;
+  gap: 3%;
+  margin: 3% 0;
+}
+
+/* Update the export button styles */
+.export-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 25px;
+  border: 0px solid var(--export-button-color);
+  border-radius: 8px;
+  background-color: rgb(58, 72, 87, .5);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.export-button:hover {
+  background-color: rgb(58, 72, 87, 1);
+  border-color: rgb(221, 224, 228);
+  transform: translateY(-1px);
+  /* color: var(--primary-hover-color); */
 }

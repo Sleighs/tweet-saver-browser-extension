@@ -187,6 +187,7 @@ ${'-'.repeat(50)}`;
             type="checkbox"
             checked={autoCleanup}
             onChange={handleAutoCleanupChange}
+            disabled={true}
           />
         </label>
         <p className="setting-description">

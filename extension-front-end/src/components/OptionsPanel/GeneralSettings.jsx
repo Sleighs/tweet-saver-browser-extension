@@ -33,6 +33,8 @@ const GeneralSettings = () => {
   }, [settings]);
 
   const handleSettingChange = async (key, value) => {
+    if (!key) return;
+    
     try {
       await updateSetting(key, value);
       
@@ -138,7 +140,7 @@ const GeneralSettings = () => {
         </p>
       </div>
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
           <span>Save Only Media Tweets</span>
           <input
@@ -148,9 +150,9 @@ const GeneralSettings = () => {
           />
         </label>
         <p className="setting-description">
-          Only save tweets that contain images or videos
+          Only save auotsave tweets that contain images or videos
         </p>
-      </div>
+      </div> */}
 
       <div className="setting-group">
         <label className="setting-label">
@@ -215,7 +217,7 @@ const GeneralSettings = () => {
 
       <div className="setting-group">
         <label className="setting-label">
-          <span>Show Storage Location</span>
+          <span>Show Storage Location of Posts</span>
           <input
             type="checkbox"
             checked={showStorageIndicator}
@@ -223,7 +225,7 @@ const GeneralSettings = () => {
           />
         </label>
         <p className="setting-description">
-          Show storage location indicator on saved posts
+          Show storage location indicator on saved posts local or online/sync
         </p>
       </div>
     </div>

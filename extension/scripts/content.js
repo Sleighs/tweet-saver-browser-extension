@@ -117,7 +117,15 @@ let settings = {
   saveTweetMetadata: true,
   saveIconStyle: 'cloud',
   saveIconPosition: 'bottom',
-  storageType: 'sync'
+  storageType: 'sync',
+  // feedArchiveEnabled: false,
+  // archiveReplies: false,
+  // archiveInterval: 1000, // ms between saves
+  // archiveReposts: true,
+  // archiveQuotes: true,
+  // maxArchiveSize: 10000, // max tweets to store
+  // archiveOrganizeByAuthor: true,
+  // preventAutoRefresh: true,
 };
 
 let optionsState = {
@@ -909,6 +917,9 @@ const initializeOptions = async () => {
 
 /////// Initialization ///////
 
+// let feedStabilizer = null;
+// let feedArchive = null;
+
 (async function () {
   try {
     // Basic setup
@@ -940,6 +951,20 @@ const initializeOptions = async () => {
       }
     }, 1000);
 
+    // Initialize FeedStabilizer only if enabled
+    // if (settings.preventAutoRefresh) {
+    //   feedStabilizer = new FeedStabilizer(settings);
+    //   feedStabilizer.enable();
+    //   if (debugMode) console.log('FeedStabilizer initialized and enabled');
+    // }
+
+    // Initialize Feed Archive only if enabled
+    // if (settings.feedArchiveEnabled) {
+    //   feedArchive = new FeedArchive(settings);
+    //   await feedArchive.initialize();
+    //   if (debugMode) console.log('FeedArchive initialized');
+    // }
+
     // Handle navigation events
     window.addEventListener('popstate', addSaveButtonsToTweets);
     window.addEventListener('pushstate', addSaveButtonsToTweets);
@@ -952,9 +977,9 @@ const initializeOptions = async () => {
       addSaveButtonsToTweets();
     }
 
-    if (debugMode) console.log('Tweet Saver initialized');
+    if (debugMode) console.log('X Post Saver initialized');
   } catch (error) {
-    if (debugMode) console.error('Error initializing Tweet Saver:', error);
+    if (debugMode) console.error('Error initializing X Post Saver:', error);
   }
 })();
 
@@ -1095,7 +1120,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         break;
         
       // ... other cases ...
+      
+      case 'enableExtension':
+        // Update local settings
+        settings.enableExtension = value;
+        
+        // Update UI based on enabled state
+        if (value) {
+          addSaveButtonsToTweets();
+        } else {
+          document.querySelectorAll('.tweet-saver--button-container').forEach(container => {
+            container.remove();
+          });
+        }
+        
+        if (notify) {
+          showNotification(`Extension ${value ? 'enabled' : 'disabled'}`, 'info');
+        }
+        break;
     }
+
+    // Add Feed Stabilizer settings handling
+    // if (key === 'preventAutoRefresh') {
+    //   if (value) {
+    //     feedStabilizer.enable();
+    //   } else {
+    //     feedStabilizer.disable();
+    //   }
+    // }
+
+    // Add Feed Archive settings handling
+    // if (key === 'feedArchiveEnabled') {
+    //   if (value) {
+    //     feedArchive.start();
+    //   } else {
+    //     feedArchive.stop();
+    //   }
+    // }
 
     // Save updated settings
     chrome.storage.local.set({ 
@@ -1217,3 +1278,4 @@ const getFromLocalStorageWithExpiration = (key) => {
 
   return item.data;
 };
+
