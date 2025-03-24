@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "X Post Saver",
-  "version": "1.0.21",
+  "version": "1.0.24",
   "description": "An easy way to save posts on X",
   "action": {
     "default_icon": {
@@ -25,7 +25,17 @@
         "images/save-icons/star-light.svg",
         "images/save-icons/star-dark.svg",
         "images/save-icons/cloud-light.svg",
-        "images/save-icons/cloud-dark.svg"
+        "images/save-icons/cloud-dark.svg",
+        "images/save-icons/plus-light-filled.svg",
+        "images/save-icons/plus-dark-filled.svg",
+        "images/save-icons/heart-light-filled.svg",
+        "images/save-icons/heart-dark-filled.svg",
+        "images/save-icons/star-light-filled.svg",
+        "images/save-icons/star-dark-filled.svg",
+        "images/save-icons/cloud-light-filled.svg",
+        "images/save-icons/cloud-dark-filled.svg",
+        "images/icon-16-gray.png",
+        "images/icon-32-gray.png"
       ],
       "matches": ["<all_urls>"]
     }

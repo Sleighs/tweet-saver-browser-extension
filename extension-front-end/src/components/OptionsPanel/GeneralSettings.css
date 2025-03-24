@@ -50,7 +50,7 @@
 
 .setting-description {
   font-size: 0.875rem;
-  color: #666;
+  color: #afafaf;
   margin: 0;
 }
 
@@ -94,7 +94,7 @@
   }
 
   .setting-description {
-    color: #999;
+    color: #adadad;
   }
 
   .setting-select {

@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import TweetCard from '../TweetCard/TweetCard';
 import './TweetList.css';
 
-const TweetList = ({ tweets, onDeleteTweet, onRefresh }) => {
+const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings = {} }) => {
+  const [allTweets, setAllTweets] = useState([]);
   const [sortBy, setSortBy] = useState('savedAt');
   const [sortOrder, setSortOrder] = useState('desc');
   const [filterType, setFilterType] = useState('all');
@@ -11,11 +12,58 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh }) => {
   const [selectedUser, setSelectedUser] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Function to get tweets from both storage types
+  const getAllTweets = async () => {
+    if (!navigator.onLine) {
+      console.error('You are offline. Please check your internet connection and try again.');
+      setAllTweets([]); // Set empty array to prevent undefined errors
+      return;
+    }
+
+    if (!chrome.storage) {
+      console.error('Chrome storage is not available.');
+      setAllTweets([]); // Set empty array to prevent undefined errors
+      return;
+    }
+
+    try {
+      // Get tweets from sync storage
+      const syncData = await new Promise((resolve) => {
+        chrome.storage.sync.get(['tweets'], (result) => {
+          resolve(JSON.parse(result.tweets || '[]'));
+        });
+      });
+
+      // Get tweets from local storage
+      const localData = await new Promise((resolve) => {
+        chrome.storage.local.get(['tweets'], (result) => {
+          resolve(JSON.parse(result.tweets || '[]'));
+        });
+      });
+
+      // Combine and deduplicate tweets based on URL
+      const combinedTweets = [...syncData, ...localData];
+      const uniqueTweets = Array.from(
+        new Map(combinedTweets.map(tweet => [tweet.url, tweet])).values()
+      );
+
+      setAllTweets(uniqueTweets);
+    } catch (error) {
+      console.error('Error fetching tweets:', error);
+      setAllTweets([]); // Set empty array to prevent undefined errors
+    }
+  };
+
+  // Fetch tweets when component mounts and when tweets prop changes
+  useEffect(() => {
+    getAllTweets();
+  }, [tweets]);
+
   // Get unique users from tweets
   const users = useMemo(() => {
-    const uniqueUsers = new Set(tweets.map(tweet => tweet.username));
+    const uniqueUsers = new Set(allTweets.map(tweet => tweet.username));
     return Array.from(uniqueUsers).sort();
-  }, [tweets]);
+  }, [allTweets]);
 
   // Helper function to safely get numeric values
   const getNumericValue = (value) => {
@@ -68,7 +116,7 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh }) => {
 
   // Filter and sort tweets
   const filteredAndSortedTweets = useMemo(() => {
-    return [...tweets] // Create a new array to avoid mutating the original
+    return [...allTweets]
       .filter(tweet => {
         // Filter by type
         if (filterType === 'media' && (!tweet.mediaItems || tweet.mediaItems.length === 0)) {
@@ -117,11 +165,11 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh }) => {
             comparison = a.username.localeCompare(b.username);
             break;
           default:
-            comparison = compareDates(a.savedAt, b.savedAt); // Default to savedAt
+            comparison = compareDates(a.savedAt, b.savedAt);
         }
         return sortOrder === 'desc' ? comparison : -comparison;
       });
-  }, [tweets, sortBy, sortOrder, filterType, searchQuery, selectedUser]);
+  }, [allTweets, sortBy, sortOrder, filterType, searchQuery, selectedUser]);
 
   const handleSortChange = (newSortBy) => {
     if (sortBy === newSortBy) {
@@ -135,7 +183,8 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh }) => {
   const handleRefresh = async () => {
     try {
       setIsRefreshing(true);
-      await onRefresh();
+      await getAllTweets();
+      await onRefresh?.();
     } catch (err) {
       console.error('Error refreshing tweets:', err);
     } finally {
@@ -222,27 +271,19 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh }) => {
       </div>
 
       <div className="tweets-stats">
-        Showing {filteredAndSortedTweets.length} of {tweets.length} tweets
+        Showing {filteredAndSortedTweets.length} of {allTweets.length} tweets
       </div>
 
-      <div className="tweet-list">
-        {filteredAndSortedTweets.length > 0 ? (
-          filteredAndSortedTweets.map((tweet) => (
-            <TweetCard
-              key={tweet.url}
-              tweet={tweet}
-              onDelete={onDeleteTweet}
-            />
-          ))
-        ) : (
-          <div className="no-tweets-message">
-            {tweets.length === 0 ? (
-              "No tweets saved yet. Save some tweets to see them here!"
-            ) : (
-              "No tweets match your current filters."
-            )}
-          </div>
-        )}
+      <div className="tweets-container">
+        {filteredAndSortedTweets.map(tweet => (
+          <TweetCard
+            key={tweet.url}
+            tweet={tweet}
+            onDelete={onDeleteTweet}
+            onRefresh={onRefresh}
+            settings={settings}
+          />
+        ))}
       </div>
     </div>
   );
@@ -257,10 +298,12 @@ TweetList.propTypes = {
     mediaItems: PropTypes.array,
     savedAt: PropTypes.string.isRequired,
     likes: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    retweets: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+    retweets: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    storageType: PropTypes.oneOf(['local', 'sync']).isRequired
   })).isRequired,
   onDeleteTweet: PropTypes.func.isRequired,
-  onRefresh: PropTypes.func.isRequired
+  onRefresh: PropTypes.func.isRequired,
+  settings: PropTypes.object
 };
 
-export default TweetList; 
+export default TweetList;

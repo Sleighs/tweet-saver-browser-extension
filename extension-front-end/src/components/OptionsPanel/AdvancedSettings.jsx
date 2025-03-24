@@ -1,40 +1,57 @@
 /* global chrome */
 import { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { useSettings } from '../../contexts/SettingsContext';
 import './OptionsPanel.css';
 
-const AdvancedSettings = ({ settings, onSettingChange }) => {
-  const [debugMode, setDebugMode] = useState(settings.debugMode ?? false);
-  const [customCSS, setCustomCSS] = useState(settings.customCSS ?? '');
-  const [retryAttempts, setRetryAttempts] = useState(settings.retryAttempts ?? 3);
-  const [retryDelay, setRetryDelay] = useState(settings.retryDelay ?? 1000);
-  const [customEndpoint, setCustomEndpoint] = useState(settings.customEndpoint ?? '');
+const AdvancedSettings = () => {
+  const { settings, updateSetting } = useSettings();
+  const [debugMode, setDebugMode] = useState(settings?.debugMode ?? false);
+  const [customCSS, setCustomCSS] = useState(settings?.customCSS ?? '');
+  const [retryAttempts, setRetryAttempts] = useState(settings?.retryAttempts ?? 3);
+  const [retryDelay, setRetryDelay] = useState(settings?.retryDelay ?? 1000);
+  const [customEndpoint, setCustomEndpoint] = useState(settings?.customEndpoint ?? '');
 
   useEffect(() => {
-    setDebugMode(settings.debugMode ?? false);
-    setCustomCSS(settings.customCSS ?? '');
-    setRetryAttempts(settings.retryAttempts ?? 3);
-    setRetryDelay(settings.retryDelay ?? 1000);
-    setCustomEndpoint(settings.customEndpoint ?? '');
+    if (settings) {
+      setDebugMode(settings.debugMode ?? false);
+      setCustomCSS(settings.customCSS ?? '');
+      setRetryAttempts(settings.retryAttempts ?? 3);
+      setRetryDelay(settings.retryDelay ?? 1000);
+      setCustomEndpoint(settings.customEndpoint ?? '');
+    }
   }, [settings]);
+
+  const handleSettingChange = async (key, value) => {
+    try {
+      await updateSetting(key, value);
+      if (window.showNotification) {
+        window.showNotification('Settings updated successfully', 'success');
+      }
+    } catch (error) {
+      console.error('Error updating setting:', error);
+      if (window.showNotification) {
+        window.showNotification('Error updating settings', 'error');
+      }
+    }
+  };
 
   const handleDebugModeChange = (e) => {
     const value = e.target.checked;
     setDebugMode(value);
-    onSettingChange('debugMode', value);
+    handleSettingChange('debugMode', value);
   };
 
   const handleCustomCSSChange = (e) => {
     const value = e.target.value;
     setCustomCSS(value);
-    onSettingChange('customCSS', value);
+    handleSettingChange('customCSS', value);
   };
 
   const handleRetryAttemptsChange = (e) => {
     const value = parseInt(e.target.value, 10);
     if (!isNaN(value) && value >= 0) {
       setRetryAttempts(value);
-      onSettingChange('retryAttempts', value);
+      handleSettingChange('retryAttempts', value);
     }
   };
 
@@ -42,26 +59,37 @@ const AdvancedSettings = ({ settings, onSettingChange }) => {
     const value = parseInt(e.target.value, 10);
     if (!isNaN(value) && value >= 0) {
       setRetryDelay(value);
-      onSettingChange('retryDelay', value);
+      handleSettingChange('retryDelay', value);
     }
   };
 
   const handleCustomEndpointChange = (e) => {
     const value = e.target.value;
     setCustomEndpoint(value);
-    onSettingChange('customEndpoint', value);
+    handleSettingChange('customEndpoint', value);
   };
 
   const handleClearData = async () => {
     if (window.confirm("Are you sure you want to clear all extension data? This cannot be undone.")) {
       try {
         await chrome.storage.local.clear();
+        await chrome.storage.sync.clear();
+        if (window.showNotification) {
+          window.showNotification('All data cleared successfully', 'success');
+        }
         window.location.reload();
       } catch (error) {
         console.error('Error clearing data:', error);
+        if (window.showNotification) {
+          window.showNotification('Error clearing data', 'error');
+        }
       }
     }
   };
+
+  if (!settings) {
+    return <div className="loading">Loading settings...</div>;
+  }
 
   return (
     <div className="settings-section">
@@ -163,17 +191,6 @@ const AdvancedSettings = ({ settings, onSettingChange }) => {
       </div>
     </div>
   );
-};
-
-AdvancedSettings.propTypes = {
-  settings: PropTypes.shape({
-    debugMode: PropTypes.bool,
-    customCSS: PropTypes.string,
-    retryAttempts: PropTypes.number,
-    retryDelay: PropTypes.number,
-    customEndpoint: PropTypes.string
-  }).isRequired,
-  onSettingChange: PropTypes.func.isRequired
 };
 
 export default AdvancedSettings; 
