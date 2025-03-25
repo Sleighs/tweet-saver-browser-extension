@@ -150,6 +150,11 @@ const optionsList = [
   "styleTheme",
 ];
 
+const STORAGE_KEYS = {
+  SETTINGS: 'xpostsaver-settings',
+  SAVED_POSTS: 'xpostsaver-savedposts',
+  SAVED_URLS: 'xpostsaver-savedurls'
+};
 
 // Get initial page URL
 let url = window.location.href;
