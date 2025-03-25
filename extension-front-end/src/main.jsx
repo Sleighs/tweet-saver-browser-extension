@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { NotificationProvider } from './contexts/NotificationContext.jsx';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -32,7 +33,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <SettingsProvider>
-        <App />
+        <NotificationProvider>
+          <App />
+        </NotificationProvider>
       </SettingsProvider>
     </ErrorBoundary>
   </React.StrictMode>,

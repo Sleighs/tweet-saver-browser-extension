@@ -3,11 +3,12 @@
   bottom: 20px;
   right: 20px;
   z-index: 1000;
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn 0.3s ease-out;  
+  background-color: #0f1419;;
+
 }
 
 .notification-content {
-  background: var(--background-primary);
   color: var(--text-primary);
   padding: 12px 20px;
   border-radius: 8px;

@@ -5,7 +5,6 @@ const defaultSettings = {
   saveLastTweetEnabled: true,
   browserStorageType: 'local',
   debugMode: true,
-  enablePhotoUrlSave: true,
   styleTheme: 'dark',
   notificationsEnabled: true,
   notificationDuration: 3000,

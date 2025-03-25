@@ -25,13 +25,36 @@ const initializeDebugMode = (enabled) => {
 const browser = chrome || browser;
 
 const defaultOptions = {
+  // General Settings
   enableExtension: true,
   saveLastTweetEnabled: true,
-  browserStorageType: 'sync', // local or sync
+  browserStorageType: 'local',
   debugMode: false,
-  enablePhotoUrlSave: true,
-  storageType: 'sync', // Add new storage type option
-  saveIconStyle: 'cloud'
+  notificationsEnabled: true,
+  autoSave: false,
+  saveDelay: 500,
+  saveOnlyMedia: false,
+  saveTweetMetadata: true,
+  saveIconStyle: 'cloud',
+  saveIconPosition: 'bottom',
+  showStorageIndicator: true,
+
+  // Storage Settings
+  maxTweets: 1000,
+  autoCleanup: false,
+  cleanupThreshold: 900,
+  backupEnabled: false,
+  backupFrequency: 'weekly',
+
+  // Advanced Settings
+  customCSS: '',
+  retryAttempts: 3,
+  retryDelay: 1000,
+  customEndpoint: '',
+  storageType: 'local',
+
+  // Add timestamp
+  lastSaved: Date.now()
 };
 
 // Options stored in chrome.storage.sync
@@ -48,41 +71,43 @@ browser.runtime.onInstalled.addListener(() => {
     browser.storage.local.get('settings'),
     browser.storage.sync.get('settings')
   ]).then(([localSettings, syncSettings]) => {
-    // Get the settings with the most recent lastSaved timestamp
-    const local = localSettings.settings || { lastSaved: 0 };
-    const sync = syncSettings.settings || { lastSaved: 0 };
+    try {
+      // Parse settings from storage
+      const local = localSettings.settings ? JSON.parse(localSettings.settings) : { lastSaved: 0 };
+      const sync = syncSettings.settings ? JSON.parse(syncSettings.settings) : { lastSaved: 0 };
 
-    // Use the most recently saved settings
-    const mostRecent = (local.lastSaved || 0) > (sync.lastSaved || 0) ? local : sync;
+      // Use the most recently saved settings
+      const mostRecent = (local.lastSaved || 0) > (sync.lastSaved || 0) ? local : sync;
 
-    // Initialize with the most recent settings
-    if (mostRecent) {
+      // Initialize with the most recent settings or defaults
       options = {
         ...defaultOptions,
-        ...mostRecent
+        ...(mostRecent || {}),
+        lastSaved: Date.now()
       };
+
+      // Initialize debug mode
       initializeDebugMode(options.debugMode);
-    } else {
+
+      // Save initial settings to both storages
+      const settingsString = JSON.stringify(options);
+
+      Promise.all([
+        browser.storage.local.set({ settings: settingsString }),
+        browser.storage.sync.set({ settings: settingsString })
+      ]).then(() => {
+        debug.log("Installed - set initial settings", options);
+      });
+
+      // Update icon and get tweets
+      updateIcon();
+      getTweetsFromStorage();
+    } catch (error) {
+      debug.error('Error initializing settings:', error);
       options = defaultOptions;
       initializeDebugMode(defaultOptions.debugMode);
     }
-
-    // Save initial settings to both storages
-    const settingsWithTimestamp = {
-      ...options,
-      lastSaved: Date.now()
-    };
-
-    Promise.all([
-      browser.storage.local.set({ settings: settingsWithTimestamp }),
-      browser.storage.sync.set({ settings: settingsWithTimestamp })
-    ]).then(() => {
-      debug.log("Installed - set initial settings", settingsWithTimestamp);
-    });
   });
-
-  updateIcon();
-  getTweetsFromStorage();
 });
 
 // Listen for storage changes
@@ -137,6 +162,7 @@ async function updateIcon() {
           "32": "../images/icon-32-gray.png"
         };
     await browser.action.setIcon({ path: iconPath });
+    debug.log('Icon updated:', settings.enableExtension ? 'enabled' : 'disabled');
   } catch (err) {
     debug.error('Error updating Icon', err);
   }

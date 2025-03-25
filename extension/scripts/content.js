@@ -56,7 +56,6 @@ let enableExtension = true;
 let saveLastTweetEnabled = true;
 let browserStorageType = 'sync';
 let debugMode = false;
-let enablePhotoUrlSave = true;
 let styleTheme = getColorScheme();
 
 // Button icon paths
@@ -108,7 +107,6 @@ let settings = {
   saveLastTweetEnabled: true,
   browserStorageType: 'sync',
   debugMode: false,
-  enablePhotoUrlSave: true,
   styleTheme: styleTheme,
   notificationsEnabled: true,
   autoSave: false,
@@ -133,7 +131,6 @@ let optionsState = {
   saveLastTweetEnabled: true,
   browserStorageType: 'sync', // local or sync
   debugMode: false,
-  enablePhotoUrlSave: true, 
   styleTheme: styleTheme
 };
 
@@ -142,7 +139,6 @@ const defaultOptions = {
   saveLastTweetEnabled: true,
   browserStorageType: 'sync',
   debugMode: false,
-  enablePhotoUrlSave: true,
   styleTheme: styleTheme
 };
 
@@ -151,7 +147,6 @@ const optionsList = [
   "saveLastTweetEnabled",
   "browserStorageType",
   "debugMode",
-  "enablePhotoUrlSave", 
   "styleTheme",
 ];
 
@@ -786,7 +781,7 @@ const isTweetUrl = (urlToCheck, ignorePhotoUrl) => {
     && !urlToCheck.includes('retweet') 
     && !urlToCheck.includes('like')
   ) {
-    if (!enablePhotoUrlSave && urlToCheck.includes('photo')) {
+    if (urlToCheck.includes('photo')) {
       return false;
     } if (ignorePhotoUrl && urlToCheck.includes('photo')) {
       return false;
@@ -1084,7 +1079,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         document.querySelectorAll('.tweet-saver--button-container').forEach(container => {
           container.remove();
         });
+        
         addSaveButtonsToTweets();
+
         if (notify) {
           showNotification(`Media-only mode ${value ? 'enabled' : 'disabled'}`, 'info');
         }
@@ -1093,10 +1090,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case 'saveIconStyle':
         // Update all existing save button icons
         const theme = detectTheme();
+        
         document.querySelectorAll('.tweet-saver--save-tweet-button').forEach(button => {
           const isSaved = button.classList.contains('saved');
           updateIconSource(button, value, theme, isSaved);
         });
+
         if (notify) {
           showNotification('Save icon style updated', 'info');
         }
@@ -1118,9 +1117,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           showNotification(`Storage indicator ${value ? 'shown' : 'hidden'}`, 'info');
         }
         break;
-        
-      // ... other cases ...
-      
+
       case 'enableExtension':
         // Update local settings
         settings.enableExtension = value;
@@ -1133,6 +1130,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             container.remove();
           });
         }
+
+        // Send message to background script to update icon
+        chrome.runtime.sendMessage({ method: 'enableExtension', value });
         
         if (notify) {
           showNotification(`Extension ${value ? 'enabled' : 'disabled'}`, 'info');

@@ -14,43 +14,55 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings = {} }) => {
 
   // Function to get tweets from both storage types
   const getAllTweets = async () => {
-    if (!navigator.onLine) {
-      console.error('You are offline. Please check your internet connection and try again.');
-      setAllTweets([]); // Set empty array to prevent undefined errors
-      return;
-    }
-
-    if (!chrome.storage) {
-      console.error('Chrome storage is not available.');
-      setAllTweets([]); // Set empty array to prevent undefined errors
-      return;
-    }
-
     try {
-      // Get tweets from sync storage
-      const syncData = await new Promise((resolve) => {
-        chrome.storage.sync.get(['tweets'], (result) => {
-          resolve(JSON.parse(result.tweets || '[]'));
-        });
-      });
+      if (chrome?.storage) {
+        if (!navigator.onLine) {
+          console.error('You are offline. Please check your internet connection and try again.');
+          setAllTweets([]); // Set empty array to prevent undefined errors
+          return;
+        }
 
-      // Get tweets from local storage
-      const localData = await new Promise((resolve) => {
-        chrome.storage.local.get(['tweets'], (result) => {
-          resolve(JSON.parse(result.tweets || '[]'));
-        });
-      });
+        if (!chrome.storage) {
+          console.error('Chrome storage is not available.');
+          setAllTweets([]); // Set empty array to prevent undefined errors
+          return;
+        }
 
-      // Combine and deduplicate tweets based on URL
-      const combinedTweets = [...syncData, ...localData];
-      const uniqueTweets = Array.from(
-        new Map(combinedTweets.map(tweet => [tweet.url, tweet])).values()
-      );
+        try {
+          // Get tweets from sync storage
+          const syncData = await new Promise((resolve) => {
+            chrome.storage.sync.get(['tweets'], (result) => {
+              resolve(JSON.parse(result.tweets || '[]'));
+            });
+          });
 
-      setAllTweets(uniqueTweets);
+          // Get tweets from local storage
+          const localData = await new Promise((resolve) => {
+            chrome.storage.local.get(['tweets'], (result) => {
+              resolve(JSON.parse(result.tweets || '[]'));
+            });
+          });
+
+          // Combine and deduplicate tweets based on URL
+          const combinedTweets = [...syncData, ...localData];
+          const uniqueTweets = Array.from(
+            new Map(combinedTweets.map(tweet => [tweet.url, tweet])).values()
+          );
+
+          setAllTweets(uniqueTweets);
+        } catch (error) {
+          console.error('Error fetching tweets:', error);
+          setAllTweets([]); // Set empty array to prevent undefined errors
+        }
+      } else {
+        // Fallback to localStorage
+        const tweetsStr = localStorage.getItem('tweets');
+        const tweets = tweetsStr ? JSON.parse(tweetsStr) : [];
+        setAllTweets(tweets);
+      }
     } catch (error) {
       console.error('Error fetching tweets:', error);
-      setAllTweets([]); // Set empty array to prevent undefined errors
+      setAllTweets([]);
     }
   };
 
