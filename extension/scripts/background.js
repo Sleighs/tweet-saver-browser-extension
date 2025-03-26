@@ -29,7 +29,7 @@ const defaultOptions = {
   enableExtension: true,
   saveLastTweetEnabled: true,
   browserStorageType: 'local',
-  debugMode: false,
+  debugMode: true,
   notificationsEnabled: true,
   autoSave: false,
   saveDelay: 500,
@@ -55,6 +55,12 @@ const defaultOptions = {
 
   // Add timestamp
   lastSaved: Date.now()
+};
+
+const STORAGE_KEYS = {
+  SETTINGS: 'settings',
+  SAVED_POSTS: 'tweets',
+  SAVED_URLS: 'tweetUrls'
 };
 
 // Options stored in chrome.storage.sync
@@ -228,9 +234,21 @@ async function getTweetsFromStorage() {
     const { options } = await browser.storage.sync.get('options');
     const storageArea = options?.storageType === 'sync' ? browser.storage.sync : browser.storage.local;
     
-    const result = await storageArea.get(['tweetUrls', 'tweets']);
-    tweetUrls = result.tweetUrls || [];
-    tweets = result.tweets || [];
+    const result = await storageArea.get([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS]);
+    
+    // Parse data carefully
+    const parseStorageData = (data) => {
+      try {
+        return typeof data === 'string' ? JSON.parse(data) : (Array.isArray(data) ? data : []);
+      } catch (e) {
+        debug.error('Error parsing storage data:', e);
+        return [];
+      }
+    };
+
+    tweetUrls = parseStorageData(result[STORAGE_KEYS.SAVED_URLS]);
+    tweets = parseStorageData(result[STORAGE_KEYS.SAVED_POSTS]);
+    
     debug.log('Retrieved from ' + (options?.storageType || 'local') + ' storage:', { tweetUrls, tweets });
   } catch (error) {
     debug.error('Error getting tweets from storage:', error);
@@ -244,7 +262,12 @@ async function saveToStorage() {
     const { options } = await browser.storage.sync.get('options');
     const storageArea = options?.storageType === 'sync' ? browser.storage.sync : browser.storage.local;
     
-    await storageArea.set({ tweetUrls, tweets });
+    const data = {
+      [STORAGE_KEYS.SAVED_URLS]: JSON.stringify(tweetUrls),
+      [STORAGE_KEYS.SAVED_POSTS]: JSON.stringify(tweets)
+    };
+    
+    await storageArea.set(data);
     debug.log('Saved to ' + (options?.storageType || 'local') + ' storage:', { tweetUrls, tweets });
   } catch (error) {
     debug.error('Error saving to storage:', error);
@@ -256,22 +279,30 @@ async function getDataFromStorage() {
   try {
     // Get data from both storages
     const [localData, syncData] = await Promise.all([
-      chrome.storage.local.get(['tweetUrls', 'tweets']),
-      chrome.storage.sync.get(['tweetUrls', 'tweets'])
+      chrome.storage.local.get([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS]),
+      chrome.storage.sync.get([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS])
     ]);
 
+    // Parse data carefully
+    const parseStorageData = (data, key) => {
+      try {
+        const value = data[key];
+        return typeof value === 'string' ? JSON.parse(value) : (Array.isArray(value) ? value : []);
+      } catch (e) {
+        debug.error('Error parsing storage data:', e);
+        return [];
+      }
+    };
+
     // Parse and combine data
-    const localTweetUrls = JSON.parse(localData.tweetUrls || '[]');
-    const syncTweetUrls = JSON.parse(syncData.tweetUrls || '[]');
-    const localTweets = JSON.parse(localData.tweets || '[]');
-    const syncTweets = JSON.parse(syncData.tweets || '[]');
+    const localTweetUrls = parseStorageData(localData, STORAGE_KEYS.SAVED_URLS);
+    const syncTweetUrls = parseStorageData(syncData, STORAGE_KEYS.SAVED_URLS);
+    const localTweets = parseStorageData(localData, STORAGE_KEYS.SAVED_POSTS);
+    const syncTweets = parseStorageData(syncData, STORAGE_KEYS.SAVED_POSTS);
 
     // Combine and deduplicate
-    const allTweets = [...localTweets, ...syncTweets];
-    const allUrls = [...localTweetUrls, ...syncTweetUrls];
-    
-    const uniqueTweets = Array.from(new Map(allTweets.map(tweet => [tweet.url, tweet])).values());
-    const uniqueUrls = [...new Set(allUrls)];
+    const uniqueTweets = Array.from(new Map([...localTweets, ...syncTweets].map(tweet => [tweet.url, tweet])).values());
+    const uniqueUrls = [...new Set([...localTweetUrls, ...syncTweetUrls])];
 
     return {
       tweetUrls: uniqueUrls,

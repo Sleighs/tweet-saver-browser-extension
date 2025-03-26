@@ -1,5 +1,7 @@
 ///* Welcome to Tweet Saver *///
 
+// import { STORAGE_KEYS } from './constants.js';
+
 // Simple debug logging system
 const debug = {
   enabled: true, // Default to true since debug mode is working
@@ -151,18 +153,14 @@ const optionsList = [
 ];
 
 const STORAGE_KEYS = {
-  SETTINGS: 'xpostsaver-settings',
-  SAVED_POSTS: 'xpostsaver-savedposts',
-  SAVED_URLS: 'xpostsaver-savedurls'
+  SETTINGS: 'settings',
+  SAVED_POSTS: 'tweets',
+  SAVED_URLS: 'tweetUrls'
 };
 
 // Get initial page URL
 let url = window.location.href;
 const homepageUrl = "https://x.com/home";
-
-// browser.storage variables
-let urlsFromStorage = 'tweetUrls';
-let tweetsFromStorage = 'tweets';
 
 // Arrays to hold URLs and tweets
 let recentUrls = [];
@@ -274,28 +272,41 @@ class Tweet {
 
 const getSavedData = async () => {
   try {
-    // Get data from both storages to not lose any tweets
+    // Get data from both storages using new keys
     const [localData, syncData] = await Promise.all([
-      chrome.storage.local.get(['tweetUrls', 'tweets']),
-      chrome.storage.sync.get(['tweetUrls', 'tweets'])
+      chrome.storage.local.get([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS]),
+      chrome.storage.sync.get([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS])
     ]);
     
     if (debugMode) {
       console.log('getSavedData - Storage data:', { localData, syncData });
     }
 
+    // Parse data carefully
+    const parseStorageData = (data, key) => {
+      try {
+        const value = data[key];
+        if (typeof value === 'string') {
+          return JSON.parse(value);
+        } else if (Array.isArray(value)) {
+          return value;
+        }
+        return [];
+      } catch (e) {
+        console.error('Error parsing storage data:', e);
+        return [];
+      }
+    };
+
     // Parse and combine data from both storages
-    const localTweetUrls = JSON.parse(localData.tweetUrls || '[]');
-    const syncTweetUrls = JSON.parse(syncData.tweetUrls || '[]');
-    const localTweets = JSON.parse(localData.tweets || '[]');
-    const syncTweets = JSON.parse(syncData.tweets || '[]');
+    const localTweetUrls = parseStorageData(localData, STORAGE_KEYS.SAVED_URLS);
+    const syncTweetUrls = parseStorageData(syncData, STORAGE_KEYS.SAVED_URLS);
+    const localTweets = parseStorageData(localData, STORAGE_KEYS.SAVED_POSTS);
+    const syncTweets = parseStorageData(syncData, STORAGE_KEYS.SAVED_POSTS);
 
     // Combine and deduplicate
-    const allTweets = [...localTweets, ...syncTweets];
-    const allUrls = [...localTweetUrls, ...syncTweetUrls];
-    
-    savedTweets = Array.from(new Map(allTweets.map(tweet => [tweet.url, tweet])).values());
-    savedUrls = [...new Set(allUrls)];
+    savedTweets = Array.from(new Map([...localTweets, ...syncTweets].map(tweet => [tweet.url, tweet])).values());
+    savedUrls = [...new Set([...localTweetUrls, ...syncTweetUrls])];
 
     if (debugMode) {
       console.log('getSavedData - Combined data:', { savedTweets, savedUrls });
@@ -307,51 +318,15 @@ const getSavedData = async () => {
 
 const saveDataToStorage = async (tweetUrls, tweets) => {
   try {
-    // Check if extension context is still valid
-    if (!chrome.runtime?.id) {
-      if (debugMode) console.log('Extension context invalid, reloading page...');
-      //window.location.reload();
-      return;
-    }
-
-    // Add retry logic
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    const attemptSave = async () => {
-      try {
-        await chrome.storage.local.set({ 
-          tweetUrls: JSON.stringify(tweetUrls),
-          tweets: JSON.stringify(tweets),
-        });
-        if (debugMode) console.log('Data saved successfully to local storage:', { tweetUrls, tweets });
-      } catch (error) {
-        if (debugMode) console.error('Save attempt failed:', error);
-        
-        // Check if extension context is still valid
-        if (!chrome.runtime?.id) {
-          if (debugMode) console.log('Extension context invalid during retry, reloading page...');
-          //window.location.reload();
-          return;
-        }
-
-        // Retry if we haven't exceeded max retries
-        if (retryCount < maxRetries) {
-          retryCount++;
-          if (debugMode) console.log(`Retrying save (attempt ${retryCount} of ${maxRetries})...`);
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between retries
-          return attemptSave();
-        }
-        
-        // If we've exhausted retries, throw the error
-        throw error;
-      }
+    const data = {
+      [STORAGE_KEYS.SAVED_URLS]: JSON.stringify(tweetUrls),
+      [STORAGE_KEYS.SAVED_POSTS]: JSON.stringify(tweets)
     };
-
-    await attemptSave();
+    
+    await chrome.storage.local.set(data);
+    if (debugMode) console.log('Data saved successfully to local storage:', { tweetUrls, tweets });
   } catch (error) {
-    if (debugMode) console.error('saveDataToStorage - Error saving data:', error, { tweetUrls, tweets });
-    showNotification('Error saving tweet. Please try again.', 'error');
+    if (debugMode) console.error('saveDataToStorage - Error:', error);
   }
 };
 
@@ -513,21 +488,22 @@ const saveNewTweet = async (tweetElement, currentUrl) => {
 
 const deleteAllSavedData = async () => {
   try {
-    // Clear browser storage
-    await browser.storage.local.clear();
+    // Clear browser storage using new keys
+    await Promise.all([
+      browser.storage.local.remove([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS]),
+      browser.storage.sync.remove([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS])
+    ]);
     
     // Clear local arrays
     savedUrls = [];
     savedTweets = [];
-    
+
     // Clear localStorage
     localStorage.removeItem('tweet-saver--urls');
     localStorage.removeItem('tweet-saver--tweets');
     
     // Notify background script
-    await browser.runtime.sendMessage({ 
-      method: 'deleteAllTweets'
-    });
+    await browser.runtime.sendMessage({ method: 'deleteAllTweets' });
     
     showNotification('All saved tweets have been deleted', 'info');
     
@@ -1229,17 +1205,17 @@ const transferStorageData = async (fromType, toType) => {
     const fromStorage = fromType === 'sync' ? chrome.storage.sync : chrome.storage.local;
     const toStorage = toType === 'sync' ? chrome.storage.sync : chrome.storage.local;
 
-    // Get data from old storage
-    fromStorage.get(['tweetUrls', 'tweets'], async (result) => {
-      if (result.tweetUrls || result.tweets) {
+    // Get data from old storage using new keys
+    fromStorage.get([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS], async (result) => {
+      if (result[STORAGE_KEYS.SAVED_URLS] || result[STORAGE_KEYS.SAVED_POSTS]) {
         // Save to new storage
         await toStorage.set({
-          tweetUrls: result.tweetUrls || '[]',
-          tweets: result.tweets || '[]'
+          [STORAGE_KEYS.SAVED_URLS]: result[STORAGE_KEYS.SAVED_URLS] || '[]',
+          [STORAGE_KEYS.SAVED_POSTS]: result[STORAGE_KEYS.SAVED_POSTS] || '[]'
         });
 
         // Clear old storage
-        await fromStorage.remove(['tweetUrls', 'tweets']);
+        await fromStorage.remove([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS]);
 
         if (debugMode) console.log(`Data transferred from ${fromType} to ${toType} storage`);
         showNotification(`Tweets transferred to ${toType} storage successfully`, 'success');
@@ -1283,4 +1259,54 @@ const getFromLocalStorageWithExpiration = (key) => {
 
   return item.data;
 };
+
+const migrateOldData = async () => {
+  try {
+    // Check for old data format
+    const oldData = await Promise.all([
+      chrome.storage.local.get(['tweets', 'tweetUrls']),
+      chrome.storage.sync.get(['tweets', 'tweetUrls'])
+    ]);
+
+    const [localOld, syncOld] = oldData;
+    
+    if (localOld.tweets || localOld.tweetUrls || syncOld.tweets || syncOld.tweetUrls) {
+      debugLog('Found old data format, migrating...');
+
+      // Combine old data
+      const oldTweets = [
+        ...JSON.parse(localOld.tweets || '[]'),
+        ...JSON.parse(syncOld.tweets || '[]')
+      ];
+      const oldUrls = [
+        ...JSON.parse(localOld.tweetUrls || '[]'),
+        ...JSON.parse(syncOld.tweetUrls || '[]')
+      ];
+
+      // Save in new format
+      await saveDataToStorage(oldUrls, oldTweets);
+
+      // Clean up old data
+      await Promise.all([
+        chrome.storage.local.remove(['tweets', 'tweetUrls']),
+        chrome.storage.sync.remove(['tweets', 'tweetUrls'])
+      ]);
+
+      debugLog('Data migration complete');
+    }
+  } catch (error) {
+    debugError('Error migrating old data:', error);
+  }
+};
+
+// Add to initialization
+// (async function() {
+//   try {
+//     await migrateOldData();
+//     await getSavedData();
+//     // ...existing initialization code...
+//   } catch (error) {
+//     debugError('Initialization error:', error);
+//   }
+// })();
 

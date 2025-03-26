@@ -25,78 +25,101 @@ const DEFAULT_SETTINGS = {
   backupEnabled: false,
   backupFrequency: 'weekly',
 
-  // Missing settings from AdvancedSettings
+  // Advanced settings
   customCSS: '',
   retryAttempts: 3,
   retryDelay: 1000,
   customEndpoint: '',
-  storageType: 'sync'
+  storageType: 'local'
 };
 
-// Add storage configuration
-const STORAGE_CONFIG = {
-  key: 'xpostsaver-settings',
-  expirationDays: 30
+// Storage keys constant
+const STORAGE_KEYS = {
+  SETTINGS: 'settings'
 };
 
-// Update the storage object
+// Update the storage object with better error handling and type checking
 const storage = {
   get: async () => {
-    if (chrome?.storage) {
-      return new Promise((resolve) => {
-        chrome.storage.local.get('settings', (result) => {
-          resolve(result.settings ? JSON.parse(result.settings) : DEFAULT_SETTINGS);
-        });
-      });
-    }
-
-    // Fallback to localStorage with expiration check
     try {
-      const item = localStorage.getItem(STORAGE_CONFIG.key);
-      if (!item) return DEFAULT_SETTINGS;
-
-      const { value, timestamp } = JSON.parse(item);
-      const now = Date.now();
-      const expirationMs = STORAGE_CONFIG.expirationDays * 24 * 60 * 60 * 1000;
-
-      // Check if data has expired
-      if (now - timestamp > expirationMs) {
-        localStorage.removeItem(STORAGE_CONFIG.key);
-        return DEFAULT_SETTINGS;
+      if (!chrome?.storage) {
+        throw new Error('Chrome storage not available');
       }
 
-      return value;
+      return new Promise((resolve) => {
+        chrome.storage.local.get(STORAGE_KEYS.SETTINGS, (result) => {
+          try {
+            // If result.settings is already an object, return it
+            if (result.settings && typeof result.settings === 'object') {
+              resolve(result.settings);
+              return;
+            }
+            
+            // If it's a string, try to parse it
+            if (typeof result.settings === 'string') {
+              resolve(JSON.parse(result.settings));
+              return;
+            }
+
+            // If nothing found or invalid, return defaults
+            resolve(DEFAULT_SETTINGS);
+          } catch (parseError) {
+            console.error('Error parsing settings:', parseError);
+            resolve(DEFAULT_SETTINGS);
+          }
+        });
+      });
     } catch (error) {
-      console.error('Error reading from localStorage:', error);
+      console.error('Error accessing storage:', error);
       return DEFAULT_SETTINGS;
     }
   },
 
   set: async (settings) => {
-    if (chrome?.storage) {
-      return chrome.storage.local.set({ settings: JSON.stringify(settings) });
-    }
-
-    // Fallback to localStorage with expiration
     try {
-      const data = {
-        value: settings,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(STORAGE_CONFIG.key, JSON.stringify(data));
-      return Promise.resolve();
+      if (!chrome?.storage) {
+        throw new Error('Chrome storage not available');
+      }
+
+      // Ensure we're storing an object, not a string
+      const settingsToStore = typeof settings === 'string' ? JSON.parse(settings) : settings;
+
+      return new Promise((resolve) => {
+        chrome.storage.local.set({ 
+          [STORAGE_KEYS.SETTINGS]: settingsToStore 
+        }, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Error saving settings:', chrome.runtime.lastError);
+            throw chrome.runtime.lastError;
+          }
+          resolve();
+        });
+      });
     } catch (error) {
-      console.error('Error writing to localStorage:', error);
-      return Promise.reject(error);
+      console.error('Error saving settings:', error);
+      throw error;
     }
   },
 
   clear: async () => {
-    if (chrome?.storage) {
-      return chrome.storage.local.remove('settings');
+    try {
+      if (!chrome?.storage) {
+        throw new Error('Chrome storage not available');
+      }
+
+      return new Promise((resolve) => {
+        chrome.storage.local.remove(STORAGE_KEYS.SETTINGS, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Error clearing settings:', chrome.runtime.lastError);
+            throw chrome.runtime.lastError;
+          }
+          resolve();
+        });
+      });
+    } catch (error) {
+      console.error('Error clearing settings:', error);
+      throw error;
     }
-    localStorage.removeItem(STORAGE_CONFIG.key);
-    return Promise.resolve();
   }
 };
 
@@ -138,7 +161,10 @@ export const SettingsProvider = ({ children }) => {
 
   const updateSettings = async (newSettings) => {
     try {
-      const updatedSettings = { ...newSettings, lastSaved: Date.now() };
+      const updatedSettings = { 
+        ...newSettings, 
+        lastSaved: Date.now() 
+      };
       await storage.set(updatedSettings);
       setSettings(updatedSettings);
       return updatedSettings;
@@ -172,11 +198,13 @@ export const SettingsProvider = ({ children }) => {
       const handleStorageChange = (changes, areaName) => {
         try {
           if (changes.settings) {
-            const newSettings = JSON.parse(changes.settings.newValue);
-            const oldSettings = changes.settings.oldValue 
-              ? JSON.parse(changes.settings.oldValue)
-              : null;
-            
+            const newValue = changes.settings.newValue;
+            const oldValue = changes.settings.oldValue;
+
+            // Handle both string and object formats
+            const newSettings = typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
+            const oldSettings = oldValue ? (typeof oldValue === 'string' ? JSON.parse(oldValue) : oldValue) : null;
+
             if (!oldSettings || (newSettings.lastSaved > oldSettings.lastSaved)) {
               setSettings(newSettings);
             }
