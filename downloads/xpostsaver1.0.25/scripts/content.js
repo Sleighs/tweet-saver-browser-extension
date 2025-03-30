@@ -667,7 +667,7 @@ const addSaveButtonsToTweets = () => {
         // Create button
         const buttonElement = document.createElement('div');
         buttonElement.classList.add('tweet-saver--save-tweet-button');
-        buttonElement.title = 'Save';
+        buttonElement.title = 'Save Post';
         
         // Set saved state if applicable
         if (savedUrls.includes(tweetUrl)) {

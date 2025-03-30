@@ -162,7 +162,7 @@ ${'-'.repeat(50)}`;
 
   return (
     <div className="settings-section">
-      <h2>Storage Settings</h2>
+      <h2>Storage Options</h2>
       
       {/* <div className="setting-group">
         <label className="setting-label">

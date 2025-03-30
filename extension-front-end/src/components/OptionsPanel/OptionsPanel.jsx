@@ -25,13 +25,13 @@ const OptionsPanel = () => {
           <span className="tab-icon">💾</span>
           Storage
         </button>
-        <button
+        {/* <button
           className={`options-tab-button ${activeTab === 'advanced' ? 'active' : ''}`}
           onClick={() => setActiveTab('advanced')}
         >
           <span className="tab-icon">🔧</span>
           Advanced
-        </button>
+        </button> */}
       </nav>
 
       <main className="options-content">

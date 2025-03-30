@@ -61,32 +61,6 @@
   margin: 0;
 }
 
-/* Button hover title effect */
-.tweet-saver--save-tweet-button::before {
-  content: attr(title);
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 4px 8px;
-  background-color: rgba(91, 112, 131, 0.9);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 400;
-  white-space: nowrap;
-  border-radius: 4px;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.5s ease, visibility 0.15s ease;
-  pointer-events: none;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
-
-.tweet-saver--save-tweet-button:hover::before {
-  opacity: 1;
-  visibility: visible;
-}
-
 /* Theme-specific base styles */
 .tweet-saver--save-tweet-button-light {
   --background: #ffffff;
