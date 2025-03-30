@@ -10,7 +10,7 @@ const AppearanceSettings = () => {
   const [compactMode, setCompactMode] = useState(settings?.compactMode ?? false);
   const [saveIconStyle, setSaveIconStyle] = useState(settings?.saveIconStyle ?? 'cloud');
   const [saveIconPosition, setSaveIconPosition] = useState(settings?.saveIconPosition ?? 'bottom');
-  const [showStorageIndicator, setShowStorageIndicator] = useState(settings?.showStorageIndicator ?? true);
+  const [showStorageIndicator, setShowStorageIndicator] = useState(settings?.showStorageIndicator ?? false);
 
   useEffect(() => {
     if (settings) {
@@ -19,7 +19,7 @@ const AppearanceSettings = () => {
       setCompactMode(settings.compactMode ?? false);
       setSaveIconStyle(settings.saveIconStyle ?? 'cloud');
       setSaveIconPosition(settings.saveIconPosition ?? 'bottom');
-      setShowStorageIndicator(settings.showStorageIndicator ?? true);
+      setShowStorageIndicator(settings.showStorageIndicator ?? false);
     }
   }, [settings]);
 

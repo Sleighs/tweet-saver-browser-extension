@@ -16,7 +16,7 @@ const DEFAULT_SETTINGS = {
   saveTweetMetadata: true,
   saveIconStyle: 'cloud',
   saveIconPosition: 'bottom',
-  showStorageIndicator: true,
+  showStorageIndicator: false,
   lastSaved: Date.now(),
 
   maxTweets: 1000,

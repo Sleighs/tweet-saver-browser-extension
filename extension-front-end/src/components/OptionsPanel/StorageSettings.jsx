@@ -133,14 +133,14 @@ const StorageSettings = () => {
         const saveDate = new Date(tweet.savedAt).toLocaleString();
         
         return `Tweet by @${tweet.username}
-${tweet.text}
-URL: ${tweet.url}
-Posted: ${tweetDate}
-Saved: ${saveDate}
-Storage: ${tweet.storageType}
-Stats: ${tweet.stats ? `❤️ ${tweet.stats.likes} 🔁 ${tweet.stats.retweets} 💬 ${tweet.stats.replies}` : 'N/A'}
-Media: ${tweet.media ? tweet.media.length : 0} items
-${'-'.repeat(50)}`;
+          ${tweet.text}
+          URL: ${tweet.url}
+          Posted: ${tweetDate}
+          Saved: ${saveDate}
+          Storage: ${tweet.storageType}
+          Stats: ${tweet.stats ? `❤️ ${tweet.stats.likes} 🔁 ${tweet.stats.retweets} 💬 ${tweet.stats.replies}` : 'N/A'}
+          Media: ${tweet.media ? tweet.media.length : 0} items
+          ${'-'.repeat(50)}`;
       }).join('\n\n');
 
       await navigator.clipboard.writeText(formattedText);
@@ -152,6 +152,31 @@ ${'-'.repeat(50)}`;
       console.error('Error copying tweets:', error);
       if (window.showNotification) {
         window.showNotification('Error copying tweets to clipboard', 'error');
+      }
+    }
+  };
+
+  const handleClearData = async () => {
+    if (window.confirm("Are you sure you want to clear all extension data? This cannot be undone.")) {
+      try {
+        await chrome.storage.local.clear();
+        await chrome.storage.sync.clear();
+        
+        // Notify content script
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+          if (tabs[0]?.id) {
+            chrome.tabs.sendMessage(tabs[0].id, { type: 'ALL_TWEETS_DELETED' });
+          }
+        });
+        
+        if (window.showNotification) {
+          window.showNotification('All data cleared successfully', 'success');
+        }
+      } catch (error) {
+        console.error('Error clearing data:', error);
+        if (window.showNotification) {
+          window.showNotification('Error clearing data', 'error');
+        }
       }
     }
   };
@@ -234,23 +259,7 @@ ${'-'.repeat(50)}`;
         <h3>Danger Zone</h3>
         <button 
           className="action-button danger"
-          onClick={async () => {
-            if (window.confirm("Are you sure you want to clear all extension data? This cannot be undone.")) {
-              try {
-                await chrome.storage.local.clear();
-                await chrome.storage.sync.clear();
-                if (window.showNotification) {
-                  window.showNotification('All data cleared successfully', 'success');
-                }
-                window.location.reload();
-              } catch (error) {
-                console.error('Error clearing data:', error);
-                if (window.showNotification) {
-                  window.showNotification('Error clearing data', 'error');
-                }
-              }
-            }
-          }}
+          onClick={handleClearData}
         >
           Clear All Data
         </button>

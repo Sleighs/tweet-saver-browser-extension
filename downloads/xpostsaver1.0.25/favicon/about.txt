@@ -1,6 +1,0 @@
-This favicon was generated using the following font:
-
-- Font Title: Knewave
-- Font Author: Copyright (c) 2011 by Tyler Finck. All rights reserved.
-- Font Source: https://fonts.gstatic.com/s/knewave/v14/sykz-yx0lLcxQaSItSq9-trEvlQ.ttf
-- Font License: SIL Open Font License, 1.1 (http://scripts.sil.org/OFL))

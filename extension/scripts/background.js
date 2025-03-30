@@ -37,7 +37,7 @@ const defaultOptions = {
   saveTweetMetadata: true,
   saveIconStyle: 'cloud',
   saveIconPosition: 'bottom',
-  showStorageIndicator: true,
+  showStorageIndicator: false,
 
   // Storage Settings
   maxTweets: 1000,
@@ -71,49 +71,48 @@ let tweetUrls = [];
 let tweets = [];
 
 // Initial setup
-browser.runtime.onInstalled.addListener(() => {
-  // Get settings from both storages
-  Promise.all([
-    browser.storage.local.get('settings'),
-    browser.storage.sync.get('settings')
-  ]).then(([localSettings, syncSettings]) => {
-    try {
-      // Parse settings from storage
-      const local = localSettings.settings ? JSON.parse(localSettings.settings) : { lastSaved: 0 };
-      const sync = syncSettings.settings ? JSON.parse(syncSettings.settings) : { lastSaved: 0 };
+browser.runtime.onInstalled.addListener(async () => {
+  try {
+    // Check for existing settings first
+    const [localSettings, syncSettings] = await Promise.all([
+      browser.storage.local.get('settings'),
+      browser.storage.sync.get('settings')
+    ]);
 
-      // Use the most recently saved settings
-      const mostRecent = (local.lastSaved || 0) > (sync.lastSaved || 0) ? local : sync;
+    // Parse existing settings if they exist
+    const local = localSettings.settings ? JSON.parse(localSettings.settings) : null;
+    const sync = syncSettings.settings ? JSON.parse(syncSettings.settings) : null;
+    
+    // Use existing settings or create new ones
+    const initialSettings = {
+      ...defaultOptions,
+      ...(local || sync || {}), // Preserve existing settings if they exist
+      lastSaved: Date.now()
+    };
 
-      // Initialize with the most recent settings or defaults
-      options = {
-        ...defaultOptions,
-        ...(mostRecent || {}),
-        lastSaved: Date.now()
-      };
+    // Save settings to both storages
+    const settingsString = JSON.stringify(initialSettings);
+    await Promise.all([
+      browser.storage.local.set({ settings: settingsString }),
+      browser.storage.sync.set({ settings: settingsString })
+    ]);
 
-      // Initialize debug mode
-      initializeDebugMode(options.debugMode);
+    // Update icon and get tweets
+    await updateIcon();
+    await getTweetsFromStorage();
 
-      // Save initial settings to both storages
-      const settingsString = JSON.stringify(options);
-
-      Promise.all([
-        browser.storage.local.set({ settings: settingsString }),
-        browser.storage.sync.set({ settings: settingsString })
-      ]).then(() => {
-        debug.log("Installed - set initial settings", options);
-      });
-
-      // Update icon and get tweets
-      updateIcon();
-      getTweetsFromStorage();
-    } catch (error) {
-      debug.error('Error initializing settings:', error);
-      options = defaultOptions;
-      initializeDebugMode(defaultOptions.debugMode);
-    }
-  });
+    debug.log("Extension installed/updated - settings initialized", initialSettings);
+  } catch (error) {
+    debug.error('Error in onInstalled:', error);
+    
+    // Fallback to ensure icon is set
+    await browser.action.setIcon({
+      path: {
+        "16": "../images/icon-16.png",
+        "32": "../images/icon-32.png"
+      }
+    });
+  }
 });
 
 // Listen for storage changes
@@ -150,27 +149,33 @@ async function updateIcon() {
       browser.storage.sync.get('settings')
     ]);
 
-    // Get the settings with the most recent lastSaved timestamp
-    const local = localSettings.settings || { lastSaved: 0 };
-    const sync = syncSettings.settings || { lastSaved: 0 };
+    // Parse settings properly
+    const local = localSettings.settings ? JSON.parse(localSettings.settings) : null;
+    const sync = syncSettings.settings ? JSON.parse(syncSettings.settings) : null;
 
-    // Use the most recently saved settings
-    const mostRecent = (local.lastSaved || 0) > (sync.lastSaved || 0) ? local : sync;
+    // Use the most recently saved settings or default to enabled
+    const mostRecent = local?.lastSaved > (sync?.lastSaved || 0) ? local : sync;
     const settings = mostRecent || defaultOptions;
 
-    const iconPath = settings.enableExtension
-      ? {
-          "16": "../images/icon-16.png",
-          "32": "../images/icon-32.png"
-        }
-      : {
-          "16": "../images/icon-16-gray.png",
-          "32": "../images/icon-32-gray.png"
-        };
+    const iconPath = settings.enableExtension !== false ? {
+      "16": "../images/icon-16.png",
+      "32": "../images/icon-32.png"
+    } : {
+      "16": "../images/icon-16-gray.png",
+      "32": "../images/icon-32-gray.png"
+    };
+
     await browser.action.setIcon({ path: iconPath });
-    debug.log('Icon updated:', settings.enableExtension ? 'enabled' : 'disabled');
+    debug.log('Icon updated:', settings.enableExtension !== false ? 'enabled' : 'disabled');
   } catch (err) {
     debug.error('Error updating Icon', err);
+    // Fallback to enabled icon
+    await browser.action.setIcon({
+      path: {
+        "16": "../images/icon-16.png",
+        "32": "../images/icon-32.png"
+      }
+    });
   }
 }
 

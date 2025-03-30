@@ -98,7 +98,7 @@
 }
 
 .email-link.clicked {
-  color: rgb(29, 155, 240); /* X's blue color */
+  color: rgb(29, 155, 240);
 }
 
 .email-link::after {

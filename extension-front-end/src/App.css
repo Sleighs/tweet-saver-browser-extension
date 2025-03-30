@@ -1,42 +1,8 @@
-/* #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
- */
+/* Global styles */
 
 #root {
   width: 100%;
+  height: 100%;
   min-height: 100vh;
   min-width: 400px;
   margin: 0;
@@ -136,7 +102,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  /* margin-left: auto; */
 }
 
 .toggle-label {
@@ -214,7 +179,6 @@
 }
 
 .open-in-tab-icon {
-  /* display: none; */
   font-size: 12px;
   opacity: 0.8;
   transition: opacity 0.2s ease;
@@ -259,7 +223,6 @@
 .app-header-tab.active {
   color: #ffffff;
   font-weight: 600;
-  /* background: rgba(255, 255, 255, 0.15); */
 }
 
 .app-header-tab.active::after {
@@ -454,14 +417,8 @@
 /* Popup view styles */
 @media (max-width: 600px) {
   #root {
-    /* max-width: 400px; */
     margin: 0 auto;
   }
-
-  /* .header-content-tab {
-    text-align: center;
-    justify-content: center;
-  } */
 
   .app-header,
   .header-content,
@@ -471,7 +428,6 @@
   .error-state,
   .app-footer,
   .error-message {
-    /* max-width: 450px; */
     margin-left: auto;
     margin-right: auto;
   }
@@ -513,8 +469,7 @@
     gap: 5px;
     align-items: center;
     text-align: center;
-    
-  padding: 0 16px 12px 16px;
+    padding: 0 16px 12px 16px;
   }
 
   .header-content h1 {

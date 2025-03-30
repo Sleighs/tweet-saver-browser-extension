@@ -896,16 +896,46 @@ const initializeOptions = async () => {
 // let feedStabilizer = null;
 // let feedArchive = null;
 
+const migrateLocalStorageData = async () => {
+  try {
+    // Check for old localStorage data
+    const oldUrls = JSON.parse(localStorage.getItem('tweet-saver--urls') || '[]');
+    const oldTweets = JSON.parse(localStorage.getItem('tweet-saver--tweets') || '[]');
+
+    if (oldUrls.length > 0 || oldTweets.length > 0) {
+      if (debugMode) console.log('Found old localStorage data:', { oldUrls, oldTweets });
+
+      // Merge with existing data
+      savedUrls = [...new Set([...savedUrls, ...oldUrls])];
+      savedTweets = Array.from(new Map(
+        [...savedTweets, ...oldTweets].map(tweet => [tweet.url, tweet])
+      ).values());
+
+      // Save merged data to browser storage
+      await saveDataToStorage(savedUrls, savedTweets);
+
+      // Clear old localStorage data
+      localStorage.removeItem('tweet-saver--urls');
+      localStorage.removeItem('tweet-saver--tweets');
+
+      if (debugMode) console.log('Migrated localStorage data to browser storage');
+    }
+  } catch (error) {
+    if (debugMode) console.error('Error migrating localStorage data:', error);
+  }
+};
+
 (async function () {
   try {
     // Basic setup
     initializeDebugMode(false);
     initializeIconUrls();
     
-    // Load settings and data
+    // Load settings and data, including migration
     await Promise.all([
       initializeOptions(),
-      getSavedData()
+      getSavedData(),
+      migrateLocalStorageData() // Add migration step
     ]);
 
     // Add initial buttons
@@ -1172,6 +1202,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Save updated arrays to storage
     saveDataToStorage(savedUrls, savedTweets);
+  } else if (message.type === 'ALL_TWEETS_DELETED') {
+    // Clear local arrays
+    savedUrls = [];
+    savedTweets = [];
+    
+    // Update UI for all save buttons
+    document.querySelectorAll('.tweet-saver--save-tweet-button').forEach(button => {
+      button.classList.remove('saved');
+      const theme = detectTheme();
+      updateIconSource(button, settings.saveIconStyle, theme, false);
+    });
   }
   
   sendResponse({ success: true });
