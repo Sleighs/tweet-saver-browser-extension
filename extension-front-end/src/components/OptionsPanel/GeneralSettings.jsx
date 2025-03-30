@@ -124,7 +124,6 @@ const GeneralSettings = () => {
     <div className="settings-section">
       <h2>General Settings</h2>
 
-      {/* <h3>General</h3> */}
       {/* Existing general settings */}
       <div className="setting-group">
         <label className="setting-label">
@@ -154,7 +153,7 @@ const GeneralSettings = () => {
         </p>
       </div> */}
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
           <span>Autosave Clicked Tweets</span>
           <input
@@ -166,9 +165,9 @@ const GeneralSettings = () => {
         <p className="setting-description">
           Automatically save tweets when you click to view them
         </p>
-      </div>
+      </div> */}
 
-      {autoSave && (
+      {/* {autoSave && (
         <div className="setting-group">
           <label className="setting-label">
             <span>Save Delay (ms)</span>
@@ -184,9 +183,9 @@ const GeneralSettings = () => {
             Delay before auto-saving (0-5000 milliseconds)
           </p>
         </div>
-      )}
+      )} */}
 
-      <h2>Appearance</h2>
+      {/* <h2>Appearance</h2> */}
       {/* Add appearance settings */}
       <div className="setting-group">
         <label className="setting-label">
@@ -202,7 +201,7 @@ const GeneralSettings = () => {
         </p>
       </div>
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
           <span>Save Icon Position</span>
           <select value={saveIconPosition} onChange={handleSaveIconPositionChange}>
@@ -213,9 +212,9 @@ const GeneralSettings = () => {
         <p className="setting-description">
           Choose where the save button appears on posts
         </p>
-      </div>
+      </div> */}
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
           <span>Show Storage Location of Posts</span>
           <input
@@ -227,7 +226,7 @@ const GeneralSettings = () => {
         <p className="setting-description">
           Show storage location indicator on saved posts local or online/sync
         </p>
-      </div>
+      </div> */}
     </div>
   );
 };

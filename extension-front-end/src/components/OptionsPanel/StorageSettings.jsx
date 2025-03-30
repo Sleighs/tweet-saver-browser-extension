@@ -180,7 +180,7 @@ ${'-'.repeat(50)}`;
         </p>
       </div> */}
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
           <span>Auto Cleanup</span>
           <input
@@ -193,9 +193,9 @@ ${'-'.repeat(50)}`;
         <p className="setting-description">
           Automatically remove oldest tweets when storage limit is reached
         </p>
-      </div>
+      </div> */}
 
-      {autoCleanup && (
+      {/* {autoCleanup && (
         <div className="setting-group">
           <label className="setting-label">
             <span>Cleanup Threshold</span>
@@ -211,7 +211,7 @@ ${'-'.repeat(50)}`;
             Number of tweets to keep after cleanup
           </p>
         </div>
-      )}
+      )} */}
 
       <div className="setting-group">
         <h3>Export Options</h3>
@@ -229,8 +229,37 @@ ${'-'.repeat(50)}`;
           Export your saved tweets as a file or copy them to clipboard
         </p>
       </div>
+
+      <div className="setting-group danger-zone">
+        <h3>Danger Zone</h3>
+        <button 
+          className="action-button danger"
+          onClick={async () => {
+            if (window.confirm("Are you sure you want to clear all extension data? This cannot be undone.")) {
+              try {
+                await chrome.storage.local.clear();
+                await chrome.storage.sync.clear();
+                if (window.showNotification) {
+                  window.showNotification('All data cleared successfully', 'success');
+                }
+                window.location.reload();
+              } catch (error) {
+                console.error('Error clearing data:', error);
+                if (window.showNotification) {
+                  window.showNotification('Error clearing data', 'error');
+                }
+              }
+            }
+          }}
+        >
+          Clear All Data
+        </button>
+        <p className="setting-description">
+          Delete all saved tweets and reset extension settings
+        </p>
+      </div>
     </div>
   );
 };
 
-export default StorageSettings; 
+export default StorageSettings;

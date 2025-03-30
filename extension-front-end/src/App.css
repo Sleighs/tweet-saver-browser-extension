@@ -109,6 +109,7 @@
   padding-bottom: 12px;
   position: relative;
   padding: 0 24px 12px 24px;
+  user-select: none;
 }
 
 .header-content h1 {
@@ -246,6 +247,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  user-select: none;
 }
 
 .app-header-tab:hover {

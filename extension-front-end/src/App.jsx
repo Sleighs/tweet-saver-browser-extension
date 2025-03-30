@@ -257,7 +257,7 @@ const AppContent = () => {
     <div className="app">
       <header className="app-header">
         <div className="header-content">
-          <h1>X Post Saver</h1>
+          <h1>Post Saver for X™</h1>
           <div className="header-controls">
             {isPopup && ( 
               <button className="open-in-tab-button" onClick={handleOpenInTab}>
