@@ -37,10 +37,8 @@ const getColorScheme = () => {
   const htmlElement = document.documentElement;
   const colorScheme = getComputedStyle(htmlElement).getPropertyValue('color-scheme').trim();
 
-  if (debugMode) {
-    console.log('Color scheme:', colorScheme);
-    console.log('HTML Element:', htmlElement);
-  }
+  if (debugMode) console.log('Color scheme:', colorScheme);
+  if (debugMode) console.log('HTML Element:', htmlElement);
 
   return colorScheme || 'dark';
 };
@@ -278,6 +276,10 @@ const getSavedData = async () => {
       chrome.storage.sync.get([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS])
     ]);
     
+    // Get data from localStorage
+    const localStorageUrls = JSON.parse(localStorage.getItem('tweet-saver--urls') || '[]');
+    const localStorageTweets = JSON.parse(localStorage.getItem('tweet-saver--tweets') || '[]');
+      
     if (debugMode) {
       console.log('getSavedData - Storage data:', { localData, syncData });
     }
@@ -298,18 +300,29 @@ const getSavedData = async () => {
       }
     };
 
-    // Parse and combine data from both storages
-    const localTweetUrls = parseStorageData(localData, STORAGE_KEYS.SAVED_URLS);
-    const syncTweetUrls = parseStorageData(syncData, STORAGE_KEYS.SAVED_URLS);
-    const localTweets = parseStorageData(localData, STORAGE_KEYS.SAVED_POSTS);
-    const syncTweets = parseStorageData(syncData, STORAGE_KEYS.SAVED_POSTS);
+    // Combine all data sources
+    savedTweets = Array.from(new Map([
+      ...parseStorageData(localData, STORAGE_KEYS.SAVED_POSTS),
+      ...parseStorageData(syncData, STORAGE_KEYS.SAVED_POSTS),
+      ...localStorageTweets
+    ].map(tweet => [tweet.url, tweet])).values());
 
-    // Combine and deduplicate
-    savedTweets = Array.from(new Map([...localTweets, ...syncTweets].map(tweet => [tweet.url, tweet])).values());
-    savedUrls = [...new Set([...localTweetUrls, ...syncTweetUrls])];
+    savedUrls = [...new Set([
+      ...parseStorageData(localData, STORAGE_KEYS.SAVED_URLS),
+      ...parseStorageData(syncData, STORAGE_KEYS.SAVED_URLS),
+      ...localStorageUrls
+    ])];
 
     if (debugMode) {
-      console.log('getSavedData - Combined data:', { savedTweets, savedUrls });
+      console.log('getSavedData - Combined data:', { 
+        tweetsCount: savedTweets.length,
+        urlsCount: savedUrls.length,
+        sources: {
+          chromeLocal: parseStorageData(localData, STORAGE_KEYS.SAVED_POSTS).length,
+          chromeSync: parseStorageData(syncData, STORAGE_KEYS.SAVED_POSTS).length,
+          localStorage: localStorageTweets.length
+        }
+      });
     }
   } catch (error) {
     if (debugMode) console.error('getSavedData - Error getting saved data:', error);
@@ -322,9 +335,23 @@ const saveDataToStorage = async (tweetUrls, tweets) => {
       [STORAGE_KEYS.SAVED_URLS]: JSON.stringify(tweetUrls),
       [STORAGE_KEYS.SAVED_POSTS]: JSON.stringify(tweets)
     };
+
+    // Save to localStorage as backup
+    localStorage.setItem('tweet-saver--urls', JSON.stringify(tweetUrls));
+    localStorage.setItem('tweet-saver--tweets', JSON.stringify(tweets));
+
+    // Save timestamp for data sync purposes
+    localStorage.setItem('tweet-saver--last-saved', Date.now().toString());
     
     await chrome.storage.local.set(data);
-    if (debugMode) console.log('Data saved successfully to local storage:', { tweetUrls, tweets });
+
+    if (debugMode) {
+      console.log('Data saved to both storages:', {
+        tweetUrls: tweetUrls.length,
+        tweets: tweets.length,
+        timestamp: new Date().toISOString()
+      });
+    }
   } catch (error) {
     if (debugMode) console.error('saveDataToStorage - Error:', error);
   }
@@ -335,9 +362,6 @@ const saveUrl = async (currentUrl) => {
     if (!isUrlSaved(currentUrl)) {
       // Save the URL
       savedUrls.push(currentUrl);
-
-      // Save to local storage
-      //localStorage.setItem('tweet-saver--urls', JSON.stringify(savedUrls));
 
       // Save to browser storage
       await saveDataToStorage(savedUrls, savedTweets);
@@ -905,11 +929,24 @@ const migrateLocalStorageData = async () => {
     if (oldUrls.length > 0 || oldTweets.length > 0) {
       if (debugMode) console.log('Found old localStorage data:', { oldUrls, oldTweets });
 
-      // Merge with existing data
-      savedUrls = [...new Set([...savedUrls, ...oldUrls])];
-      savedTweets = Array.from(new Map(
-        [...savedTweets, ...oldTweets].map(tweet => [tweet.url, tweet])
-      ).values());
+      // Merge and deduplicate URLs
+      const mergedUrls = new Set([...savedUrls, ...oldUrls]);
+      savedUrls = Array.from(mergedUrls);
+
+      // Create a map of existing tweets by URL for quick lookup
+      const tweetMap = new Map(savedTweets.map(tweet => [tweet.url, tweet]));
+      
+      // Merge tweets, keeping the most recent version based on lastUpdated
+      oldTweets.forEach(oldTweet => {
+        const existingTweet = tweetMap.get(oldTweet.url);
+        if (!existingTweet || (oldTweet.lastUpdated && existingTweet.lastUpdated && 
+            new Date(oldTweet.lastUpdated) > new Date(existingTweet.lastUpdated))) {
+          tweetMap.set(oldTweet.url, oldTweet);
+        }
+      });
+
+      // Convert map back to array
+      savedTweets = Array.from(tweetMap.values());
 
       // Save merged data to browser storage
       await saveDataToStorage(savedUrls, savedTweets);
@@ -918,7 +955,12 @@ const migrateLocalStorageData = async () => {
       localStorage.removeItem('tweet-saver--urls');
       localStorage.removeItem('tweet-saver--tweets');
 
-      if (debugMode) console.log('Migrated localStorage data to browser storage');
+      if (debugMode) {
+        console.log('Migration complete:', {
+          urlsCount: savedUrls.length,
+          tweetsCount: savedTweets.length
+        });
+      }
     }
   } catch (error) {
     if (debugMode) console.error('Error migrating localStorage data:', error);
