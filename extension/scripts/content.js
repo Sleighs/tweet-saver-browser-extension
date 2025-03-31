@@ -951,10 +951,6 @@ const migrateLocalStorageData = async () => {
       // Save merged data to browser storage
       await saveDataToStorage(savedUrls, savedTweets);
 
-      // Clear old localStorage data
-      localStorage.removeItem('tweet-saver--urls');
-      localStorage.removeItem('tweet-saver--tweets');
-
       if (debugMode) {
         console.log('Migration complete:', {
           urlsCount: savedUrls.length,
