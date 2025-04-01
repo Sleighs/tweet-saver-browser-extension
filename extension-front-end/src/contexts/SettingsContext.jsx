@@ -1,6 +1,5 @@
 /* global chrome */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import SettingsService from '../services/SettingsService';
 import Notification from '../components/Notification/Notification';
 
 // Add default settings

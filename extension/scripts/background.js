@@ -1,27 +1,28 @@
-import { extension } from "mime";
-
 // Debug logging system
+const getDebugMode = () => settings?.debugMode || false;
+
 const debug = {
-  enabled: false,
   log: (message, ...args) => {
-    if (debug.enabled) {
+    if (getDebugMode()) {
       console.log(`[Tweet Saver] ${message}`, ...args);
     }
   },
   error: (message, error, ...args) => {
-    if (debug.enabled) {
+    if (getDebugMode()) {
       console.error(`[Tweet Saver] ${message}:`, error, ...args);
     }
   },
   warn: (message, ...args) => {
-    if (debug.enabled) {
+    if (getDebugMode()) {
       console.warn(`[Tweet Saver] ${message}`, ...args);
     }
   }
 };
 
+// Update initialization
 const initializeDebugMode = (enabled) => {
-  debug.enabled = enabled;
+  settings.debugMode = enabled;
+  debug.log('Debug mode initialized:', enabled);
 };
 
 const browser = chrome || browser;
