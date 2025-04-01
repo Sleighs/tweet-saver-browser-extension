@@ -31,7 +31,7 @@ const defaultOptions = {
   enableExtension: true,
   saveLastTweetEnabled: true,
   browserStorageType: 'local',
-  debugMode: true,
+  debugMode: false,
   notificationsEnabled: true,
   autoSave: false,
   saveDelay: 500,
@@ -100,11 +100,13 @@ browser.runtime.onInstalled.addListener(async () => {
       browser.storage.sync.set({ settings: settingsString })
     ]);
 
+    // Initialize debug mode from settings
+    initializeDebugMode(initialSettings.debugMode);
+    debug.log("Extension installed/updated - settings initialized", initialSettings);
+
     // Update icon and get tweets
     await updateIcon();
     await getTweetsFromStorage();
-
-    debug.log("Extension installed/updated - settings initialized", initialSettings);
   } catch (error) {
     debug.error('Error in onInstalled:', error);
     

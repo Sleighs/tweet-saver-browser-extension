@@ -1,7 +1,5 @@
 ///* Welcome to Tweet Saver *///
 
-// import { STORAGE_KEYS } from './constants.js';
-
 // Simple debug logging system
 const debug = {
   enabled: true, // Default to true since debug mode is working
@@ -54,7 +52,6 @@ const browser = chrome || browser;
 // Options
 let enableExtension = true;
 let saveLastTweetEnabled = true;
-let browserStorageType = 'sync';
 let debugMode = false;
 let styleTheme = getColorScheme();
 
@@ -117,39 +114,15 @@ let settings = {
   saveIconStyle: 'cloud',
   saveIconPosition: 'bottom',
   storageType: 'sync',
-  // feedArchiveEnabled: false,
-  // archiveReplies: false,
-  // archiveInterval: 1000, // ms between saves
-  // archiveReposts: true,
-  // archiveQuotes: true,
-  // maxArchiveSize: 10000, // max tweets to store
-  // archiveOrganizeByAuthor: true,
-  // preventAutoRefresh: true,
 };
 
-let optionsState = {
-  enableExtension: true,
-  saveLastTweetEnabled: true,
-  browserStorageType: 'sync', // local or sync
-  debugMode: false,
-  styleTheme: styleTheme
-};
-
-const defaultOptions = {
-  enableExtension: true,
-  saveLastTweetEnabled: true,
-  browserStorageType: 'sync',
-  debugMode: false,
-  styleTheme: styleTheme
-};
-
-const optionsList = [
-  "enableExtension",
-  "saveLastTweetEnabled",
-  "browserStorageType",
-  "debugMode",
-  "styleTheme",
-];
+// const defaultOptions = {
+//   enableExtension: true,
+//   saveLastTweetEnabled: true,
+//   browserStorageType: 'sync',
+//   debugMode: false,
+//   styleTheme: styleTheme
+// };
 
 const STORAGE_KEYS = {
   SETTINGS: 'settings',
@@ -163,8 +136,6 @@ const homepageUrl = "https://x.com/home";
 
 // Arrays to hold URLs and tweets
 let recentUrls = [];
-// let savedUrls = JSON.parse(localStorage.getItem('tweet-saver--urls')) || [];
-// let savedTweets = JSON.parse(localStorage.getItem('tweet-saver--tweets')) || [];
 let savedUrls = [];
 let savedTweets = [];
 
@@ -254,7 +225,7 @@ class Tweet {
       // If extension context is invalid, reload the page
       if (!isExtensionContextValid()) {
         if (debugMode) console.log('Extension context invalid after save attempt, reloading page...');
-        window.location.reload();
+        // window.location.reload();
       }
     }
   }
@@ -575,7 +546,7 @@ function extractProperties(names, obj) {
     if (name in obj) {
       extracted[name] = obj[name];
     } else {
-      extracted[name] = defaultOptions[name];
+      extracted[name] = settings[name];
     }
   });
   return extracted;
@@ -774,41 +745,74 @@ const showSplashEffect = (button) => {
 
 /////// Helper functions ///////
 
-const cleanTweetUrl = (url) => {
+const getStatusId = (url) => {
   try {
-    // Remove any segments after the status ID
-    const statusMatch = url.match(/(\/status\/\d+)/);
-    if (statusMatch) {
-      // Get everything up to and including the status ID
-      const baseUrl = url.slice(0, url.indexOf(statusMatch[0]) + statusMatch[0].length);
-      return baseUrl;
-    }
-    return url;
+    // Extract status ID using regex
+    const statusMatch = url.match(/\/status\/(\d+)/);
+    return statusMatch ? statusMatch[1] : null;
   } catch (error) {
-    if (debugMode) console.error('Error cleaning tweet URL:', error);
-    return url;
+    if (debugMode) console.error('Error getting status ID:', error);
+    return null;
   }
 };
 
 const isUrlSaved = (urlToCheck) => {
   try {
-    const cleanedUrlToCheck = cleanTweetUrl(urlToCheck);
-    
-    // Check main savedUrls array with cleaned URLs
-    if (savedUrls.some(url => cleanTweetUrl(url) === cleanedUrlToCheck)) {
+    const statusId = getStatusId(urlToCheck);
+    if (!statusId) {
+      if (debugMode) console.log('URL check failed - No status ID found:', urlToCheck);
+      return false;
+    }
+
+    if (debugMode) {
+      console.log('Checking URL:', {
+        urlToCheck,
+        statusId,
+        savedUrlsCount: savedUrls.length
+      });
+    }
+
+    // Check main savedUrls array
+    if (savedUrls.some(url => {
+      const isSameUrl = url === urlToCheck;
+      const isSameStatusId = getStatusId(url) === statusId;
+      
+      if (debugMode && (isSameUrl || isSameStatusId)) {
+        console.log('Match found in savedUrls:', {
+          savedUrl: url,
+          matchType: isSameUrl ? 'exact URL' : 'status ID',
+          statusId
+        });
+      }
+      
+      return isSameUrl || isSameStatusId;
+    })) {
       return true;
     }
 
     // Check localStorage
     const localStorageUrls = JSON.parse(localStorage.getItem('tweet-saver--urls') || '[]');
-    if (localStorageUrls.some(url => cleanTweetUrl(url) === cleanedUrlToCheck)) {
-      // Sync with main array if found
+    if (localStorageUrls.some(url => {
+      const isSameUrl = url === urlToCheck;
+      const isSameStatusId = getStatusId(url) === statusId;
+      
+      if (debugMode && (isSameUrl || isSameStatusId)) {
+        console.log('Match found in localStorage:', {
+          savedUrl: url,
+          matchType: isSameUrl ? 'exact URL' : 'status ID',
+          statusId
+        });
+      }
+      
+      return isSameUrl || isSameStatusId;
+    })) {
       if (!savedUrls.includes(urlToCheck)) {
         savedUrls.push(urlToCheck);
       }
       return true;
     }
 
+    if (debugMode) console.log('URL not found in any storage:', urlToCheck);
     return false;
   } catch (error) {
     if (debugMode) console.error('Error checking if URL is saved:', error);
@@ -885,7 +889,7 @@ const detectUrlChange = async () => {
     // Check if extension context is still valid
       if (!chrome.runtime?.id) {
         observer.disconnect();
-        window.location.reload();
+        // window.location.reload();
         return;
       }
 
@@ -895,7 +899,7 @@ const detectUrlChange = async () => {
     if (debugMode) console.error('Error in mutation observer:', err);
       if (!chrome.runtime?.id) {
         observer.disconnect();
-        window.location.reload();
+        // window.location.reload();
       }
     }
   });
@@ -945,7 +949,6 @@ const initializeOptions = async () => {
     if (debugMode) console.error('initializeOptions - Error retrieving options:', error);
     // Use default settings if there's an error
     settings = {
-      ...defaultOptions,
       ...settings
     };
   }
@@ -1210,6 +1213,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         
         if (notify) {
           showNotification(`Extension ${value ? 'enabled' : 'disabled'}`, 'info');
+        }
+        break;
+
+      case 'debugMode':
+        debugMode = value;
+        initializeDebugMode(value);
+        if (notify) {
+          showNotification(`Debug mode ${value ? 'enabled' : 'disabled'}`, 'info');
         }
         break;
     }
