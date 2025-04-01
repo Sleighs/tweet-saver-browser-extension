@@ -1,3 +1,5 @@
+import { extension } from "mime";
+
 // Debug logging system
 const debug = {
   enabled: false,
@@ -87,7 +89,8 @@ browser.runtime.onInstalled.addListener(async () => {
     const initialSettings = {
       ...defaultOptions,
       ...(local || sync || {}), // Preserve existing settings if they exist
-      lastSaved: Date.now()
+      lastSaved: Date.now(),
+      extensionInstalled: true
     };
 
     // Save settings to both storages

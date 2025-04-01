@@ -103,6 +103,7 @@ const initializeIconUrls = () => {
 
 // Global settings object that will contain all settings
 let settings = {
+  extensionInstalled: false,
   enableExtension: true,
   saveLastTweetEnabled: true,
   browserStorageType: 'sync',
@@ -773,8 +774,46 @@ const showSplashEffect = (button) => {
 
 /////// Helper functions ///////
 
+const cleanTweetUrl = (url) => {
+  try {
+    // Remove any segments after the status ID
+    const statusMatch = url.match(/(\/status\/\d+)/);
+    if (statusMatch) {
+      // Get everything up to and including the status ID
+      const baseUrl = url.slice(0, url.indexOf(statusMatch[0]) + statusMatch[0].length);
+      return baseUrl;
+    }
+    return url;
+  } catch (error) {
+    if (debugMode) console.error('Error cleaning tweet URL:', error);
+    return url;
+  }
+};
+
 const isUrlSaved = (urlToCheck) => {
-  return savedUrls.includes(urlToCheck);
+  try {
+    const cleanedUrlToCheck = cleanTweetUrl(urlToCheck);
+    
+    // Check main savedUrls array with cleaned URLs
+    if (savedUrls.some(url => cleanTweetUrl(url) === cleanedUrlToCheck)) {
+      return true;
+    }
+
+    // Check localStorage
+    const localStorageUrls = JSON.parse(localStorage.getItem('tweet-saver--urls') || '[]');
+    if (localStorageUrls.some(url => cleanTweetUrl(url) === cleanedUrlToCheck)) {
+      // Sync with main array if found
+      if (!savedUrls.includes(urlToCheck)) {
+        savedUrls.push(urlToCheck);
+      }
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    if (debugMode) console.error('Error checking if URL is saved:', error);
+    return false;
+  }
 };
 
 const isTweetUrl = (urlToCheck, ignorePhotoUrl) => {
@@ -973,7 +1012,7 @@ const migrateLocalStorageData = async () => {
     await Promise.all([
       initializeOptions(),
       getSavedData(),
-      migrateLocalStorageData() // Add migration step
+      migrateLocalStorageData() 
     ]);
 
     // Add initial buttons
@@ -995,20 +1034,6 @@ const migrateLocalStorageData = async () => {
       }
     }, 1000);
 
-    // Initialize FeedStabilizer only if enabled
-    // if (settings.preventAutoRefresh) {
-    //   feedStabilizer = new FeedStabilizer(settings);
-    //   feedStabilizer.enable();
-    //   if (debugMode) console.log('FeedStabilizer initialized and enabled');
-    // }
-
-    // Initialize Feed Archive only if enabled
-    // if (settings.feedArchiveEnabled) {
-    //   feedArchive = new FeedArchive(settings);
-    //   await feedArchive.initialize();
-    //   if (debugMode) console.log('FeedArchive initialized');
-    // }
-
     // Handle navigation events
     window.addEventListener('popstate', addSaveButtonsToTweets);
     window.addEventListener('pushstate', addSaveButtonsToTweets);
@@ -1021,7 +1046,7 @@ const migrateLocalStorageData = async () => {
       addSaveButtonsToTweets();
     }
 
-    if (debugMode) console.log('X Post Saver initialized');
+    if (debugMode) console.log('X Post Saver initialized', settings);
   } catch (error) {
     if (debugMode) console.error('Error initializing X Post Saver:', error);
   }
@@ -1189,24 +1214,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         break;
     }
 
-    // Add Feed Stabilizer settings handling
-    // if (key === 'preventAutoRefresh') {
-    //   if (value) {
-    //     feedStabilizer.enable();
-    //   } else {
-    //     feedStabilizer.disable();
-    //   }
-    // }
-
-    // Add Feed Archive settings handling
-    // if (key === 'feedArchiveEnabled') {
-    //   if (value) {
-    //     feedArchive.start();
-    //   } else {
-    //     feedArchive.stop();
-    //   }
-    // }
-
     // Save updated settings
     chrome.storage.local.set({ 
       settings: {
@@ -1278,114 +1285,8 @@ document.addEventListener('click', (event) => {
   }
 });
 
-// Add function to transfer data between storage types
-const transferStorageData = async (fromType, toType) => {
-  try {
-    const fromStorage = fromType === 'sync' ? chrome.storage.sync : chrome.storage.local;
-    const toStorage = toType === 'sync' ? chrome.storage.sync : chrome.storage.local;
-
-    // Get data from old storage using new keys
-    fromStorage.get([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS], async (result) => {
-      if (result[STORAGE_KEYS.SAVED_URLS] || result[STORAGE_KEYS.SAVED_POSTS]) {
-        // Save to new storage
-        await toStorage.set({
-          [STORAGE_KEYS.SAVED_URLS]: result[STORAGE_KEYS.SAVED_URLS] || '[]',
-          [STORAGE_KEYS.SAVED_POSTS]: result[STORAGE_KEYS.SAVED_POSTS] || '[]'
-        });
-
-        // Clear old storage
-        await fromStorage.remove([STORAGE_KEYS.SAVED_URLS, STORAGE_KEYS.SAVED_POSTS]);
-
-        if (debugMode) console.log(`Data transferred from ${fromType} to ${toType} storage`);
-        showNotification(`Tweets transferred to ${toType} storage successfully`, 'success');
-      }
-    });
-  } catch (error) {
-    if (debugMode) console.error('Error transferring data between storage types:', error);
-    showNotification('Error transferring tweets between storage types', 'error');
-  }
-};
-
 // Add a helper function to check extension context
 const isExtensionContextValid = () => {
   return !!chrome.runtime?.id;
 };
-
-const saveToLocalStorageWithExpiration = (key, data, expirationInMinutes) => {
-  const now = new Date();
-  const expirationTime = now.getTime() + expirationInMinutes * 60 * 1000;
-  const item = {
-    data: data,
-    expiration: expirationTime
-  };
-  localStorage.setItem(key, JSON.stringify(item));
-};
-
-const getFromLocalStorageWithExpiration = (key) => {
-  const itemStr = localStorage.getItem(key);
-  if (!itemStr) {
-    return null;
-  }
-
-  const item = JSON.parse(itemStr);
-  const now = new Date();
-
-  if (now.getTime() > item.expiration) {
-    // Data has expired
-    localStorage.removeItem(key);
-    return null;
-  }
-
-  return item.data;
-};
-
-const migrateOldData = async () => {
-  try {
-    // Check for old data format
-    const oldData = await Promise.all([
-      chrome.storage.local.get(['tweets', 'tweetUrls']),
-      chrome.storage.sync.get(['tweets', 'tweetUrls'])
-    ]);
-
-    const [localOld, syncOld] = oldData;
-    
-    if (localOld.tweets || localOld.tweetUrls || syncOld.tweets || syncOld.tweetUrls) {
-      debugLog('Found old data format, migrating...');
-
-      // Combine old data
-      const oldTweets = [
-        ...JSON.parse(localOld.tweets || '[]'),
-        ...JSON.parse(syncOld.tweets || '[]')
-      ];
-      const oldUrls = [
-        ...JSON.parse(localOld.tweetUrls || '[]'),
-        ...JSON.parse(syncOld.tweetUrls || '[]')
-      ];
-
-      // Save in new format
-      await saveDataToStorage(oldUrls, oldTweets);
-
-      // Clean up old data
-      await Promise.all([
-        chrome.storage.local.remove(['tweets', 'tweetUrls']),
-        chrome.storage.sync.remove(['tweets', 'tweetUrls'])
-      ]);
-
-      debugLog('Data migration complete');
-    }
-  } catch (error) {
-    debugError('Error migrating old data:', error);
-  }
-};
-
-// Add to initialization
-// (async function() {
-//   try {
-//     await migrateOldData();
-//     await getSavedData();
-//     // ...existing initialization code...
-//   } catch (error) {
-//     debugError('Initialization error:', error);
-//   }
-// })();
 

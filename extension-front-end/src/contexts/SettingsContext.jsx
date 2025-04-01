@@ -5,6 +5,7 @@ import Notification from '../components/Notification/Notification';
 
 // Add default settings
 const DEFAULT_SETTINGS = {
+  extensionInstalled: false,
   enableExtension: true,
   saveLastTweetEnabled: true,
   browserStorageType: 'local',

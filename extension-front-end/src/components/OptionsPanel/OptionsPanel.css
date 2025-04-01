@@ -121,6 +121,7 @@
   position: relative;
   border: none;
   outline: none;
+  user-select: none;
 }
 
 .options-tab-button:hover {
@@ -313,6 +314,7 @@
   transition: all 0.2s ease;
   width: 100%;
   margin-top: 8px;
+  user-select: none;
 }
 
 .action-button:hover {
@@ -411,7 +413,7 @@
   background-color: var(--error-color);
   border: solid 0px var(--error-color);
   opacity: .8;
-
+  user-select: none;
 }
 
 .action-button.danger:hover {
@@ -458,6 +460,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  user-select: none;
 }
 
 .export-button:hover {
