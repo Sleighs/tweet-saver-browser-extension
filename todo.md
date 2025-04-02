@@ -3,15 +3,15 @@
 
 ## Todo
 
+### Update extraction format
+- Maybe JSON
+- A format that is easily mutable
+
 ### Post saving limitation detection
 - Limit detection
 - Limit notification with prompt to remove oldest 
 - Option to automatically delete old posts
 - Set post limit to 1000
-
-### New Save Icon Styles
-- Get or make an Icon 
-- Ideas: Cloud icon, something that stands out, something with a plus sign
 
 ### Post Organization in Collections
 - Create a collection system to group posts by label
@@ -35,3 +35,7 @@
 - Implement a settings menu for users to select their preferred icon style and location.
 
 ### Make Video pics on TweetCards link to the post
+
+### New Save Icon Styles
+- Get or make an Icon 
+- Ideas: Cloud icon, something that stands out, something with a plus sign

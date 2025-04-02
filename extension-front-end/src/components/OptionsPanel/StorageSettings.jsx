@@ -10,6 +10,7 @@ const StorageSettings = () => {
   const [cleanupThreshold, setCleanupThreshold] = useState(settings?.cleanupThreshold ?? 900);
   const [backupEnabled, setBackupEnabled] = useState(settings?.backupEnabled ?? false);
   const [backupFrequency, setBackupFrequency] = useState(settings?.backupFrequency ?? 'weekly');
+  const [exportFormat, setExportFormat] = useState('json');
 
   useEffect(() => {
     if (settings) {
@@ -69,89 +70,173 @@ const StorageSettings = () => {
     handleSettingChange('backupFrequency', value);
   };
 
+  const handleFormatChange = (e) => {
+    setExportFormat(e.target.value);
+  };
+
   const handleExportData = async () => {
     try {
-      // Get tweets from both storage types
       const [localResult, syncResult] = await Promise.all([
         chrome.storage.local.get('tweets'),
         chrome.storage.sync.get('tweets')
       ]);
 
-      // Parse tweets from both storages
       const localTweets = localResult.tweets ? JSON.parse(localResult.tweets) : [];
       const syncTweets = syncResult.tweets ? JSON.parse(syncResult.tweets) : [];
 
-      // Combine and deduplicate tweets based on URL
       const allTweets = [...localTweets, ...syncTweets];
       const uniqueTweets = Array.from(
         new Map(allTweets.map(tweet => [tweet.url, tweet])).values()
       );
 
-      // Create a JSON file
-      const blob = new Blob([JSON.stringify(uniqueTweets, null, 2)], { type: 'application/json' });
+      let exportContent;
+      let mimeType;
+      let fileExtension;
+
+      switch (exportFormat) {
+        case 'json':
+          exportContent = JSON.stringify(uniqueTweets, null, 2);
+          mimeType = 'application/json';
+          fileExtension = 'json';
+          break;
+        case 'text':
+          exportContent = uniqueTweets.map(tweet => {
+            const tweetDate = new Date(tweet.timestamp).toLocaleString();
+            const saveDate = new Date(tweet.savedAt).toLocaleString();
+            return `Tweet by @${tweet.username}
+  ${tweet.text}
+  URL: ${tweet.url}
+  Posted: ${tweetDate}
+  Saved: ${saveDate}
+  Storage: ${tweet.storageType}
+  Likes: ${tweet.likes ? tweet.likes : 'N/A'}
+  Retweets: ${tweet.retweets ? tweet.retweets : 'N/A'}
+  Replies: ${tweet.replies ? tweet.replies : 'N/A'}
+  Media: ${tweet.media ? tweet.media.length : 0} items
+  ${'-'.repeat(3)}`;
+          }).join('\n\n');
+          mimeType = 'text/plain';
+          fileExtension = 'txt';
+          break;
+        case 'markdown':
+          exportContent = uniqueTweets.map(tweet => {
+            const tweetDate = new Date(tweet.timestamp).toLocaleString();
+            const saveDate = new Date(tweet.savedAt).toLocaleString();
+            return `### Tweet by @${tweet.username}
+${tweet.text}        
+* **URL:** ${tweet.url}
+* **Posted:** ${tweetDate}
+* **Saved:** ${saveDate}
+* **Storage:** ${tweet.storageType}
+* **Likes:** ${tweet.likes? tweet.likes : 'N/A'}
+* **Retweets:** ${tweet.retweets ? tweet.retweets : 'N/A'}
+* **Replies:** ${tweet.replies ? tweet.replies : 'N/A'}
+* **Media:** ${tweet.media ? tweet.media.length : 0} items
+***`;
+          }).join('\n\n');
+          mimeType = 'text/markdown';
+          fileExtension = 'md';
+          break;
+        default:
+          exportContent = JSON.stringify(uniqueTweets, null, 2);
+          mimeType = 'application/json';
+          fileExtension = 'json';
+      }
+
+      const blob = new Blob([exportContent], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `tweet-saver-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `post-saver-export-${new Date().toISOString().split('T')[0]}.${fileExtension}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
       if (window.showNotification) {
-        window.showNotification('Tweets exported successfully', 'success');
+        window.showNotification('Posts exported successfully', 'success');
       }
     } catch (error) {
-      console.error('Error exporting tweets:', error);
+      console.error('Error exporting posts:', error);
       if (window.showNotification) {
-        window.showNotification('Error exporting tweets', 'error');
+        window.showNotification('Error exporting posts', 'error');
       }
     }
   };
 
   const handleCopyToClipboard = async () => {
     try {
-      // Get tweets from both storage types
       const [localResult, syncResult] = await Promise.all([
         chrome.storage.local.get('tweets'),
         chrome.storage.sync.get('tweets')
       ]);
 
-      // Parse tweets from both storages
       const localTweets = localResult.tweets ? JSON.parse(localResult.tweets) : [];
       const syncTweets = syncResult.tweets ? JSON.parse(syncResult.tweets) : [];
 
-      // Combine and deduplicate tweets based on URL
       const allTweets = [...localTweets, ...syncTweets];
       const uniqueTweets = Array.from(
         new Map(allTweets.map(tweet => [tweet.url, tweet])).values()
       );
 
-      // Format tweets for clipboard
       const formattedText = uniqueTweets.map(tweet => {
         const tweetDate = new Date(tweet.timestamp).toLocaleString();
         const saveDate = new Date(tweet.savedAt).toLocaleString();
         
         return `Tweet by @${tweet.username}
-          ${tweet.text}
-          URL: ${tweet.url}
-          Posted: ${tweetDate}
-          Saved: ${saveDate}
-          Storage: ${tweet.storageType}
-          Stats: ${tweet.stats ? `❤️ ${tweet.stats.likes} 🔁 ${tweet.stats.retweets} 💬 ${tweet.stats.replies}` : 'N/A'}
-          Media: ${tweet.media ? tweet.media.length : 0} items
-          ${'-'.repeat(50)}`;
+  ${tweet.text}
+  URL: ${tweet.url}
+  Posted: ${tweetDate}
+  Saved: ${saveDate}
+  Storage: ${tweet.storageType}
+  Likes: ${tweet.likes ? tweet.likes : `N/A`}
+  Retweets: ${tweet.retweets ? tweet.retweets : `N/A`}
+  Replies: ${tweet.replies ? tweet.replies : `N/A`}
+  Media: ${tweet.media ? tweet.media.length : 0} items
+          ${'-'.repeat(3)}`;
       }).join('\n\n');
 
-      await navigator.clipboard.writeText(formattedText);
+      const formattedTextJSON = JSON.stringify(uniqueTweets, null, 2);
+
+      const formattedTextMarkdown = uniqueTweets.map(tweet => {
+        const tweetDate = new Date(tweet.timestamp).toLocaleString();
+        const saveDate = new Date(tweet.savedAt).toLocaleString();
+
+        return `### Tweet by @${tweet.username} 
+${tweet.text}
+* URL: ${tweet.url}
+* Posted: ${tweetDate}
+* Saved: ${saveDate}
+* Storage: ${tweet.storageType}
+* Likes: ${tweet.likes ? tweet.likes : `N/A`}
+* Retweets: ${tweet.retweets ? tweet.retweets : `N/A`}
+* Replies: ${tweet.replies ? tweet.replies : `N/A`}
+* Media: ${tweet.media ? tweet.media.length : 0} items
+\n***\n`;
+      }).join('\n\n');
+
+      switch (exportFormat) {
+        case 'json':
+          await navigator.clipboard.writeText(formattedTextJSON);
+          break;
+        case 'text':
+          await navigator.clipboard.writeText(formattedText);
+          break;
+        case 'markdown':
+          await navigator.clipboard.writeText(formattedTextMarkdown);
+          break;
+        default:
+          await navigator.clipboard.writeText(formattedTextJSON);
+          break;
+      }
       
       if (window.showNotification) {
-        window.showNotification('Tweets copied to clipboard', 'success');
+        window.showNotification('Posts copied to clipboard', 'success');
       }
     } catch (error) {
       console.error('Error copying tweets:', error);
       if (window.showNotification) {
-        window.showNotification('Error copying tweets to clipboard', 'error');
+        window.showNotification('Error copying posts to clipboard', 'error');
       }
     }
   };
@@ -162,7 +247,6 @@ const StorageSettings = () => {
         await chrome.storage.local.clear();
         await chrome.storage.sync.clear();
         
-        // Notify content script
         chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
           if (tabs[0]?.id) {
             chrome.tabs.sendMessage(tabs[0].id, { type: 'ALL_TWEETS_DELETED' });
@@ -188,7 +272,7 @@ const StorageSettings = () => {
   return (
     <div className="settings-section">
       <h2>Storage Options</h2>
-      
+
       {/* <div className="setting-group">
         <label className="setting-label">
           <span>Maximum Saved Tweets</span>
@@ -237,9 +321,23 @@ const StorageSettings = () => {
           </p>
         </div>
       )} */}
-
+      
       <div className="setting-group">
         <h3>Export Options</h3>
+        <div className="export-format">
+          <label className="setting-label">
+            <span>Format</span>
+            <select 
+              value={exportFormat}
+              onChange={handleFormatChange}
+              className="format-select"
+            >
+              <option value="json">JSON</option>
+              <option value="text">Plain Text</option>
+              <option value="markdown">Markdown</option>
+            </select>
+          </label>
+        </div>
         <div className="export-buttons">
           <button onClick={handleExportData} className="export-button">
             <span className="button-icon">📥</span>
@@ -251,7 +349,7 @@ const StorageSettings = () => {
           </button>
         </div>
         <p className="setting-description">
-          Export your saved tweets as a file or copy them to clipboard
+          Export your saved tweets as a file or copy them to clipboard in your preferred format
         </p>
       </div>
 

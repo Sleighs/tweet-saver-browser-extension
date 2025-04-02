@@ -35,10 +35,35 @@ const AdvancedSettings = () => {
     }
   };
 
-  const handleDebugModeChange = (e) => {
+  const handleDebugModeChange = async (e) => {
     const value = e.target.checked;
     setDebugMode(value);
-    handleSettingChange('debugMode', value);
+    
+    try {
+      // Update setting in storage
+      await updateSetting('debugMode', value);
+      
+      // Send message to all x.com tabs
+      const tabs = await chrome.tabs.query({ url: '*://*.x.com/*' });
+      
+      // Update each tab
+      const updatePromises = tabs.map(tab => 
+        chrome.tabs.sendMessage(tab.id, {
+          type: 'SETTING_UPDATED',
+          payload: {
+            key: 'debugMode',
+            value,
+            notify: settings?.notificationsEnabled
+          }
+        }).catch(() => {
+          // Ignore errors for inactive tabs
+        })
+      );
+
+      await Promise.allSettled(updatePromises);
+    } catch (error) {
+      console.error('Error updating debug mode:', error);
+    }
   };
 
   const handleCustomCSSChange = (e) => {
@@ -177,7 +202,7 @@ const AdvancedSettings = () => {
         </p>
       </div> */}
 
-      <div className="setting-group danger-zone">
+      {/* <div className="setting-group danger-zone">
         <h3>Danger Zone</h3>
         <button 
           className="action-button danger"
@@ -188,9 +213,9 @@ const AdvancedSettings = () => {
         <p className="setting-description">
           Delete all saved tweets and reset extension settings
         </p>
-      </div>
+      </div> */}
     </div>
   );
 };
 
-export default AdvancedSettings; 
+export default AdvancedSettings;

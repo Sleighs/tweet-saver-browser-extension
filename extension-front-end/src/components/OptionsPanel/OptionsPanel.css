@@ -469,3 +469,21 @@
   transform: translateY(-1px);
   /* color: var(--primary-hover-color); */
 }
+
+.export-format {
+  margin-bottom: 1rem;
+}
+
+.format-select {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--background-color);
+  color: var(--text-color);
+  width: 150px;
+}
+
+.format-select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}

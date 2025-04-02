@@ -1,28 +1,35 @@
+let settings = {
+  debugMode: false,
+};
+
 // Debug logging system
 const getDebugMode = () => settings?.debugMode || false;
 
 const debug = {
   log: (message, ...args) => {
     if (getDebugMode()) {
-      console.log(`[Tweet Saver] ${message}`, ...args);
+      console.log(`X Post Saver ${message}`, ...args);
     }
   },
   error: (message, error, ...args) => {
     if (getDebugMode()) {
-      console.error(`[Tweet Saver] ${message}:`, error, ...args);
+      console.error(`X Post Saver ${message}:`, error, ...args);
     }
   },
   warn: (message, ...args) => {
     if (getDebugMode()) {
-      console.warn(`[Tweet Saver] ${message}`, ...args);
+      console.warn(`X Post Saver ${message}`, ...args);
     }
   }
 };
 
 // Update initialization
 const initializeDebugMode = (enabled) => {
+  if (!settings) settings = {};
   settings.debugMode = enabled;
-  debug.log('Debug mode initialized:', enabled);
+  if (enabled) {
+    console.log('X Post Saver Debug mode initialized:', enabled);
+  }
 };
 
 const browser = chrome || browser;
@@ -94,6 +101,8 @@ browser.runtime.onInstalled.addListener(async () => {
       extensionInstalled: true
     };
 
+    settings = { ...initialSettings};
+
     // Save settings to both storages
     const settingsString = JSON.stringify(initialSettings);
     await Promise.all([
@@ -124,17 +133,21 @@ browser.runtime.onInstalled.addListener(async () => {
 // Listen for storage changes
 browser.storage.onChanged.addListener((changes, areaName) => {
   if (changes.settings) {
-    const newSettings = changes.settings.newValue;
-    const oldSettings = changes.settings.oldValue;
-    
-    // Only update if the new settings are more recent
-    if (!oldSettings || (newSettings.lastSaved > oldSettings.lastSaved)) {
-      options = {
-        ...options,
-        ...newSettings
-      };
-      initializeDebugMode(options.debugMode);
-      debug.log("Settings updated from storage", options);
+    try {
+      const newSettings = changes.settings.newValue;
+      const oldSettings = changes.settings.oldValue;
+      
+      // Only update if the new settings are more recent
+      if (!oldSettings || (newSettings.lastSaved > oldSettings.lastSaved)) {
+        options = {
+          ...options,
+          ...newSettings
+        };
+        //initializeDebugMode(options.debugMode);
+        debug.log("Settings updated from storage", options);
+      }
+    } catch (error) {
+      debug.error('Error parsing settings change:', error);
     }
   }
 });
@@ -161,9 +174,9 @@ async function updateIcon() {
 
     // Use the most recently saved settings or default to enabled
     const mostRecent = local?.lastSaved > (sync?.lastSaved || 0) ? local : sync;
-    const settings = mostRecent || defaultOptions;
+    const newSettings = mostRecent || defaultOptions;
 
-    const iconPath = settings.enableExtension !== false ? {
+    const iconPath = newSettings.enableExtension !== false ? {
       "16": "../images/icon-16.png",
       "32": "../images/icon-32.png"
     } : {
@@ -172,7 +185,7 @@ async function updateIcon() {
     };
 
     await browser.action.setIcon({ path: iconPath });
-    debug.log('Icon updated:', settings.enableExtension !== false ? 'enabled' : 'disabled');
+    debug.log('Icon updated:', newSettings.enableExtension !== false ? 'enabled' : 'disabled');
   } catch (err) {
     debug.error('Error updating Icon', err);
     // Fallback to enabled icon

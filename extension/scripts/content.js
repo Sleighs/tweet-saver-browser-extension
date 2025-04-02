@@ -2,6 +2,7 @@
 
 
 
+let settings;
 
 // Debug logging system
 const debug = {
@@ -100,8 +101,7 @@ let browserStorageType = 'local';
 let debugMode = false;
 let styleTheme = getColorScheme();
 
-// Global settings object that will contain all settings
-let settings = {
+settings = {
   enableExtension: true,
   saveLastTweetEnabled: true,
   browserStorageType: 'local',
@@ -241,34 +241,71 @@ class Tweet {
 
 const getSavedData = async () => {
   try {
-    // Get data from both storages to not lose any tweets
-    const [localData, syncData] = await Promise.all([
-      chrome.storage.local.get(['tweetUrls', 'tweets']),
-      chrome.storage.sync.get(['tweetUrls', 'tweets'])
+    // Get data from both chrome storage and localStorage
+    const [chromeData, localStorageData] = await Promise.all([
+      Promise.all([
+        chrome.storage.local.get(['tweetUrls', 'tweets']),
+        chrome.storage.sync.get(['tweetUrls', 'tweets'])
+      ]),
+      Promise.resolve({
+        tweets: localStorage.getItem('tweet-saver--tweets'),
+        urls: localStorage.getItem('tweet-saver--urls')
+      })
     ]);
-    
-    if (settings.debugMode) {
-      console.log('getSavedData - Storage data:', { localData, syncData });
+
+    const [localData, syncData] = chromeData;
+
+    // Parse all data sources
+    const chromeTweets = [
+      ...JSON.parse(localData.tweets || '[]'),
+      ...JSON.parse(syncData.tweets || '[]')
+    ];
+    const chromeUrls = [
+      ...JSON.parse(localData.tweetUrls || '[]'),
+      ...JSON.parse(syncData.tweetUrls || '[]')
+    ];
+    const storageTweets = JSON.parse(localStorageData.tweets || '[]');
+    const storageUrls = JSON.parse(localStorageData.urls || '[]');
+
+    if (settings?.debugMode) {
+      console.log('Raw data from all sources:', {
+        chrome: { tweets: chromeTweets.length, urls: chromeUrls.length },
+        localStorage: { tweets: storageTweets.length, urls: storageUrls.length }
+      });
     }
 
-    // Parse and combine data from both storages
-    const localTweetUrls = JSON.parse(localData.tweetUrls || '[]');
-    const syncTweetUrls = JSON.parse(syncData.tweetUrls || '[]');
-    const localTweets = JSON.parse(localData.tweets || '[]');
-    const syncTweets = JSON.parse(syncData.tweets || '[]');
+    // Combine all tweets and deduplicate by status ID first, then URL
+    const allTweets = [...chromeTweets, ...storageTweets];
+    savedTweets = Array.from(
+      new Map(
+        allTweets.map(tweet => {
+          const statusId = getStatusId(tweet.url);
+          return [statusId || tweet.url, tweet];
+        })
+      ).values()
+    );
 
-    // Combine and deduplicate
-    const allTweets = [...localTweets, ...syncTweets];
-    const allUrls = [...localTweetUrls, ...syncTweetUrls];
-    
-    savedTweets = Array.from(new Map(allTweets.map(tweet => [tweet.url, tweet])).values());
-    savedUrls = [...new Set(allUrls)];
+    // Combine all URLs and deduplicate
+    savedUrls = [...new Set([...chromeUrls, ...storageUrls])];
 
-    if (settings.debugMode) {
-      console.log('getSavedData - Combined data:', { savedTweets, savedUrls });
+    if (settings?.debugMode) {
+      console.log('Combined and deduplicated data:', {
+        tweets: {
+          total: savedTweets.length,
+          byStatusId: savedTweets.filter(t => getStatusId(t.url)).length
+        },
+        urls: savedUrls.length
+      });
     }
+
+    // Save combined data back to all storages
+    await saveDataToStorage(savedUrls, savedTweets);
+
   } catch (error) {
-    if (settings.debugMode) console.error('getSavedData - Error getting saved data:', error);
+    if (settings?.debugMode) {
+      console.error('Error in getSavedData:', error);
+      console.log('Current state:', { savedTweets, savedUrls });
+    }
   }
 };
 
@@ -276,47 +313,49 @@ const saveDataToStorage = async (tweetUrls, tweets) => {
   try {
     // Check if extension context is still valid
     if (!chrome.runtime?.id) {
-      if (settings.debugMode) console.log('Extension context invalid, reloading page...');
+      if (settings?.debugMode) console.log('Extension context invalid, reloading page...');
       return;
     }
 
-    // Add retry logic
-    let retryCount = 0;
-    const maxRetries = 3;
+    if (settings?.debugMode) {
+      console.log('Saving data:', {
+        urlsCount: tweetUrls.length,
+        tweetsCount: tweets.length
+      });
+    }
 
-    const attemptSave = async () => {
-      try {
-        await chrome.storage.local.set({ 
-          tweetUrls: JSON.stringify(tweetUrls),
-          tweets: JSON.stringify(tweets),
-        });
-        if (settings.debugMode) console.log('Data saved successfully to local storage:', { tweetUrls, tweets });
-      } catch (error) {
-        if (settings.debugMode) console.error('Save attempt failed:', error);
-        
-        // Check if extension context is still valid
-        if (!chrome.runtime?.id) {
-          if (settings.debugMode) console.log('Extension context invalid during retry, reloading page...');
-          return;
+    // Save to chrome.storage.local
+    await chrome.storage.local.set({
+      'tweetUrls': JSON.stringify(tweetUrls),
+      'tweets': JSON.stringify(tweets)
+    });
+
+    // Save to localStorage as backup
+    localStorage.setItem('tweet-saver--urls', JSON.stringify(tweetUrls));
+    localStorage.setItem('tweet-saver--tweets', JSON.stringify(tweets));
+
+    // Update memory arrays
+    savedUrls = [...tweetUrls];
+    savedTweets = [...tweets];
+
+    if (settings?.debugMode) {
+      console.log('Data saved successfully:', {
+        storage: {
+          chromeStorage: { tweetUrls, tweets },
+          localStorage: {
+            urls: localStorage.getItem('tweet-saver--urls'),
+            tweets: localStorage.getItem('tweet-saver--tweets')
+          }
+        },
+        memory: {
+          savedUrls: savedUrls.length,
+          savedTweets: savedTweets.length
         }
-
-        // Retry if we haven't exceeded max retries
-        if (retryCount < maxRetries) {
-          retryCount++;
-          if (settings.debugMode) console.log(`Retrying save (attempt ${retryCount} of ${maxRetries})...`);
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between retries
-          return attemptSave();
-        }
-        
-        // If we've exhausted retries, throw the error
-        throw error;
-      }
-    };
-
-    await attemptSave();
+      });
+    }
   } catch (error) {
-    if (settings.debugMode) console.error('saveDataToStorage - Error saving data:', error, { tweetUrls, tweets });
-    showNotification('Error saving tweet. Please try again.', 'error');
+    if (settings?.debugMode) console.error('saveDataToStorage - Error:', error);
+    showNotification('Error saving data', 'error');
   }
 };
 
@@ -675,25 +714,37 @@ const addSaveButtonsToTweets = () => {
           e.preventDefault();
           e.stopPropagation();
           
-          // Prevent multiple clicks while processing
           if (buttonElement.classList.contains('tweet-saver--loading')) return;
           
           try {
             buttonElement.classList.add('tweet-saver--loading');
             
-            // Get the tweet element
             const tweetElement = buttonElement.closest('article[data-testid="tweet"]');
             if (!tweetElement) return;
-
+            
             const tweetUrl = getTweetUrl(tweetElement);
             const statusId = getStatusId(tweetUrl);
 
             if (settings?.debugMode) {
-              console.log('Button clicked:', {
-                url: tweetUrl,
-                statusId,
-                savedUrls: savedUrls.includes(tweetUrl),
-                savedByStatusId: savedTweets.some(t => getStatusId(t.url) === statusId)
+              console.log('Save button clicked:', {
+                buttonState: {
+                  classList: Array.from(buttonElement.classList),
+                  isSavedClass: buttonElement.classList.contains('saved'),
+                  isLoadingClass: buttonElement.classList.contains('tweet-saver--loading')
+                },
+                tweetInfo: {
+                  url: tweetUrl,
+                  statusId: statusId
+                },
+                savedState: {
+                  inUrls: savedUrls.includes(tweetUrl),
+                  byStatusId: savedTweets.some(t => getStatusId(t.url) === statusId),
+                  matchingTweet: savedTweets.find(t => getStatusId(t.url) === statusId)
+                },
+                storage: {
+                  savedUrlsCount: savedUrls.length,
+                  savedTweetsCount: savedTweets.length
+                }
               });
             }
 
@@ -817,6 +868,9 @@ const isTweetUrl = (urlToCheck, ignorePhotoUrl) => {
   return false;
 };
 
+
+
+
 /////// Event listeners ///////
 
 // Modify the detectUrlChange function to be more focused
@@ -886,22 +940,12 @@ const getStatusId = (url) => {
     const statusMatch = url.match(/\/status\/(\d+)/);
     const statusId = statusMatch ? statusMatch[1] : null;
     
-    if (settings?.debugMode) {
-      console.log('Status ID extraction:', {
-        url,
-        statusId,
-        matchResult: statusMatch
-      });
-    }
-    
     return statusId;
   } catch (error) {
     if (settings?.debugMode) console.error('Error extracting status ID:', error);
     return null;
   }
 };
-
-
 
 
 
@@ -954,17 +998,27 @@ const initializeOptions = async () => {
 (async function () {
   try {
     // Basic setup
-    initializeDebugMode(false);
+    //initializeDebugMode(false);
+    // Load settings first
+    await initializeOptions();
+    
+    // Initialize icons
     initializeIconUrls();
     
-    // Load settings and data
-    await Promise.all([
-      initializeOptions(),
-      getSavedData()
-    ]);
+    // Load saved data
+    await getSavedData();
+
+    if (settings?.debugMode) {
+      console.log('Initialization complete:', {
+        settings,
+        savedTweets: savedTweets.length,
+        savedUrls: savedUrls.length
+      });
+    }
 
     // Add initial buttons
     addSaveButtonsToTweets();
+
 
     // Set up main observer
     const observer = new MutationObserver(() => {
@@ -1074,6 +1128,10 @@ const showNotification = (message, type = 'info', duration = 3000) => {
   }
 };
 
+
+
+
+
 // Listen for messages from options panel and frontend
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'SETTING_UPDATED') {
@@ -1082,13 +1140,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Update the specific setting
     settings[key] = value;
 
-    // Handle debug mode changes immediately
-    if (key === 'debugMode') {
-      initializeDebugMode(value);
-      if (notify) {
-        showNotification(`Debug mode ${value ? 'enabled' : 'disabled'}`, 'info');
-      }
-      debug.log('Debug mode changed:', value);
+    // Handle specific settings that need immediate updates
+    switch (key) {
+      case 'debugMode':
+        settings.debugMode = value;
+        if (notify) {
+          showNotification(`Debug mode ${value ? 'enabled' : 'disabled'}`, 'info');
+        }
+        break;
+
+      case 'saveIconStyle':
+        const theme = detectTheme();
+        document.querySelectorAll('.tweet-saver--button-container').forEach(container => {
+          const button = container.querySelector('.tweet-saver--save-tweet-button');
+          if (button) {
+            const isSaved = button.classList.contains('saved');
+            updateIconSource(button, value, theme, isSaved);
+          }
+        });
+        break;
     }
 
     // Save updated settings
@@ -1098,7 +1168,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         lastSaved: Date.now()
       }
     });
-  } else if (message.type === 'TWEET_DELETED') {
+} else if (message.type === 'TWEET_DELETED') {
     // Update save button state for the deleted tweet
     const tweetUrl = message.url;
     const buttonContainer = document.querySelector(`.tweet-saver--button-container[data-tweet-url="${tweetUrl}"]`);

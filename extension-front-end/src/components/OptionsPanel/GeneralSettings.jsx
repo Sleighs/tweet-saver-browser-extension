@@ -18,19 +18,17 @@ const GeneralSettings = () => {
 
   useEffect(() => {
     if (settings) {
-      // Existing settings
-      setAutoSave(settings.autoSave ?? true);
-      setSaveDelay(settings.saveDelay ?? 500);
-      setNotificationsEnabled(settings.notificationsEnabled ?? true);
-      setSaveOnlyMedia(settings.saveOnlyMedia ?? false);
-      setSaveTweetMetadata(settings.saveTweetMetadata ?? true);
-      
-      // Appearance settings
-      setSaveIconStyle(settings.saveIconStyle ?? 'cloud');
-      setSaveIconPosition(settings.saveIconPosition ?? 'bottom');
-      setShowStorageIndicator(settings.showStorageIndicator ?? false);
+      if (settings.autoSave !== autoSave) setAutoSave(settings.autoSave ?? false);
+      if (settings.saveDelay !== saveDelay) setSaveDelay(settings.saveDelay ?? 500);
+      if (settings.notificationsEnabled !== notificationsEnabled) setNotificationsEnabled(settings.notificationsEnabled ?? true);
+      if (settings.saveOnlyMedia !== saveOnlyMedia) setSaveOnlyMedia(settings.saveOnlyMedia ?? false);
+      if (settings.saveTweetMetadata !== saveTweetMetadata) setSaveTweetMetadata(settings.saveTweetMetadata ?? true);
+      if (settings.saveIconStyle !== saveIconStyle) setSaveIconStyle(settings.saveIconStyle ?? 'cloud');
+      if (settings.saveIconPosition !== saveIconPosition) setSaveIconPosition(settings.saveIconPosition ?? 'bottom');
+      if (settings.showStorageIndicator !== showStorageIndicator) setShowStorageIndicator(settings.showStorageIndicator ?? false);
     }
   }, [settings]);
+
 
   const handleSettingChange = async (key, value) => {
     if (!key) return;
@@ -98,7 +96,7 @@ const GeneralSettings = () => {
   };
 
   // Add appearance handlers
-  const handleSaveIconStyleChange = (e) => {
+  const handleSaveIconStyleChange = async (e) => {
     const value = e.target.value;
     setSaveIconStyle(value);
     handleSettingChange('saveIconStyle', value);
@@ -190,7 +188,10 @@ const GeneralSettings = () => {
       <div className="setting-group">
         <label className="setting-label">
           <span>Save Icon Style</span>
-          <select value={saveIconStyle} onChange={handleSaveIconStyleChange}>
+          <select 
+            value={saveIconStyle} 
+            onChange={handleSaveIconStyleChange}  // Fix this line
+          >
             <option value="cloud">Cloud</option>
             <option value="star">Star</option>
             <option value="plus">Plus Sign</option>

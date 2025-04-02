@@ -21,7 +21,7 @@ const AppearanceSettings = () => {
       setSaveIconPosition(settings.saveIconPosition ?? 'bottom');
       setShowStorageIndicator(settings.showStorageIndicator ?? false);
     }
-  }, [settings]);
+  }, []);
 
   const handleSettingChange = async (key, value) => {
     try {
