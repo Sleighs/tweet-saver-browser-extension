@@ -1,7 +1,7 @@
 
-# X Post Saver
+# Post Saver for X
 
-X Post Saver is a browser extension that allows you to easily save X posts for later reference. It seamlessly integrates with X's interface to provide a smooth user experience for saving and managing posts.
+Post Saver for X is a browser extension that allows you to easily save X posts for later reference. It seamlessly integrates with X's interface to provide a smooth user experience for saving and managing posts.
 
 ## Features
 
@@ -10,19 +10,31 @@ X Post Saver is a browser extension that allows you to easily save X posts for l
 - 💾 Local storage with browser sync
 - 🔍 Quick access to saved posts
 - 🎨 Seamless integration with X's UI
-- 🔄 Account switching support
+- 🔄 X Account switching support
+
+
+## Usage
+
+1. Navigate to X (X.com)
+2. Click the save icon next to any post bookmark button on the bottom right to save the post
+3. Access your saved posts through the extension popup
+4. Manage your saved posts in the dashboard
+
 
 ## Installation
 
-### Download Option 1
-1. Download the zip at [v1.0.22 link](https://drive.google.com/file/d/1_z8m8JFQ8a7b2adg_Rd-ndmSf8I6e6qM/view?usp=drive_link)
+### Download Option 1 - Install from Chrome Web Store
+(First release coming soon)
+
+### Download Option 2 - Manual Install
+1. Download the zip at [v1.0.25 link](https://drive.google.com/file/d/1FnbfEaSXtCh5PlvZsv4WhuJ82riq-ohe/view?usp=sharing)
 2. Unzip
 3. Load the extension in Chrome:
    - Open Chrome and navigate to `chrome://extensions/`
    - Enable "Developer mode" in the top right
    - Click "Load unpacked" and select the unzipped folder
 
-### Download Option 2
+<!-- ### Download Option 3
 1. Clone this repository:
 ```bash
 git clone https://github.com/sleighs/tweet-saver-browser-extension/extension
@@ -31,68 +43,34 @@ git clone https://github.com/sleighs/tweet-saver-browser-extension/extension
 2. Load the extension in Chrome:
    - Open Chrome and navigate to `chrome://extensions/`
    - Enable "Developer mode" in the top right
-   - Click "Load unpacked" and select the `extension` directory
-
-## Usage
-
-1. Navigate to X (X.com)
-2. Click the "+" button next to any tweet to save it
-3. Access your saved posts through the extension popup
-4. Manage your saved posts in the dashboard
+   - Click "Load unpacked" and select the `extension` directory -->
 
 ## Configuration
 
 The extension can be configured through the options page:
 
 - Enable/disable the extension
-- Automatically save posts
-- Choose storage type (local/sync)
-- Toggle photo URL saving
-- Coming soon - Switch between light/dark themes
-- Enable/disable debug mode
+- Choose icon type
+- Enable/disable notifications for saving/unsaving posts
 - Delete all saved posts
-
-## Development
-
-### Project Structure
-```
-extension/
-├── manifest.json        # Extension configuration
-├── scripts/
-│   ├── content.js      # Main content script
-│   ├── background.js   # Background script
-│   └── options.js      # Options page logic
-├── styles/
-│   └── content.css     # Styles for the save button
-├── images/             # Extension icons and assets
-└── pages/
-    └── options.html    # Options page
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- Export saved post data (text or JSON)
 
 ## Roadmap
 
 - [ ] Cloud storage integration
-- [ ] Advanced search functionality
-- [ ] Export capabilities
-- [ ] Tweet organization with tags
-- [ ] Analytics dashboard
+- [ ] Post organization with tags
+- [ ] Custom JavaScript
 - [ ] Batch operations
 - [ ] API access
+- [ ] Auto post saving
 
 ## Support
 
-For support, please contact us at swrightdev@gmail.com or open an issue in the GitHub repository.
+For support or to ask any questions please email swrightdev@gmail.com
 
 ## Acknowledgments
 
 - X for their platform
-- Contributors and users of X Post Saver
+- Special thanks to the contributors and users of X Post Saver
+
  

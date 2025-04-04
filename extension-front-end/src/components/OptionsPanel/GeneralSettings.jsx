@@ -1,61 +1,159 @@
 import { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { useSettings } from '../../contexts/SettingsContext';
 import './OptionsPanel.css';
 
-const GeneralSettings = ({ settings, onSettingChange }) => {
-  const [autoSave, setAutoSave] = useState(settings.autoSave ?? true);
-  const [saveDelay, setSaveDelay] = useState(settings.saveDelay ?? 500);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(settings.notificationsEnabled ?? true);
-  const [saveOnlyMedia, setSaveOnlyMedia] = useState(settings.saveOnlyMedia ?? false);
-  const [saveTweetMetadata, setSaveTweetMetadata] = useState(settings.saveTweetMetadata ?? true);
+const GeneralSettings = () => {
+  const { settings, updateSetting } = useSettings();
+  // Existing state
+  const [autoSave, setAutoSave] = useState(settings?.autoSave ?? true);
+  const [saveDelay, setSaveDelay] = useState(settings?.saveDelay ?? 500);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(settings?.notificationsEnabled ?? true);
+  const [saveOnlyMedia, setSaveOnlyMedia] = useState(settings?.saveOnlyMedia ?? false);
+  const [saveTweetMetadata, setSaveTweetMetadata] = useState(settings?.saveTweetMetadata ?? true);
+  
+  // Add appearance state
+  const [saveIconStyle, setSaveIconStyle] = useState(settings?.saveIconStyle ?? 'cloud');
+  const [saveIconPosition, setSaveIconPosition] = useState(settings?.saveIconPosition ?? 'bottom');
+  const [showStorageIndicator, setShowStorageIndicator] = useState(settings?.showStorageIndicator ?? false);
 
   useEffect(() => {
-    setAutoSave(settings.autoSave ?? true);
-    setSaveDelay(settings.saveDelay ?? 500);
-    setNotificationsEnabled(settings.notificationsEnabled ?? true);
-    setSaveOnlyMedia(settings.saveOnlyMedia ?? false);
-    setSaveTweetMetadata(settings.saveTweetMetadata ?? true);
+    if (settings) {
+      if (settings.autoSave !== autoSave) setAutoSave(settings.autoSave ?? false);
+      if (settings.saveDelay !== saveDelay) setSaveDelay(settings.saveDelay ?? 500);
+      if (settings.notificationsEnabled !== notificationsEnabled) setNotificationsEnabled(settings.notificationsEnabled ?? true);
+      if (settings.saveOnlyMedia !== saveOnlyMedia) setSaveOnlyMedia(settings.saveOnlyMedia ?? false);
+      if (settings.saveTweetMetadata !== saveTweetMetadata) setSaveTweetMetadata(settings.saveTweetMetadata ?? true);
+      if (settings.saveIconStyle !== saveIconStyle) setSaveIconStyle(settings.saveIconStyle ?? 'cloud');
+      if (settings.saveIconPosition !== saveIconPosition) setSaveIconPosition(settings.saveIconPosition ?? 'bottom');
+      if (settings.showStorageIndicator !== showStorageIndicator) setShowStorageIndicator(settings.showStorageIndicator ?? false);
+    }
   }, [settings]);
+
+
+  const handleSettingChange = async (key, value) => {
+    if (!key) return;
+    
+    try {
+      await updateSetting(key, value);
+      
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const activeTab = tabs[0];
+      
+      if (activeTab?.url?.includes('x.com')) {
+        chrome.tabs.sendMessage(activeTab.id, {
+          type: 'SETTING_UPDATED',
+          payload: {
+            key,
+            value,
+            notify: settings?.notificationsEnabled ?? true
+          }
+        }).catch(() => {
+          // Ignore errors for inactive tabs
+        });
+      }
+
+      if (window.showNotification) {
+        window.showNotification('Settings updated successfully', 'success');
+      }
+    } catch (error) {
+      console.error('Error updating setting:', error);
+      if (window.showNotification) {
+        window.showNotification('Error updating settings', 'error');
+      }
+    }
+  };
 
   const handleAutoSaveChange = (e) => {
     const value = e.target.checked;
     setAutoSave(value);
-    onSettingChange('autoSave', value);
+    handleSettingChange('autoSave', value);
   };
 
   const handleSaveDelayChange = (e) => {
     const value = parseInt(e.target.value, 10);
     if (!isNaN(value) && value >= 0) {
       setSaveDelay(value);
-      onSettingChange('saveDelay', value);
+      handleSettingChange('saveDelay', value);
     }
   };
 
   const handleNotificationsChange = (e) => {
     const value = e.target.checked;
     setNotificationsEnabled(value);
-    onSettingChange('notificationsEnabled', value);
+    handleSettingChange('notificationsEnabled', value);
   };
 
   const handleSaveOnlyMediaChange = (e) => {
     const value = e.target.checked;
     setSaveOnlyMedia(value);
-    onSettingChange('saveOnlyMedia', value);
+    handleSettingChange('saveOnlyMedia', value);
   };
 
   const handleSaveMetadataChange = (e) => {
     const value = e.target.checked;
     setSaveTweetMetadata(value);
-    onSettingChange('saveTweetMetadata', value);
+    handleSettingChange('saveTweetMetadata', value);
   };
+
+  // Add appearance handlers
+  const handleSaveIconStyleChange = async (e) => {
+    const value = e.target.value;
+    setSaveIconStyle(value);
+    handleSettingChange('saveIconStyle', value);
+  };
+
+  const handleSaveIconPositionChange = (e) => {
+    const value = e.target.value;
+    setSaveIconPosition(value);
+    handleSettingChange('saveIconPosition', value);
+  };
+
+  const handleShowStorageIndicatorChange = (e) => {
+    const value = e.target.checked;
+    setShowStorageIndicator(value);
+    handleSettingChange('showStorageIndicator', value);
+  };
+
+  if (!settings) {
+    return <div className="loading">Loading settings...</div>;
+  }
 
   return (
     <div className="settings-section">
       <h2>General Settings</h2>
-      
+
+      {/* Existing general settings */}
       <div className="setting-group">
         <label className="setting-label">
-          <span>Auto-Save Tweets</span>
+          <span>Show Notifications</span>
+          <input
+            type="checkbox"
+            checked={notificationsEnabled}
+            onChange={handleNotificationsChange}
+          />
+        </label>
+        <p className="setting-description">
+          Display notifications when tweets are saved
+        </p>
+      </div>
+
+      {/* <div className="setting-group">
+        <label className="setting-label">
+          <span>Save Only Media Tweets</span>
+          <input
+            type="checkbox"
+            checked={saveOnlyMedia}
+            onChange={handleSaveOnlyMediaChange}
+          />
+        </label>
+        <p className="setting-description">
+          Only save auotsave tweets that contain images or videos
+        </p>
+      </div> */}
+
+      {/* <div className="setting-group">
+        <label className="setting-label">
+          <span>Autosave Clicked Tweets</span>
           <input
             type="checkbox"
             checked={autoSave}
@@ -63,11 +161,11 @@ const GeneralSettings = ({ settings, onSettingChange }) => {
           />
         </label>
         <p className="setting-description">
-          Automatically save tweets when you click on them to view (separate from the save button)
+          Automatically save tweets when you click to view them
         </p>
-      </div>
+      </div> */}
 
-      {autoSave && (
+      {/* {autoSave && (
         <div className="setting-group">
           <label className="setting-label">
             <span>Save Delay (ms)</span>
@@ -83,62 +181,55 @@ const GeneralSettings = ({ settings, onSettingChange }) => {
             Delay before auto-saving (0-5000 milliseconds)
           </p>
         </div>
-      )}
+      )} */}
 
+      {/* <h2>Appearance</h2> */}
+      {/* Add appearance settings */}
       <div className="setting-group">
         <label className="setting-label">
-          <span>Show Notifications</span>
-          <input
-            type="checkbox"
-            checked={notificationsEnabled}
-            onChange={handleNotificationsChange}
-          />
+          <span>Save Icon Style</span>
+          <select 
+            value={saveIconStyle} 
+            onChange={handleSaveIconStyleChange}  // Fix this line
+          >
+            <option value="cloud">Cloud</option>
+            <option value="star">Star</option>
+            <option value="plus">Plus Sign</option>
+          </select>
         </label>
         <p className="setting-description">
-          Display notifications when tweets are saved
+          Choose the style of the save button icon
         </p>
       </div>
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
-          <span>Save Only Media Tweets</span>
-          <input
-            type="checkbox"
-            checked={saveOnlyMedia}
-            onChange={handleSaveOnlyMediaChange}
-          />
+          <span>Save Icon Position</span>
+          <select value={saveIconPosition} onChange={handleSaveIconPositionChange}>
+            <option value="bottom">Bottom (Next to Bookmark)</option>
+            <option value="top" disabled={true}>Top (Near Post Options)</option>
+          </select>
         </label>
         <p className="setting-description">
-          Only save tweets that contain images or videos
+          Choose where the save button appears on posts
         </p>
-      </div>
+      </div> */}
 
-      <div className="setting-group">
+      {/* <div className="setting-group">
         <label className="setting-label">
-          <span>Save Tweet Metadata</span>
+          <span>Show Storage Location of Posts</span>
           <input
             type="checkbox"
-            checked={saveTweetMetadata}
-            onChange={handleSaveMetadataChange}
+            checked={showStorageIndicator}
+            onChange={handleShowStorageIndicatorChange}
           />
         </label>
         <p className="setting-description">
-          Include likes, retweets, and other metadata when saving tweets
+          Show storage location indicator on saved posts local or online/sync
         </p>
-      </div>
+      </div> */}
     </div>
   );
-};
-
-GeneralSettings.propTypes = {
-  settings: PropTypes.shape({
-    autoSave: PropTypes.bool,
-    saveDelay: PropTypes.number,
-    notificationsEnabled: PropTypes.bool,
-    saveOnlyMedia: PropTypes.bool,
-    saveTweetMetadata: PropTypes.bool
-  }).isRequired,
-  onSettingChange: PropTypes.func.isRequired
 };
 
 export default GeneralSettings;

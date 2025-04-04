@@ -58,6 +58,11 @@
   background-size: 16px;
 }
 
+.filter-select:hover,
+.user-select:hover {
+  border-color: #646cff;
+}
+
 .sort-controls {
   display: flex;
   gap: 8px;
@@ -77,12 +82,17 @@
 
 .sort-button:hover {
   background-color: var(--hover-color, #f7f7f7);
+  border-color: #646cff;
 }
 
 .sort-button.active {
   background-color: var(--primary-color, #1d9bf0);
   color: white;
   border-color: var(--primary-color, #1d9bf0);
+}
+
+.sort-button.active {
+  border-color: #646cff;
 }
 
 .tweets-stats {

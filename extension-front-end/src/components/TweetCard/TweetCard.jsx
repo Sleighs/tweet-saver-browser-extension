@@ -2,7 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import './TweetCard.css';
 
-const TweetCard = ({ tweet, onDelete, onRefresh }) => {
+const TweetCard = ({ tweet, onDelete, onRefresh, settings }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -13,6 +13,24 @@ const TweetCard = ({ tweet, onDelete, onRefresh }) => {
       console.error('Error refreshing tweet:', error);
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const handleDelete = async (tweet) => {
+    try {
+      // Send message to content script to update button state
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tabs[0]?.url?.includes('x.com')) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'TWEET_DELETED',
+          url: tweet.url
+        }).catch(() => {
+          // Ignore errors for inactive tabs
+        });
+      }
+      await onDelete(tweet);
+    } catch (error) {
+      console.error('Error deleting tweet:', error);
     }
   };
 
@@ -28,7 +46,8 @@ const TweetCard = ({ tweet, onDelete, onRefresh }) => {
     retweets,
     replies,
     views,
-    savedAt
+    savedAt,
+    storageType
   } = tweet;
 
   const formatNumber = (num) => {
@@ -118,6 +137,36 @@ const TweetCard = ({ tweet, onDelete, onRefresh }) => {
     </svg>
   );
 
+  // Add new icon components for storage types
+  const LocalStorageIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="storage-icon">
+      <path d="M4 4C4 3.44772 4.44772 3 5 3H19C19.5523 3 20 3.44772 20 4V20C20 20.5523 19.5523 21 19 21H5C4.44772 21 4 20.5523 4 20V4Z" stroke="currentColor" strokeWidth="2"/>
+      <path d="M8 7H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+
+  const SyncStorageIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="storage-icon">
+      <path d="M4 12C4 7.58172 7.58172 4 12 4C15.3 4 18.1 5.9 19.3 8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 12C20 16.4183 16.4183 20 12 20C8.7 20 5.9 18.1 4.7 15.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 3V9H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M4 15V21H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+
+  // Add CSS for the storage indicator
+  const storageIndicatorStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '12px',
+    color: 'var(--text-secondary)',
+    marginLeft: 'auto',
+    padding: '2px 6px',
+    borderRadius: '12px',
+    background: 'var(--background-secondary)',
+  };
+
   return (
     <div className="tweet-card">
       <div className="tweet-card-header">
@@ -135,6 +184,16 @@ const TweetCard = ({ tweet, onDelete, onRefresh }) => {
           </div>
         </div>
         <div className="tweet-actions">
+          {/* Only render the storage indicator if showStorageIndicator is true */}
+          {settings?.showStorageIndicator && (
+            <div 
+              style={storageIndicatorStyle}
+              title={`Saved ${storageType === 'sync' ? 'across all browsers' : 'locally'}`}
+            >
+              {storageType === 'sync' ? <SyncStorageIcon /> : <LocalStorageIcon />}
+              {storageType === 'sync' ? 'Synced' : 'Local'}
+            </div>
+          )}
           <button 
             className="tweet-action-button primary"
             onClick={() => window.open(url, '_blank')}
@@ -153,7 +212,7 @@ const TweetCard = ({ tweet, onDelete, onRefresh }) => {
             {isRefreshing ? 'Updating' : 'Update'}
           </button> */}
           <button 
-            onClick={() => onDelete(tweet)} 
+            onClick={() => handleDelete(tweet)} 
             className="delete-button"
             title="Delete tweet"
           >
@@ -235,10 +294,14 @@ TweetCard.propTypes = {
     retweets: PropTypes.string,
     replies: PropTypes.string,
     views: PropTypes.string,
-    savedAt: PropTypes.string
+    savedAt: PropTypes.string,
+    storageType: PropTypes.oneOf(['local', 'sync']).isRequired
   }).isRequired,
   onDelete: PropTypes.func.isRequired,
-  onRefresh: PropTypes.func
+  onRefresh: PropTypes.func,
+  settings: PropTypes.shape({
+    showStorageIndicator: PropTypes.bool
+  })
 };
 
 export default TweetCard; 
