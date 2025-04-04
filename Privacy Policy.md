@@ -58,14 +58,6 @@ This privacy policy may be updated to reflect:
 For privacy concerns or questions:
 - Email: swrightdev@gmail.com
 
-
-## User Rights
-You have the right to:
-- Export your data
-- Delete all stored data
-- Disable the extension
-- Uninstall the extension
-
 ## Children's Privacy
 This extension does not knowingly collect data from children under 13.
 
