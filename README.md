@@ -29,7 +29,7 @@ X Post Saver is a browser extension that allows you to easily save X posts for l
 ## Installation
 
 ### Download Option 1 - Install from Chrome Web Store
-(First release coming soon)
+[Chrome Web Store](https://chromewebstore.google.com/detail/x-post-saver/lbocheaabffbopcjanfnaedhkockljcd?authuser=0&hl=en)
 
 ### Download Option 2 - Manual Install
 1. Download the zip at [v1.0.25 link](https://drive.google.com/file/d/1FnbfEaSXtCh5PlvZsv4WhuJ82riq-ohe/view?usp=sharing)
