@@ -34,7 +34,7 @@ Post Saver for X is a browser extension that allows you to easily save X posts f
    - Enable "Developer mode" in the top right
    - Click "Load unpacked" and select the unzipped folder
 
-<!-- ### Download Option 2
+<!-- ### Download Option 3
 1. Clone this repository:
 ```bash
 git clone https://github.com/sleighs/tweet-saver-browser-extension/extension
