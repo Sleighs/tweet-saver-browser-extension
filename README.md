@@ -23,15 +23,18 @@ Post Saver for X is a browser extension that allows you to easily save X posts f
 
 ## Installation
 
-### Download Option 1
-1. Download the zip at [v1.0.22 link](https://drive.google.com/file/d/1_z8m8JFQ8a7b2adg_Rd-ndmSf8I6e6qM/view?usp=drive_link)
+### Download Option 1 - Install from Chrome Web Store
+(First release coming soon)
+
+### Download Option 2 - Manual Install
+1. Download the zip at [v1.0.25 link](https://drive.google.com/file/d/1FnbfEaSXtCh5PlvZsv4WhuJ82riq-ohe/view?usp=sharing)
 2. Unzip
 3. Load the extension in Chrome:
    - Open Chrome and navigate to `chrome://extensions/`
    - Enable "Developer mode" in the top right
    - Click "Load unpacked" and select the unzipped folder
 
-### Download Option 2
+<!-- ### Download Option 2
 1. Clone this repository:
 ```bash
 git clone https://github.com/sleighs/tweet-saver-browser-extension/extension
@@ -40,7 +43,7 @@ git clone https://github.com/sleighs/tweet-saver-browser-extension/extension
 2. Load the extension in Chrome:
    - Open Chrome and navigate to `chrome://extensions/`
    - Enable "Developer mode" in the top right
-   - Click "Load unpacked" and select the `extension` directory
+   - Click "Load unpacked" and select the `extension` directory -->
 
 ## Configuration
 
