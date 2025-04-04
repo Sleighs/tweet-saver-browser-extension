@@ -93,7 +93,7 @@
 
 .options-tabs {
   background: var(--background-color, #ffffff);
-  padding: 10px 16px;
+  padding: 0px 16px;
   padding-bottom: 1px;
   display: flex;
   flex-direction: row;
@@ -109,7 +109,9 @@
 .options-tab-button {
   background: none;
   padding: 6px 4px 5px 1px;
-  color: var(--text-color, #0f1419);
+  padding: 8px 10px 5px 5px;
+  padding-bottom: 5px;
+  color: rgb(255, 255, 255);
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
@@ -122,6 +124,7 @@
   border: none;
   outline: none;
   user-select: none;
+  /* border-radius: 8px; */
 }
 
 .options-tab-button:hover {
@@ -132,6 +135,10 @@
   color: var(--primary-color, #1d9bf0);
   font-weight: 600;
   background: none;
+}
+
+.options-tab-button.active:hover {
+  /* background-color: var(--hover-background, rgba(15, 20, 25, 0.1)); */
 }
 
 .options-tab-button.active::after {

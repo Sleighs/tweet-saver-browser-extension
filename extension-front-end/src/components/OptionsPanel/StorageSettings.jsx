@@ -252,6 +252,11 @@ ${tweet.text}
             chrome.tabs.sendMessage(tabs[0].id, { type: 'ALL_TWEETS_DELETED' });
           }
         });
+
+        // Remove data from localstorage
+        localStorage.remove('tweet-saver--tweets');
+        localStorage.remove('tweet-saver--urls');
+        localStorage.remove('tweet-saver--settings');
         
         if (window.showNotification) {
           window.showNotification('All data cleared successfully', 'success');
@@ -349,7 +354,7 @@ ${tweet.text}
           </button>
         </div>
         <p className="setting-description">
-          Export your saved tweets as a file or copy them to clipboard in your preferred format
+          Export your saved posts as a file or copy them to clipboard in your preferred format
         </p>
       </div>
 
@@ -362,7 +367,7 @@ ${tweet.text}
           Clear All Data
         </button>
         <p className="setting-description">
-          Delete all saved tweets and reset extension settings
+          Delete all saved tweets
         </p>
       </div>
     </div>

@@ -157,7 +157,7 @@ const Collections = ({ tweets, onUpdateTweet }) => {
                 }}
                 className="collections-select"
               >
-                <option value="">Add a tweet...</option>
+                <option value="">Add a post...</option>
                 {tweets.map(tweet => (
                   <option key={tweet.url} value={tweet.url}>
                     {tweet.text.substring(0, 50)}...

@@ -16,8 +16,8 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings = {} }) => {
   // Function to get tweets from all storage sources
   const getAllTweets = async () => {
     try {
-      if (!navigator.onLine) {
-        console.error('You are offline. Please check your connection and try again.');
+      if (!navigator.onLine || !chrome?.storage) {
+        console.warn('You are offline. Please check your connection and try again.');
         // setAllTweets(sampleData.tweets);
         return;
       }
@@ -218,7 +218,7 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings = {} }) => {
             onChange={(e) => setFilterType(e.target.value)}
             className="filter-select"
           >
-            <option value="all">All Tweets</option>
+            <option value="all">All Posts</option>
             <option value="media">Media Only</option>
             <option value="text">Text Only</option>
           </select>
@@ -235,7 +235,7 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings = {} }) => {
           <button 
             className={`refresh-button ${isRefreshing ? 'refreshing' : ''}`}
             onClick={handleRefresh}
-            title="Refresh tweets"
+            title="Refresh posts"
           >
             {isRefreshing ? '⟳' : '↻'}
           </button>
@@ -281,7 +281,7 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings = {} }) => {
       </div>
 
       <div className="tweets-stats">
-        Showing {filteredAndSortedTweets.length} of {allTweets.length} tweets
+        Showing {filteredAndSortedTweets.length} of {allTweets.length} posts
       </div>
 
       <div className="tweets-container">

@@ -43,7 +43,9 @@ const storage = {
   get: async () => {
     try {
       if (!chrome?.storage) {
-        throw new Error('Chrome storage not available');
+        // throw new Error('Chrome storage not available');
+        console.warn('Chrome storage not available, returning default settings');
+        return DEFAULT_SETTINGS;
       }
 
       return new Promise((resolve) => {

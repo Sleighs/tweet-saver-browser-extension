@@ -1,7 +1,9 @@
+import SettingsContext from '../../contexts/SettingsContext';
 import './About.css';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 
 const About = () => {
+  const { settings } = useContext(SettingsContext);
   const [copied, setCopied] = useState(false);
   const [clicked, setClicked] = useState(false);
 
@@ -24,7 +26,7 @@ const About = () => {
         X Post Saver exists to help you save posts from X (formerly Twitter) for later reading, reference, or sharing. It was created as a simple, lightweight way of bookmarking for X users who want to return to prior feeds and those browsing between multiple accounts.
       </p>
       {/* <p>
-        I hope this extension makes it easier for you to save tweets and access them later.
+        I hope this extension makes it easier for you to save posts and access them later.
       </p> */}
       <p>
         For any questions, feedback, or issues, please reach out to{' '}
@@ -53,14 +55,14 @@ const About = () => {
         </button>
       </p>
       <div className="about-links">
-        <a 
+        {settings.debugMode && <a 
           href="https://github.com/sleighs/tweet-saver-browser-extension" 
           target="_blank" 
           rel="noopener noreferrer"
           className="about-link"
         >
           <span>🔗</span> GitHub Repository
-        </a>
+        </a> }
         <a 
           href="https://buymeacoffee.com/sleighs" 
           target="_blank" 

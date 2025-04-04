@@ -211,7 +211,7 @@ const AdvancedSettings = () => {
           Clear All Data
         </button>
         <p className="setting-description">
-          Delete all saved tweets and reset extension settings
+          Delete all saved posts and reset extension settings
         </p>
       </div> */}
     </div>

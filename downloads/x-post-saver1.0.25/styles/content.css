@@ -1,0 +1,277 @@
+/*
+// Style button
+      button.style.marginLeft = '0';
+      // button.style.padding = '2%';
+      // button.style.border = 'solid rgba(255, 255, 255, 0.75) 2px';
+      button.style.border = 'solid rgb(113, 118, 123) 2px';
+      button.style.borderRadius = '5px';
+      // button.style.borderRadius = '50%';
+      button.style.backgroundColor = 'rgba(0, 0, 0, 0)';
+      button.style.color = 'white';
+      // button.style.color = 'rgb(113, 118, 123)';
+      button.style.fontSize = '.75rem';
+      button.style.fontFamily = 'sans-serif';
+      button.style.textAlign = 'center';
+      button.style.cursor = 'pointer';
+      button.style.height = '1.25rem';
+      button.style.width = '3.5rem';
+      button.style.position = 'fixed';
+      button.style.top = '2.5%';
+      button.style.right = '10%';
+      // button.style.bottom = '2%';
+      // button.style.left = '2%';
+      button.style.zIndex = '9999';
+      button.style.opacity = '0.4';
+*/
+
+.tweet-saver--button-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34.75px;
+  min-height: 34.75px;
+  margin: 0;
+  user-select: none;
+  transform: translateY(1px); /* Slight vertical adjustment to align with other buttons */
+}
+
+/* Position-specific styles */
+.tweet-saver--button-container[data-position="top"] {
+  margin-right: 24px; /* Increased spacing */
+}
+
+.tweet-saver--button-container[data-position="bottom"] {
+  margin-left: 24px; /* Increased spacing */
+}
+
+.tweet-saver--save-tweet-button {
+  width: 34.75px;
+  height: 34.75px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  padding: 0;
+  margin: 0;
+}
+
+/* Button hover title effect */
+.tweet-saver--save-tweet-button::before {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background-color: rgba(91, 112, 131, 0.9);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 400;
+  white-space: nowrap;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0.15s ease;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.tweet-saver--save-tweet-button:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Theme-specific base styles */
+.tweet-saver--save-tweet-button-light {
+  --background: #ffffff;
+  --border-color: #cfd9de;
+  --text-color: #0f1419;
+  --hover-background: rgba(15, 20, 25, 0.1);
+  --error-color: #f4212e;
+  --error-background: rgba(244, 33, 46, 0.1);
+  background-color: transparent;
+}
+
+.tweet-saver--save-tweet-button-dark {
+  --background: #15202b;
+  --border-color: #38444d;
+  --text-color: #e7e9ea;
+  --hover-background: rgba(239, 243, 244, 0.1);
+  --error-color: #f4212e;
+  --error-background: rgba(244, 33, 46, 0.1);
+  background-color: transparent;
+}
+
+/* Icon styles */
+.tweet-saver--save-tweet-button img {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) saturate(100%) invert(45%) sepia(8%) saturate(825%) hue-rotate(182deg) brightness(92%) contrast(86%); /* Twitter gray */
+  transition: filter 0.2s ease;
+  /* transform: translateX(1px); */
+}
+
+/* Hover effect - blue background and icon */
+.tweet-saver--save-tweet-button:hover {
+  background-color: rgba(29, 155, 240, 0.1); /* Twitter blue with opacity */
+}
+
+.tweet-saver--save-tweet-button:hover img {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(98%) saturate(2252%) hue-rotate(179deg) brightness(98%) contrast(93%); /* Twitter blue */
+}
+
+/* Saved state - blue icon */
+.tweet-saver--save-tweet-button.saved img {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(98%) saturate(2252%) hue-rotate(179deg) brightness(98%) contrast(93%); /* Twitter blue */
+}
+
+/* Active/clicked state */
+.tweet-saver--save-tweet-button:active {
+  background-color: rgba(29, 155, 240, 0.2);
+  /* transform: scale(0.95); */ /* Commented out click animation */
+}
+
+/* Icon-specific styles */
+.tweet-saver--save-tweet-button[data-icon-style="heart"] .tweet-saver--icon {
+  transform: scale(1.1);
+}
+
+.tweet-saver--save-tweet-button[data-icon-style="star"] .tweet-saver--icon {
+  transform: scale(1.2);
+}
+
+.tweet-saver--save-tweet-button[data-icon-style="cloud"] .tweet-saver--icon {
+  transform: scale(1.1);
+}
+
+/* Loading state */
+.tweet-saver--save-tweet-button.tweet-saver--loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.tweet-saver--save-tweet-button.tweet-saver--loading .tweet-saver--icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Splash effect animation */
+.tweet-saver--splash-effect::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, var(--hover-background) 0%, transparent 70%);
+  transform: scale(0);
+  animation: splash 0.3s ease-out;
+  border-radius: 50%;
+}
+
+@keyframes splash {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Notification System */
+.tweet-saver--notification {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  z-index: 9999;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #fff;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  pointer-events: none;
+}
+
+.tweet-saver--notification.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tweet-saver--notification.success {
+  background-color: rgb(29, 155, 240);
+}
+
+.tweet-saver--notification.error {
+  background-color: #f4212e;
+}
+
+.tweet-saver--notification.info {
+  background-color: rgb(29, 155, 240);
+}
+
+/* Loading States */
+.tweet-saver--loading {
+  position: relative;
+}
+
+.tweet-saver--loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid rgba(29, 155, 240, 0.2);
+  border-top-color: #1d9bf0;
+  border-radius: 50%;
+  animation: loading-spin 0.8s linear infinite;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .tweet-saver--save-tweet-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .tweet-saver--icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .tweet-saver--notification {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+    text-align: center;
+  }
+}

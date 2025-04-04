@@ -27,6 +27,11 @@
 
 ### Option to save user's current account at time of saving
 
+### Update Storage Keys to variables
+
+
+
+
 ## Done
 
 ### Save Icon Customization

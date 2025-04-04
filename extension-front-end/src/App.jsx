@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import TweetList from './components/TweetList/TweetList';
 import OptionsPanel from './components/OptionsPanel/OptionsPanel';
-import Collections from './components/Collections/Collections';
-import FeedArchive from './components/FeedArchive/FeedArchive';
+// import Collections from './components/Collections/Collections';
+// import FeedArchive from './components/FeedArchive/FeedArchive';
 import About from './components/About/About';
 import { useSettings } from './contexts/SettingsContext';
 
@@ -53,7 +53,7 @@ const AppContent = () => {
   const loadTweets = async () => {
     try {
       // Check if we're offline
-      if (!navigator.onLine) {
+      if (!navigator.onLine || !chrome.storage) {
         setError('You are offline. Please check your internet connection and try again.');
         // Update to get saved tweets from localstorage cookie
         setSavedTweets([]); // Set empty array to prevent undefined errors
@@ -257,7 +257,7 @@ const AppContent = () => {
     <div className="app">
       <header className="app-header">
         <div className="header-content">
-          <h1>X Post Saver</h1>
+          <h1 className="header-brand-title">X Post Saver</h1>
           <div className="header-controls">
             {isPopup && ( 
               <button className="open-in-tab-button" onClick={handleOpenInTab}>

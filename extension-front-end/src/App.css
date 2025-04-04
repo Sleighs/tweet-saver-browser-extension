@@ -10,6 +10,11 @@
   text-align: left;
 }
 
+.header-brand-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
 .saved-tweets-container {
   display: flex;
   flex-direction: column;
@@ -200,7 +205,7 @@
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
   font-weight: 500;
-  padding: 8px 16px;
+  padding: 8px 14px 8px 10px;
   border: none;
   background: none;
   cursor: pointer;
@@ -222,6 +227,7 @@
 
 .app-header-tab.active {
   color: #ffffff;
+
   font-weight: 600;
 }
 
@@ -233,6 +239,7 @@
   width: 100%;
   height: 3px;
   background: #1d9bf0;
+
 }
 
 .tab-icon {
@@ -433,10 +440,11 @@
   }
 
   .app-tabs {
-    padding: 0 12px;
+    padding: 0;
     display: flex;
-    justify-content: auto;
+    justify-content: center;
     gap: 4px;
+    width: 100%;
   }
 
   .app-header {
@@ -449,7 +457,7 @@
 
   .app-header-tab {
     min-width: unset;
-    padding: 6px 12px;
+    padding: 6px 12px 6px 10px;
     font-size: 14px;
   }
 
@@ -511,15 +519,21 @@
 
   .app-header-tab:hover {
     color: #ffffff;
+    
     background: rgba(255, 255, 255, 0.1);
   }
 
   .app-header-tab.active {
     color: #ffffff;
+    
   }
 
   .app-header-tab.active::after {
     background: #1d9bf0;
+  }
+
+  .app-header-tab.active:hover {
+    background: rgba(255, 255, 255, 0);
   }
 
   .app-header {
