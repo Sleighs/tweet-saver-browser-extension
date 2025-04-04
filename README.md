@@ -73,6 +73,6 @@ For support or to ask any questions please email swrightdev@gmail.com
 - Special thanks to the contributors and users of X Post Saver
 
 <p align="center"">
-  <img src="https://i.imgur.com/MY38abi.png" />
+  <img src="https://imgur.com/MY38abi" />
 </p>
  
