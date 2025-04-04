@@ -1,7 +1,7 @@
 .tweet-card {
   background: var(--background-color, #ffffff);
-  border-top: 1px solid var(--border-color, #cfd9de);
-  border-bottom: 1px solid var(--border-color, #cfd9de);
+  /* border-top: 1px solid var(--border-color, rgb(207, 217, 222)); */
+  border-bottom: 1px solid var(--border-color, rgb(207, 217, 222));
   border-radius: 0px;
   padding: 24px;
   /* margin-bottom: 16px; */

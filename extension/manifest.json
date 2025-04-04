@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Post Saver for X",
+  "name": "X Post Saver",
   "version": "1.0.25",
   "description": "An easy way to save posts on X",
   "action": {

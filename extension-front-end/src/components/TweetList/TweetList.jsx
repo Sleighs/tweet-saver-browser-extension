@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import TweetCard from '../TweetCard/TweetCard';
+import { sampleData } from '../../scripts/sampleData';
 import './TweetList.css';
 
 const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings = {} }) => {
@@ -15,11 +16,11 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings = {} }) => {
   // Function to get tweets from all storage sources
   const getAllTweets = async () => {
     try {
-      // if (!navigator.onLine) {
-      //   console.error('You are offline. Please check your internet connection and try again.');
-      //   setAllTweets([]);
-      //   return;
-      // }
+      if (!navigator.onLine) {
+        console.error('You are offline. Please check your connection and try again.');
+        // setAllTweets(sampleData.tweets);
+        return;
+      }
 
       // Get tweets from all storage sources
       const [chromeLocal, chromeSync, localStorageData] = await Promise.all([
@@ -59,7 +60,7 @@ const TweetList = ({ tweets, onDeleteTweet, onRefresh, settings = {} }) => {
 
     } catch (error) {
       console.error('Error fetching tweets:', error);
-      setAllTweets([]);
+      //setAllTweets(sampleData.tweets);
     }
   };
 

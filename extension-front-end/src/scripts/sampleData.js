@@ -1,4 +1,4 @@
-const sampleData = { 
+export const sampleData = { 
   tweetUrls: [
     "https://x.com/RationalMale/status/1805978453768110443",
     "https://x.com/devsideas/status/1806483964271501577",
@@ -2316,5 +2316,3 @@ const sampleData = {
     }
   ]
 };
-
-export default sampleData;

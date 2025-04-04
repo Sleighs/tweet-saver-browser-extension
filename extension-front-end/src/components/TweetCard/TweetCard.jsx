@@ -185,7 +185,7 @@ const TweetCard = ({ tweet, onDelete, onRefresh, settings }) => {
         </div>
         <div className="tweet-actions">
           {/* Only render the storage indicator if showStorageIndicator is true */}
-          {settings?.showStorageIndicator !== false && (
+          {settings?.showStorageIndicator && (
             <div 
               style={storageIndicatorStyle}
               title={`Saved ${storageType === 'sync' ? 'across all browsers' : 'locally'}`}

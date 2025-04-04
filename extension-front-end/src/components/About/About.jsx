@@ -62,7 +62,7 @@ const About = () => {
           <span>🔗</span> GitHub Repository
         </a>
         <a 
-          href="buymeacoffee.com/sleighs" 
+          href="https://buymeacoffee.com/sleighs" 
           target="_blank" 
           rel="noopener noreferrer"
           className="about-link donate-link"

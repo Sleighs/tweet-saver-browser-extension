@@ -202,8 +202,33 @@ export const SettingsProvider = ({ children }) => {
             const oldValue = changes.settings.oldValue;
 
             // Handle both string and object formats
-            const newSettings = typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
-            const oldSettings = oldValue ? (typeof oldValue === 'string' ? JSON.parse(oldValue) : oldValue) : null;
+            // const newSettings = typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
+            // const oldSettings = oldValue ? (typeof oldValue === 'string' ? JSON.parse(oldValue) : oldValue) : null;
+
+            // Safely parse and validate new settings
+            let newSettings;
+            try {
+              newSettings = typeof newValue === 'string' ? JSON.parse(newValue) : newValue;
+              // Ensure we have valid settings object
+              if (!newSettings || typeof newSettings !== 'object') {
+                console.error('Invalid settings format:', newSettings);
+                return;
+              }
+            } catch (parseError) {
+              console.error('Error parsing new settings:', parseError);
+              return;
+            }
+
+            // Safely parse old settings
+            let oldSettings;
+            try {
+              oldSettings = oldValue ? 
+                (typeof oldValue === 'string' ? JSON.parse(oldValue) : oldValue) 
+                : null;
+            } catch (parseError) {
+              console.error('Error parsing old settings:', parseError);
+              oldSettings = null;
+            }
 
             if (!oldSettings || (newSettings.lastSaved > oldSettings.lastSaved)) {
               setSettings(newSettings);

@@ -25,7 +25,7 @@
 - Add the option to the settings panel on the front-end.
 - Add an icon to the tweedcard component that allows to save to online storage if local and remove from online storage and save it locally.
 
-
+### Option to save user's current account at time of saving
 
 ## Done
 

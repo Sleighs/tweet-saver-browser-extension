@@ -294,7 +294,8 @@ const getSavedData = async () => {
           total: savedTweets.length,
           byStatusId: savedTweets.filter(t => getStatusId(t.url)).length
         },
-        urls: savedUrls.length
+        urls: savedUrls.length,
+        savedTweets
       });
     }
 
@@ -615,26 +616,66 @@ const unsaveTweet = async (tweetUrl) => {
 // Add this function before addSaveButtonsToTweets
 const getTweetUrl = (tweetElement) => {
   try {
-    // First try to find the link in the tweet's header
-    const headerLink = tweetElement.querySelector('[data-testid="User-Name"] a[href*="/status/"]');
-    if (headerLink) {
-      return headerLink.href;
+    // Helper to clean and normalize URLs
+    const normalizeUrl = (url) => {
+      try {
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/');
+        const statusIndex = pathParts.indexOf('status');
+        if (statusIndex !== -1 && statusIndex + 1 < pathParts.length) {
+          // Reconstruct URL with just username and status ID
+          return `${urlObj.origin}/${pathParts[1]}/status/${pathParts[statusIndex + 1]}`;
+        }
+        return url;
+      } catch (e) {
+        if (settings?.debugMode) console.error('Error normalizing URL:', e);
+        return url;
+      }
+    };
+
+    if (settings?.debugMode) {
+      console.log('Getting tweet URL for element:', {
+        element: tweetElement,
+        currentUrl: window.location.href
+      });
     }
 
-    // Then try to find any link with a status ID
-    const statusLink = tweetElement.querySelector('a[href*="/status/"]');
-    if (statusLink) {
-      return statusLink.href;
+    // Try different methods to find the tweet URL
+    const possibleUrls = [
+      // Method 1: Tweet header link
+      tweetElement.querySelector('[data-testid="User-Name"] a[href*="/status/"]')?.href,
+      // Method 2: Tweet timestamp link
+      tweetElement.querySelector('time')?.closest('a')?.href,
+      // Method 3: Any status link in the tweet
+      tweetElement.querySelector('a[href*="/status/"]')?.href,
+      // Method 4: Current URL if we're on a tweet page
+      isTweetUrl(window.location.href) ? window.location.href : null
+    ].filter(Boolean);
+
+    if (settings?.debugMode) {
+      console.log('Found possible URLs:', possibleUrls);
     }
 
-    // Finally, try to get the URL from the current page if we're on a tweet page
-    if (isTweetUrl(window.location.href)) {
-      return window.location.href;
+    // Use the first valid URL found
+    for (const url of possibleUrls) {
+      const normalizedUrl = normalizeUrl(url);
+      const statusId = getStatusId(normalizedUrl);
+      
+      if (statusId) {
+        if (settings?.debugMode) {
+          console.log('Selected tweet URL:', {
+            original: url,
+            normalized: normalizedUrl,
+            statusId
+          });
+        }
+        return normalizedUrl;
+      }
     }
 
     return null;
   } catch (err) {
-    if (settings.debugMode) console.error('Error getting tweet URL:', err);
+    if (settings?.debugMode) console.error('Error getting tweet URL:', err);
     return null;
   }
 };
