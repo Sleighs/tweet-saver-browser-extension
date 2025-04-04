@@ -12,6 +12,9 @@ X Post Saver is a browser extension that allows you to easily save X posts for l
 - 🎨 Seamless integration with X's UI
 - 🔄 X Account switching support
 
+<p align="center">
+  <img src="https://imgur.com/a/MY38abi" />
+</p>
 
 ## Usage
 
