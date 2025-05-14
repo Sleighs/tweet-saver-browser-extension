@@ -1212,7 +1212,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         lastSaved: Date.now()
       }
     });
-} else if (message.type === 'TWEET_DELETED') {
+  } else if (message.type === 'TWEET_DELETED') {
     // Update save button state for the deleted tweet
     const tweetUrl = message.url;
     const buttonContainer = document.querySelector(`.tweet-saver--button-container[data-tweet-url="${tweetUrl}"]`);
