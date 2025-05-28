@@ -160,32 +160,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-async function updateIcon() {
+async function updateIcon(forceEnabled) {
   try {
-    // Get settings from both storages
-    const [localSettings, syncSettings] = await Promise.all([
-      browser.storage.local.get('settings'),
-      browser.storage.sync.get('settings')
-    ]);
-
-    // Parse settings properly
-    const local = localSettings.settings ? JSON.parse(localSettings.settings) : null;
-    const sync = syncSettings.settings ? JSON.parse(syncSettings.settings) : null;
-
-    // Use the most recently saved settings or default to enabled
-    const mostRecent = local?.lastSaved > (sync?.lastSaved || 0) ? local : sync;
-    const newSettings = mostRecent || defaultOptions;
-
-    const iconPath = newSettings.enableExtension !== false ? {
-      "16": "../images/icon-16.png",
-      "32": "../images/icon-32.png"
-    } : {
+    const iconPath = forceEnabled === false ? {
       "16": "../images/icon-16-gray.png",
       "32": "../images/icon-32-gray.png"
+    } : {
+      "16": "../images/icon-16.png",
+      "32": "../images/icon-32.png"
     };
 
     await browser.action.setIcon({ path: iconPath });
-    debug.log('Icon updated:', newSettings.enableExtension !== false ? 'enabled' : 'disabled');
+    debug.log('Icon updated:', forceEnabled !== false ? 'enabled' : 'disabled');
   } catch (err) {
     debug.error('Error updating Icon', err);
     // Fallback to enabled icon
@@ -201,8 +187,8 @@ async function updateIcon() {
 // Handle messages from the content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.method) {
-    case 'enableExtension':
-      updateIcon();
+    case 'updateIcon':
+      updateIcon(message.enabled);
       break;
 
     case 'saveTweetUrl':

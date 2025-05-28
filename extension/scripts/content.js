@@ -1186,6 +1186,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Handle specific settings that need immediate updates
     switch (key) {
+      case 'enableExtension':
+        enableExtension = value;
+        // Notify background script to update icon with explicit enabled state
+        chrome.runtime.sendMessage({ 
+          method: 'updateIcon',
+          enabled: value === true
+        });
+        if (!value) {
+          document.querySelectorAll('.tweet-saver--button-container').forEach(container => {
+            container.remove();
+          });
+        } else {
+          addSaveButtonsToTweets();
+        }
+        break;
+
       case 'debugMode':
         settings.debugMode = value;
         if (notify) {
