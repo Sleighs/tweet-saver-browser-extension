@@ -1,7 +1,16 @@
 # Todo List
 
 
-## Todo
+## Todos
+
+### Recent Viewed Post History Tab
+- Stores all recently viewed posts
+- Identifies whether post is clicked, viewed in feed, viewed in replies, etc.
+- Option to save all posts that had a button added to it.
+- Future: Option to store by parent post (for replies)
+
+
+### Fix gray icon change when extension is turned off
 
 ### Update extraction format
 - Maybe JSON

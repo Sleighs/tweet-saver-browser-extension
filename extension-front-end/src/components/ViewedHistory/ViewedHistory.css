@@ -1,0 +1,133 @@
+.viewed-history {
+  padding: 16px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.viewed-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.viewed-history-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color, #0f1419);
+  margin: 0;
+}
+
+.viewed-history-count {
+  font-size: 14px;
+  color: var(--text-secondary, #536471);
+}
+
+.viewed-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.viewed-history-item {
+  background-color: var(--background-color, #ffffff);
+  border: 1px solid var(--border-color, #cfd9de);
+  border-radius: 12px;
+  padding: 16px;
+  transition: background-color 0.2s ease;
+}
+
+.viewed-history-item:hover {
+  background-color: var(--hover-background, rgba(15, 20, 25, 0.1));
+}
+
+.viewed-history-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.viewed-history-item-text {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-color, #0f1419);
+  margin: 0;
+  word-wrap: break-word;
+}
+
+.viewed-history-item-link {
+  color: var(--primary-color, #1d9bf0);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.viewed-history-item-link:hover {
+  text-decoration: underline;
+}
+
+.viewed-history-item-time {
+  font-size: 13px;
+  color: var(--text-secondary, #536471);
+}
+
+.viewed-history-item-media {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.viewed-history-item-image {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.viewed-history-loading,
+.viewed-history-error,
+.viewed-history-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-secondary, #536471);
+}
+
+.viewed-history-empty-subtitle {
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .viewed-history-item {
+    background-color: var(--background-color, #15202b);
+    border-color: var(--border-color, #38444d);
+  }
+
+  .viewed-history-item:hover {
+    background-color: var(--hover-background, rgba(255, 255, 255, 0.1));
+  }
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  .viewed-history {
+    padding: 12px;
+  }
+
+  .viewed-history-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .viewed-history-item {
+    padding: 12px;
+  }
+
+  .viewed-history-item-text {
+    font-size: 14px;
+  }
+} 

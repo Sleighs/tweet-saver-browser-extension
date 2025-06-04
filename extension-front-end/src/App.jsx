@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import TweetList from './components/TweetList/TweetList';
 import OptionsPanel from './components/OptionsPanel/OptionsPanel';
+import ViewedHistory from './components/ViewedHistory/ViewedHistory';
 // import Collections from './components/Collections/Collections';
 // import FeedArchive from './components/FeedArchive/FeedArchive';
 import About from './components/About/About';
@@ -14,6 +15,12 @@ const TABS = [
     label: 'Saved Posts',
     icon: '🐦',
     component: TweetList
+  },
+  {
+    id: 'history',
+    label: 'View History',
+    icon: '📜',
+    component: ViewedHistory
   },
   // {
   //   id: 'feedArchive',

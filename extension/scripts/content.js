@@ -123,7 +123,9 @@ const STORAGE_KEYS = {
   SAVED_URLS: 'xpostsaver-savedurls',
   LOCALSTORAGE_POSTS: 'tweet-saver--tweets',
   LOCALSTORAGE_URLS: 'tweet-saver--urls',
-  LOCALSTORAGE_BACKUP: 'tweet-saver--backup'
+  LOCALSTORAGE_BACKUP: 'tweet-saver--backup',
+  VIEWED_POSTS: 'xpostsaver-viewedposts',
+  LOCALSTORAGE_VIEWED_POSTS: 'xpostsaver--viewedposts'
 };
 
 
@@ -135,6 +137,7 @@ const homepageUrl = "https://x.com/home";
 let recentUrls = [];
 let savedUrls = [];
 let savedTweets = [];
+let viewedTweets = [];
 
 class Tweet {
   constructor(tweet) {
@@ -693,7 +696,92 @@ const updateIconSource = (buttonElement, iconStyle, theme, isSaved) => {
   }
 };
 
-// Simplify the button addition function
+// Add these constants after the existing declarations
+const COOKIE_STORAGE = {
+  POSTS: 'xpostsaver--local-posts',
+  LAST_SAVE_TIME: 'xpostsaver--last-save-time',
+  MAX_POSTS_PER_BATCH: 50,
+  SAVE_COOLDOWN: 2000
+};
+
+// Add these functions after the existing declarations
+const getCookie = (name) => {
+  try {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      return JSON.parse(decodeURIComponent(parts.pop().split(';').shift()));
+    }
+    return null;
+  } catch (error) {
+    if (settings?.debugMode) console.error('Error reading cookie:', error);
+    return null;
+  }
+};
+
+const setCookie = (name, value, days = 7) => {
+  try {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    const expires = `expires=${date.toUTCString()}`;
+    document.cookie = `${name}=${encodeURIComponent(JSON.stringify(value))};${expires};path=/`;
+  } catch (error) {
+    if (settings?.debugMode) console.error('Error setting cookie:', error);
+  }
+};
+
+const savePostToCookie = async (post) => {
+  try {
+    // Get existing posts from cookie
+    const localPosts = getCookie(COOKIE_STORAGE.POSTS) || [];
+    
+    // Check if post already exists (by status ID)
+    const statusId = getStatusId(post.url);
+    const existingPostIndex = localPosts.findIndex(p => getStatusId(p.url) === statusId);
+    
+    if (existingPostIndex === -1) {
+      // Add timestamp to post
+      post.localSavedAt = Date.now();
+      
+      // Add to local storage
+      localPosts.push(post);
+      
+      // Save back to cookie
+      setCookie(COOKIE_STORAGE.POSTS, localPosts);
+      
+      if (settings?.debugMode) {
+        console.log('Post saved to cookie:', {
+          post,
+          totalPosts: localPosts.length
+        });
+      }
+    }
+  } catch (error) {
+    if (settings?.debugMode) console.error('Error saving post to cookie:', error);
+  }
+};
+
+const canSaveMorePosts = () => {
+  try {
+    const lastSaveTime = getCookie(COOKIE_STORAGE.LAST_SAVE_TIME) || 0;
+    const currentTime = Date.now();
+    const timeSinceLastSave = currentTime - lastSaveTime;
+    
+    // Check if we're within the cooldown period
+    if (timeSinceLastSave < COOKIE_STORAGE.SAVE_COOLDOWN) {
+      return false;
+    }
+    
+    // Update last save time
+    setCookie(COOKIE_STORAGE.LAST_SAVE_TIME, currentTime);
+    return true;
+  } catch (error) {
+    if (settings?.debugMode) console.error('Error checking save limit:', error);
+    return false;
+  }
+};
+
+// Modify the existing addSaveButtonsToTweets function to include cookie storage
 const addSaveButtonsToTweets = () => {
   // Check if extension is enabled
   if (!settings.enableExtension) {
@@ -710,6 +798,8 @@ const addSaveButtonsToTweets = () => {
     if (!tweets.length) return;
 
     const theme = detectTheme();
+    let postsToSave = [];
+
     tweets.forEach(tweet => {
       try {
         // Skip if already has our button
@@ -734,6 +824,20 @@ const addSaveButtonsToTweets = () => {
           if (settings.debugMode) console.log('Skipping tweet - already has button');
           return;
         }
+
+        // Prepare post data for cookie storage
+        const postData = {
+          id: tweet.dataset.tweetId,
+          url: tweetUrl,
+          text: tweet.querySelector('[data-testid="tweetText"]')?.textContent,
+          media: Array.from(tweet.querySelectorAll('img[src*="pbs.twimg.com/media"]')).map(img => ({
+            url: img.src
+          })),
+          timestamp: Date.now()
+        };
+
+        // Add to posts to save
+        postsToSave.push(postData);
 
         // Create button container
         const buttonContainer = document.createElement('div');
@@ -836,6 +940,25 @@ const addSaveButtonsToTweets = () => {
         if (settings.debugMode) console.error('Error adding button to tweet:', err);
       }
     });
+
+    // Save posts to cookie if we have any and rate limit allows (not functional yet, must fix, also uses too much memory)
+    // if (postsToSave.length > 0 && canSaveMorePosts()) {
+    //   // Limit the number of posts to save
+    //   const postsToSaveLimited = postsToSave.slice(0, COOKIE_STORAGE.MAX_POSTS_PER_BATCH);
+      
+    //   // Save each post to cookie
+    //   postsToSaveLimited.forEach(post => {
+    //     savePostToCookie(post);
+    //   });
+
+    //   //if (settings?.debugMode) {
+    //     console.log('Saved posts to cookie:', {
+    //       total: postsToSave.length,
+    //       saved: postsToSaveLimited.length,
+    //       skipped: postsToSave.length - postsToSaveLimited.length
+    //     });
+    //   //}
+    // }
   } catch (err) {
     if (settings.debugMode) console.error('Error in addSaveButtonsToTweets:', err);
   }
@@ -847,6 +970,9 @@ const showSplashEffect = (button) => {
       button.classList.remove('tweet-saver--splash-effect');
   }, 500); // Duration should match the animation duration
 };
+
+
+
 
 /////// Helper functions ///////
 
@@ -1037,6 +1163,7 @@ const initializeOptions = async () => {
   }
 };
 
+
 /////// Initialization ///////
 
 (async function () {
@@ -1188,10 +1315,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     switch (key) {
       case 'enableExtension':
         enableExtension = value;
-        // Notify background script to update icon with explicit enabled state
+        // Notify background script to update icon
         chrome.runtime.sendMessage({ 
           method: 'updateIcon',
-          enabled: value === true
+          enabled: enableExtension
         });
         if (!value) {
           document.querySelectorAll('.tweet-saver--button-container').forEach(container => {

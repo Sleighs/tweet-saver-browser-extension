@@ -188,6 +188,8 @@ async function updateIcon(forceEnabled) {
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.method) {
     case 'updateIcon':
+    case 'toggleExtension':
+    case 'enableExtension':
       updateIcon(message.enabled);
       break;
 
