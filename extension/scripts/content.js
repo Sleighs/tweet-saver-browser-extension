@@ -5,36 +5,24 @@
 let settings;
 
 // Debug logging system
-const debug = {
-  log: (message, ...args) => {
-    if (settings?.debugMode) {
-      console.log(`[Tweet Saver] ${message}`, ...args);
-    }
-  },
-  error: (message, error, ...args) => {
-    if (settings?.debugMode) {
-      console.error(`[Tweet Saver] ${message}:`, error, ...args);
-    }
-  },
-  warn: (message, ...args) => {
-    if (settings?.debugMode) {
-      console.warn(`[Tweet Saver] ${message}`, ...args);
-    }
-  }
-};
+const debug = new DebugLogger({
+  debugMode: settings?.debugMode || false,
+  prefix: '[Tweet Saver]'
+});
 
-// Export debug functions for use throughout the code
-const debugLog = debug.log;
-const debugError = debug.error;
-const debugWarn = debug.warn;
+// Update debug settings when initializing debug mode
 const initializeDebugMode = (enabled) => {
   settings.debugMode = enabled;
+  debug.settings.debugMode = enabled;
   if (enabled) {
-    console.log('[Tweet Saver] Debug mode initialized:', enabled);
+    debug.log('Debug mode initialized:', enabled);
   }
 };
 
-
+// Remove old debug exports since we'll use debug directly
+const debugLog = debug.log.bind(debug);
+const debugError = debug.error.bind(debug);
+const debugWarn = debug.warn.bind(debug);
 
 /////// Declarations ///////
 
@@ -115,6 +103,7 @@ settings = {
   saveIconStyle: 'cloud',
   saveIconPosition: 'bottom',
   storageType: 'local',
+  saveAllViewedPosts: true,
 };
 
 const STORAGE_KEYS = {
@@ -128,6 +117,14 @@ const STORAGE_KEYS = {
   LOCALSTORAGE_VIEWED_POSTS: 'xpostsaver--viewedposts'
 };
 
+// Add after the STORAGE_KEYS constant
+const VIEWED_POSTS_CONFIG = {
+  DB_NAME: 'tweet-saver-viewed-posts',
+  STORE_NAME: 'viewed-posts',
+  MAX_ENTRIES: 1000,
+  CLEANUP_THRESHOLD: 800, // Start cleanup when we reach this many entries
+  MAX_AGE_DAYS: 30 // Remove entries older than this
+};
 
 // Get initial page URL
 let url = window.location.href;
@@ -696,92 +693,7 @@ const updateIconSource = (buttonElement, iconStyle, theme, isSaved) => {
   }
 };
 
-// Add these constants after the existing declarations
-const COOKIE_STORAGE = {
-  POSTS: 'xpostsaver--local-posts',
-  LAST_SAVE_TIME: 'xpostsaver--last-save-time',
-  MAX_POSTS_PER_BATCH: 50,
-  SAVE_COOLDOWN: 2000
-};
-
-// Add these functions after the existing declarations
-const getCookie = (name) => {
-  try {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) {
-      return JSON.parse(decodeURIComponent(parts.pop().split(';').shift()));
-    }
-    return null;
-  } catch (error) {
-    if (settings?.debugMode) console.error('Error reading cookie:', error);
-    return null;
-  }
-};
-
-const setCookie = (name, value, days = 7) => {
-  try {
-    const date = new Date();
-    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-    const expires = `expires=${date.toUTCString()}`;
-    document.cookie = `${name}=${encodeURIComponent(JSON.stringify(value))};${expires};path=/`;
-  } catch (error) {
-    if (settings?.debugMode) console.error('Error setting cookie:', error);
-  }
-};
-
-const savePostToCookie = async (post) => {
-  try {
-    // Get existing posts from cookie
-    const localPosts = getCookie(COOKIE_STORAGE.POSTS) || [];
-    
-    // Check if post already exists (by status ID)
-    const statusId = getStatusId(post.url);
-    const existingPostIndex = localPosts.findIndex(p => getStatusId(p.url) === statusId);
-    
-    if (existingPostIndex === -1) {
-      // Add timestamp to post
-      post.localSavedAt = Date.now();
-      
-      // Add to local storage
-      localPosts.push(post);
-      
-      // Save back to cookie
-      setCookie(COOKIE_STORAGE.POSTS, localPosts);
-      
-      if (settings?.debugMode) {
-        console.log('Post saved to cookie:', {
-          post,
-          totalPosts: localPosts.length
-        });
-      }
-    }
-  } catch (error) {
-    if (settings?.debugMode) console.error('Error saving post to cookie:', error);
-  }
-};
-
-const canSaveMorePosts = () => {
-  try {
-    const lastSaveTime = getCookie(COOKIE_STORAGE.LAST_SAVE_TIME) || 0;
-    const currentTime = Date.now();
-    const timeSinceLastSave = currentTime - lastSaveTime;
-    
-    // Check if we're within the cooldown period
-    if (timeSinceLastSave < COOKIE_STORAGE.SAVE_COOLDOWN) {
-      return false;
-    }
-    
-    // Update last save time
-    setCookie(COOKIE_STORAGE.LAST_SAVE_TIME, currentTime);
-    return true;
-  } catch (error) {
-    if (settings?.debugMode) console.error('Error checking save limit:', error);
-    return false;
-  }
-};
-
-// Modify the existing addSaveButtonsToTweets function to include cookie storage
+// Modify the addSaveButtonsToTweets function to remove the detectViewedPost call
 const addSaveButtonsToTweets = () => {
   // Check if extension is enabled
   if (!settings.enableExtension) {
@@ -941,24 +853,6 @@ const addSaveButtonsToTweets = () => {
       }
     });
 
-    // Save posts to cookie if we have any and rate limit allows (not functional yet, must fix, also uses too much memory)
-    // if (postsToSave.length > 0 && canSaveMorePosts()) {
-    //   // Limit the number of posts to save
-    //   const postsToSaveLimited = postsToSave.slice(0, COOKIE_STORAGE.MAX_POSTS_PER_BATCH);
-      
-    //   // Save each post to cookie
-    //   postsToSaveLimited.forEach(post => {
-    //     savePostToCookie(post);
-    //   });
-
-    //   //if (settings?.debugMode) {
-    //     console.log('Saved posts to cookie:', {
-    //       total: postsToSave.length,
-    //       saved: postsToSaveLimited.length,
-    //       skipped: postsToSave.length - postsToSaveLimited.length
-    //     });
-    //   //}
-    // }
   } catch (err) {
     if (settings.debugMode) console.error('Error in addSaveButtonsToTweets:', err);
   }
@@ -1190,6 +1084,8 @@ const initializeOptions = async () => {
     // Add initial buttons
     addSaveButtonsToTweets();
 
+    // Set up post detection
+    setupPostDetection();
 
     // Set up main observer
     const observer = new MutationObserver(() => {
@@ -1385,6 +1281,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Save updated arrays to storage
     saveDataToStorage(savedUrls, savedTweets);
+  } else if (message.method === 'getRecentViewedPosts') {
+    // Handle request for recent viewed posts
+    viewedPostsManager.getRecentPosts(message.limit || 50)
+      .then(posts => sendResponse(posts))
+      .catch(error => {
+        if (settings?.debugMode) console.error('Error getting recent posts:', error);
+        sendResponse([]);
+      });
+    return true; // Keep the message channel open for async response
   }
   
   sendResponse({ success: true });
@@ -1404,6 +1309,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+
 // Add click outside handler to close menus
 document.addEventListener('click', (event) => {
   if (!event.target.closest('.tweet-saver--button-container')) {
@@ -1418,4 +1324,253 @@ const isExtensionContextValid = () => {
   return !!chrome.runtime?.id;
 };
 
+class ViewedPostsManager {
+  constructor() {
+    this.db = null;
+    this.initialized = false;
+  }
 
+  async init() {
+    if (this.initialized) return;
+
+    try {
+      this.db = await this.openDatabase();
+      this.initialized = true;
+      if (settings?.debugMode) console.log('ViewedPostsManager initialized');
+    } catch (error) {
+      if (settings?.debugMode) console.error('Error initializing ViewedPostsManager:', error);
+    }
+  }
+
+  openDatabase() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(VIEWED_POSTS_CONFIG.DB_NAME, 1);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(VIEWED_POSTS_CONFIG.STORE_NAME)) {
+          const store = db.createObjectStore(VIEWED_POSTS_CONFIG.STORE_NAME, { keyPath: 'statusId' });
+          store.createIndex('timestamp', 'timestamp', { unique: false });
+        }
+      };
+    });
+  }
+
+  async addViewedPost(tweetElement) {
+    if (!this.initialized) await this.init();
+
+    try {
+      const statusId = getStatusId(getTweetUrl(tweetElement));
+      if (!statusId) return;
+
+      const username = tweetElement.querySelector('[data-testid="User-Name"]')?.innerText.split('\n')[0];
+      const text = tweetElement.querySelector('[data-testid="tweetText"]')?.innerText || '';
+      const textPreview = text.length > 100 ? text.substring(0, 97) + '...' : text;
+
+      const post = {
+        statusId,
+        url: getTweetUrl(tweetElement),
+        username,
+        textPreview,
+        timestamp: Date.now()
+      };
+
+      const transaction = this.db.transaction([VIEWED_POSTS_CONFIG.STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(VIEWED_POSTS_CONFIG.STORE_NAME);
+
+      await store.put(post);
+      await this.cleanupIfNeeded();
+
+      if (settings?.debugMode) console.log('Viewed post added:', post);
+    } catch (error) {
+      if (settings?.debugMode) console.error('Error adding viewed post:', error);
+    }
+  }
+
+  async cleanupIfNeeded() {
+    try {
+      const count = await this.getCount();
+      if (count < VIEWED_POSTS_CONFIG.CLEANUP_THRESHOLD) return;
+
+      const transaction = this.db.transaction([VIEWED_POSTS_CONFIG.STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(VIEWED_POSTS_CONFIG.STORE_NAME);
+      const index = store.index('timestamp');
+
+      // Get all entries
+      const entries = await new Promise((resolve, reject) => {
+        const request = index.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+
+      // Sort by timestamp
+      entries.sort((a, b) => a.timestamp - b.timestamp);
+
+      // Remove oldest entries until we're under the max
+      const entriesToRemove = entries.slice(0, entries.length - VIEWED_POSTS_CONFIG.MAX_ENTRIES);
+      for (const entry of entriesToRemove) {
+        await store.delete(entry.statusId);
+      }
+
+      // Remove entries older than MAX_AGE_DAYS
+      const cutoffTime = Date.now() - (VIEWED_POSTS_CONFIG.MAX_AGE_DAYS * 24 * 60 * 60 * 1000);
+      const oldEntries = entries.filter(entry => entry.timestamp < cutoffTime);
+      for (const entry of oldEntries) {
+        await store.delete(entry.statusId);
+      }
+
+      if (settings?.debugMode) {
+        console.log('Cleanup completed:', {
+          removed: entriesToRemove.length + oldEntries.length,
+          remaining: await this.getCount()
+        });
+      }
+    } catch (error) {
+      if (settings?.debugMode) console.error('Error during cleanup:', error);
+    }
+  }
+
+  async getCount() {
+    const transaction = this.db.transaction([VIEWED_POSTS_CONFIG.STORE_NAME], 'readonly');
+    const store = transaction.objectStore(VIEWED_POSTS_CONFIG.STORE_NAME);
+    return new Promise((resolve, reject) => {
+      const request = store.count();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getRecentPosts(limit = 50) {
+    if (!this.initialized) await this.init();
+
+    try {
+      const transaction = this.db.transaction([VIEWED_POSTS_CONFIG.STORE_NAME], 'readonly');
+      const store = transaction.objectStore(VIEWED_POSTS_CONFIG.STORE_NAME);
+      const index = store.index('timestamp');
+
+      return new Promise((resolve, reject) => {
+        const request = index.openCursor(null, 'prev');
+        const posts = [];
+
+        request.onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor && posts.length < limit) {
+            posts.push(cursor.value);
+            cursor.continue();
+          } else {
+            resolve(posts);
+          }
+        };
+
+        request.onerror = () => reject(request.error);
+      });
+    } catch (error) {
+      if (settings?.debugMode) console.error('Error getting recent posts:', error);
+      return [];
+    }
+  }
+}
+
+// Create a singleton instance
+const viewedPostsManager = new ViewedPostsManager();
+
+// Simplify the setupPostDetection function
+const setupPostDetection = () => {
+  try {
+    // Only set up detection if the feature is enabled
+    if (!settings.saveAllViewedPosts) {
+      if (settings?.debugMode) console.log('[Post Detection] Post detection is disabled in settings');
+      return;
+    }
+
+    if (settings?.debugMode) console.log('[Post Detection] Setting up post detection');
+
+    // Helper function to validate tweet
+    const isValidTweet = (tweetElement) => {
+      const hasUserName = tweetElement.querySelector('[data-testid="User-Name"]');
+      const hasTweetText = tweetElement.querySelector('[data-testid="tweetText"]');
+      
+      if (!hasUserName || !hasTweetText) {
+        if (settings?.debugMode) {
+          console.log('[Post Detection] Skipping invalid tweet:', {
+            hasUserName: !!hasUserName,
+            hasTweetText: !!hasTweetText
+          });
+        }
+        return false;
+      }
+      return true;
+    };
+
+    // Create intersection observer
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const tweetElement = entry.target;
+          
+          // Skip if already processed
+          if (tweetElement.dataset.viewed === 'true') return;
+          
+          // Validate tweet before processing
+          if (!isValidTweet(tweetElement)) return;
+          
+          // Mark as viewed and save
+          tweetElement.dataset.viewed = 'true';
+          viewedPostsManager.addViewedPost(tweetElement);
+          
+          if (settings?.debugMode) {
+            console.log('[Post Detection] Post viewed:', {
+              url: getTweetUrl(tweetElement),
+              timestamp: new Date().toISOString(),
+              hasUserName: !!tweetElement.querySelector('[data-testid="User-Name"]'),
+              hasTweetText: !!tweetElement.querySelector('[data-testid="tweetText"]')
+            });
+          }
+        }
+      });
+    }, {
+      threshold: 0.5,
+      rootMargin: '50px'
+    });
+
+    // Function to observe new tweets
+    const observeTweets = () => {
+      const tweets = document.querySelectorAll('article[data-testid="tweet"]:not([data-viewed])');
+      tweets.forEach(tweet => {
+        // Only observe if it's a valid tweet
+        if (isValidTweet(tweet)) {
+          observer.observe(tweet);
+        }
+      });
+    };
+
+    // Initial observation
+    observeTweets();
+
+    // Set up mutation observer to detect new tweets
+    const mutationObserver = new MutationObserver(() => observeTweets());
+
+    // Start observing the main content area
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+      mutationObserver.observe(mainContent, {
+        childList: true,
+        subtree: true
+      });
+    }
+
+    // Clean up function
+    return () => {
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
+  } catch (error) {
+    if (settings?.debugMode) console.error('[Post Detection] Error:', error);
+  }
+};
+
+
+``

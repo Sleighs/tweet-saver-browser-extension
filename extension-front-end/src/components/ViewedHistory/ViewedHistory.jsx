@@ -10,16 +10,20 @@ const ViewedHistory = () => {
     const loadViewedPosts = async () => {
       try {
         setIsLoading(true);
-        // Get viewed posts from cookie
-        const cookieValue = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('xpostsaver--local-posts='));
         
-        if (cookieValue) {
-          const posts = JSON.parse(decodeURIComponent(cookieValue.split('=')[1]));
-          // Sort by timestamp in descending order (most recent first)
-          const sortedPosts = posts.sort((a, b) => b.timestamp - a.timestamp);
-          setViewedPosts(sortedPosts);
+        // Send message to content script to get recent posts
+        const response = await chrome.tabs.query({ active: true, currentWindow: true });
+        const tab = response[0];
+        
+        if (tab) {
+          const posts = await chrome.tabs.sendMessage(tab.id, { 
+            method: 'getRecentViewedPosts',
+            limit: 50
+          });
+          
+          if (posts) {
+            setViewedPosts(posts);
+          }
         }
       } catch (err) {
         console.error('Error loading viewed posts:', err);
@@ -66,8 +70,14 @@ const ViewedHistory = () => {
         {viewedPosts.map((post, index) => (
           <div key={index} className="viewed-history-item">
             <div className="viewed-history-item-content">
-              {post.text && (
-                <p className="viewed-history-item-text">{post.text}</p>
+              <div className="viewed-history-item-header">
+                <span className="viewed-history-item-username">{post.username}</span>
+                <span className="viewed-history-item-time">
+                  {formatTimestamp(post.timestamp)}
+                </span>
+              </div>
+              {post.textPreview && (
+                <p className="viewed-history-item-text">{post.textPreview}</p>
               )}
               <a
                 href={post.url}
@@ -77,22 +87,7 @@ const ViewedHistory = () => {
               >
                 View Post
               </a>
-              <span className="viewed-history-item-time">
-                {formatTimestamp(post.timestamp)}
-              </span>
             </div>
-            {post.media && post.media.length > 0 && (
-              <div className="viewed-history-item-media">
-                {post.media.map((media, mediaIndex) => (
-                  <img
-                    key={mediaIndex}
-                    src={media.url}
-                    alt=""
-                    className="viewed-history-item-image"
-                  />
-                ))}
-              </div>
-            )}
           </div>
         ))}
       </div>

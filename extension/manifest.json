@@ -55,6 +55,7 @@
         "https://twitter.com/*"
       ],
       "js": [
+        "scripts/debugLogger.js",
         "scripts/content.js"
       ],
       "css": [
