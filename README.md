@@ -60,14 +60,14 @@ The extension can be configured through the options page:
 - Delete all saved posts
 - Export saved post data (text or JSON)
 
-## Roadmap
+<!-- ## Roadmap
 
 - [ ] Cloud storage integration
 - [ ] Post organization with tags
 - [ ] Custom JavaScript
 - [ ] Batch operations
 - [ ] API access
-- [ ] Auto post saving
+- [ ] Auto post saving -->
 
 ## Support
 
